@@ -1,0 +1,21 @@
+groups:
+
+  - name: base
+    frame: base_link
+    spheres: b0 b1 b2 b3 b4 b6 b7 b8 b9 b10 b11 b12 b13
+
+b0: {x: 0.35, y: 0.0, z: 0.06, radius: 0.35, priority: 1}
+b1: {x: -0.35, y: 0.0, z: 0.06, radius: 0.35, priority: 1}
+b2: {x: 0.18, y: 0.29, z: 0.06, radius: 0.35, priority: 1}
+b3: {x: 0.18, y: -0.29, z: 0.06, radius: 0.35, priority: 1}
+b4: {x: -0.18, y: 0.29, z: 0.06, radius: 0.35, priority: 1}
+b5: {x: -0.18, y: -0.29, z: 0.06, radius: 0.35, priority: 1}
+b6: {x: 0.19, y: 0.0, z: -0.10, radius: 0.35, priority: 1}
+b7: {x: 0.18, y: 0.29, z: -0.10, radius: 0.35, priority: 1}
+b8: {x: 0.18, y: -0.29, z: -0.10, radius: 0.35, priority: 1}
+b9: {x: -0.19, y: 0.0, z: -0.10, radius: 0.35, priority: 1}
+b10: {x: -0.13, y: 0.18, z: -0.10, radius: 0.35, priority: 1}
+b11: {x: -0.13, y: -0.18, z: -0.10, radius: 0.35, priority: 1}
+b12: {x: 0.0, y: 0.0, z: 0.02, radius: 0.35, priority: 1}
+b13: {x: 0.0, y: 0.0, z: -0.07, radius: 0.35, priority: 1}
+
