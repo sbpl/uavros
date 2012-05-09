@@ -1,0 +1,14 @@
+<package>
+  <description brief="uav_global_planner">
+
+     uav_global_planner
+
+  </description>
+  <author>Michael Phillips</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/uav_global_planner</url>
+
+</package>
+
+
