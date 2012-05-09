@@ -80,6 +80,7 @@ class UAVCollisionSpace
     void getVoxelsInGroup(KDL::Frame &frame, Group &group);
 
     bool isUAVValid(double x, double y, double z, double theta, unsigned char &dist);
+    void setGrid(OccupancyGrid* g);
 
   private:
 

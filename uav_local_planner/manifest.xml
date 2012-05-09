@@ -9,6 +9,13 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/uav_local_planner</url>
 
+  <depend package="uav_msgs" />
+  <depend package="geometry_msgs" />
+  <depend package="nav_msgs" />
+  <depend package="arm_navigation_msgs" />
+  <depend package="tf" />
+  <depend package="uav_collision_checking" />
+
 </package>
 
 

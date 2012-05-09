@@ -181,3 +181,7 @@ bool UAVCollisionSpace::isUAVValid(double x, double y, double z, double theta, u
   return true;
 }
 
+void UAVCollisionSpace::setGrid(OccupancyGrid* g){
+  grid_ = g;
+}
+
