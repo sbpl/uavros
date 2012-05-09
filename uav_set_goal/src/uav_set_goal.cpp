@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 
   // create an interactive marker for our server
   visualization_msgs::InteractiveMarker int_marker;
-  int_marker.header.frame_id = "/base_link";
+  int_marker.header.frame_id = "/map";
   int_marker.name = "goal_cube";
   int_marker.description = "Simple 4-DOF Control (X,Y,Z,Yaw)";
 
