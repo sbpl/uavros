@@ -1,0 +1,22 @@
+<package>
+  <description brief="uav_collision_checking">
+
+     uav_collision_checking
+
+  </description>
+  <author>Michael Phillips</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/uav_collision_checking</url>
+
+  <depend package="roscpp" />
+  <depend package="kdl" />
+  <depend package="distance_field" />
+
+  <export>
+    <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -                      lpr2_collision_checker"/>
+  </export>
+
+</package>
+
+
