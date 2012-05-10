@@ -1,20 +1,24 @@
 <package>
   <description brief="uav_local_planner">
 
-     uav_local_planner
+    uav_local_planner
 
   </description>
   <author>Michael Phillips</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/uav_local_planner</url>
-    <depend package="eigen"/>
-    <depend package="roscpp"/>
-    <depend package="rospy"/>
-    <depend package="uav_msgs"/>
-    <depend package="geometry_msgs"/>
-    <depend package="tf"/>
-    <depend package="dynamic_reconfigure"/>
+  <depend package="eigen"/>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
+  <depend package="uav_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="nav_msgs" />
+  <depend package="arm_navigation_msgs" />
+  <depend package="uav_collision_checking" />
+
 </package>
 
 

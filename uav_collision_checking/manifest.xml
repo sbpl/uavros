@@ -14,7 +14,7 @@
   <depend package="distance_field" />
 
   <export>
-    <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -                      lpr2_collision_checker"/>
+    <cpp cflags="-I${prefix}/include -O3 -g" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -luav_collision_checker"/>
   </export>
 
 </package>
