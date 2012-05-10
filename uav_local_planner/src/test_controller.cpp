@@ -10,8 +10,8 @@ int main(int argc, char** argv)
   HexaController* hexa_controller = new HexaController();
 
   // Dynamic reconfigure stuff
-  dynamic_reconfigure::Server<uav_local_planner::TutorialsConfig> server;
-  dynamic_reconfigure::Server<uav_local_planner::TutorialsConfig>::CallbackType f;
+  dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> server;
+  dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
   f = boost::bind(&HexaController::dynamic_reconfigure_callback, hexa_controller, _1, _2);
   server.setCallback(f);
 

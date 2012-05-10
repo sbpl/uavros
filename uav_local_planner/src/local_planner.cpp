@@ -39,6 +39,7 @@ UAVLocalPlanner::UAVLocalPlanner()
   collision_map_sub_ = nh.subscribe("local_collision_map", 1, &UAVLocalPlanner::collisionMapCallback,this);
   path_sub_ = nh.subscribe("path", 1, &UAVLocalPlanner::pathCallback,this);
   goal_sub_ = nh.subscribe("goal", 1, &UAVLocalPlanner::goalCallback,this);
+  twist_sub_ = nh.subscribe("twist", 1, &UAVLocalPlanner::twistCallback,this);
   flight_mode_sub_ = nh.subscribe("flight_mode_request", 1, &UAVLocalPlanner::flightModeCallback,this);
 }
 
@@ -157,7 +158,7 @@ bool UAVLocalPlanner::updateCollisionMap(){
   
   //if we did a swap, then update the collision space to use the new occupancy grid
   if(updated)
-    cspace_->setGrid(controller_grid_);//TODO: this function doesn't exist yet...
+    cspace_->setGrid(controller_grid_);
   return updated;
 }
 
@@ -172,6 +173,7 @@ bool UAVLocalPlanner::updatePath(UAVControllerState& state){
     new_path_ = false;
     ret = true;
 
+    boost::unique_lock<boost::mutex> goal_lock(goal_mutex_);
     if(latest_goal_.header.stamp.toSec()>controller_path_->header.stamp.toSec()){
       //switch from following to hover if the new path is old
       if(state==FOLLOWING)
@@ -182,6 +184,7 @@ bool UAVLocalPlanner::updatePath(UAVControllerState& state){
       if(state==HOVER)
         state = FOLLOWING;
     }
+    goal_lock.unlock();
   }
   lock.unlock();
 
@@ -234,7 +237,9 @@ void UAVLocalPlanner::getRobotPose(geometry_msgs::PoseStamped& pose, geometry_ms
   pose.pose.orientation.z = geo_pose.transform.rotation.z;
   pose.header = geo_pose.header;
 
-  //TODO: get the velocity information from.....somewhere?
+  boost::unique_lock<boost::mutex> lock(twist_mutex_);
+  velocity = latest_twist_;
+  lock.unlock();
 }
 
 /***************** CALLBACKS *****************/
@@ -264,7 +269,15 @@ void UAVLocalPlanner::pathCallback(nav_msgs::PathConstPtr path){
 }
 
 void UAVLocalPlanner::goalCallback(geometry_msgs::PoseStampedConstPtr goal){
+  boost::unique_lock<boost::mutex> lock(goal_mutex_);
   latest_goal_ = *goal;
+  lock.unlock();
+}
+
+void UAVLocalPlanner::twistCallback(geometry_msgs::TwistStampedConstPtr twist){
+  boost::unique_lock<boost::mutex> lock(twist_mutex_);
+  latest_twist_ = *twist;
+  lock.unlock();
 }
 
 void UAVLocalPlanner::flightModeCallback(uav_msgs::FlightModeRequestConstPtr req){

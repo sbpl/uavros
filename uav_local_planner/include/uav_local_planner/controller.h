@@ -3,7 +3,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <uav_msgs/ControllerCommand.h>
 #include <uav_local_planner/hexa_dynamics.h>
-#include <uav_local_planner/TutorialsConfig.h>
+#include <uav_local_planner/UAVControllerConfig.h>
 #include <dynamic_reconfigure/server.h>
  
 
@@ -137,6 +137,6 @@ class HexaController{
    * @param config Callback message from GUI
    * @param level Callback level from GUI (Not used)
    */
-  void dynamic_reconfigure_callback(uav_local_planner::TutorialsConfig &config, uint32_t level);
+  void dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level);
 
 };

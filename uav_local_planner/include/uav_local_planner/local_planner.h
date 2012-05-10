@@ -42,6 +42,7 @@ class UAVLocalPlanner{
     void collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm);
     void pathCallback(nav_msgs::PathConstPtr path);
     void goalCallback(geometry_msgs::PoseStampedConstPtr goal);
+    void twistCallback(geometry_msgs::TwistStampedConstPtr goal);
     void flightModeCallback(uav_msgs::FlightModeRequestConstPtr req);
 
     double sizex_, sizey_, sizez_, resolution_;
@@ -52,6 +53,7 @@ class UAVLocalPlanner{
     ros::Subscriber collision_map_sub_;
     ros::Subscriber path_sub_;
     ros::Subscriber goal_sub_;
+    ros::Subscriber twist_sub_;
     ros::Subscriber flight_mode_sub_;
     
     UAVCollisionSpace* cspace_;
@@ -63,10 +65,13 @@ class UAVLocalPlanner{
     nav_msgs::Path* callback_path_;
     uav_msgs::FlightModeRequest flight_mode_;
     geometry_msgs::PoseStamped latest_goal_;
+    geometry_msgs::TwistStamped latest_twist_;
 
     boost::thread* controller_thread_;
     boost::mutex grid_mutex_;
     boost::mutex path_mutex_;
+    boost::mutex goal_mutex_;
+    boost::mutex twist_mutex_;
     boost::mutex flight_mode_mutex_;
     bool new_grid_, new_path_;
 
