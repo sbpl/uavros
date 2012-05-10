@@ -1,0 +1,17 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~RPkp" : \b [double] Roll/Pitch Proportional Gain min: 0.0, default: 20.0, max: 100.0
+- \b "~RPkd" : \b [double] Roll/Pitch Derivative Gain min: 0.0, default: 2.5, max: 100.0
+- \b "~RPki" : \b [double] Roll/Pitch Integral Gain min: 0.0, default: 0.03, max: 100.0
+- \b "~Ykp" : \b [double] Yaw Proportional Gain min: 0.0, default: 6.0, max: 100.0
+- \b "~Ykd" : \b [double] Yaw Derivative Gain min: 0.0, default: 11.0, max: 100.0
+- \b "~Yki" : \b [double] Yaw Integral Gain min: 0.0, default: 0.0, max: 100.0
+- \b "~Tkp" : \b [double] Thrust Proportional Gain min: 0.0, default: 10.0, max: 100.0
+- \b "~Tkd" : \b [double] Thrust Derivative  Gain min: 0.0, default: 6.0, max: 100.0
+- \b "~Tki" : \b [double] Thrust Integral Gain min: 0.0, default: 0.1, max: 100.0
+- \b "~Posekp" : \b [double] Roll/Pitch Proportional Gain for Position min: 0.0, default: 8.0, max: 100.0
+- \b "~Posekd" : \b [double] Roll/Pitch Derivative Gain for Position min: 0.0, default: 6.0, max: 100.0
+- \b "~Poseki" : \b [double] Roll/Pitch Integral  Gain for Position min: 0.0, default: 0.0, max: 100.0
+

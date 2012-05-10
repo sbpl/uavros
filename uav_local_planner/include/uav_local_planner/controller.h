@@ -3,6 +3,9 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <uav_msgs/ControllerCommand.h>
 #include <uav_local_planner/hexa_dynamics.h>
+#include <uav_local_planner/TutorialsConfig.h>
+#include <dynamic_reconfigure/server.h>
+ 
 
 //Controller Gains and Variables (Copied over from Jon's MATLAB version)
 
@@ -48,91 +51,92 @@ typedef struct{
 
 class HexaController{
 
-
   /**
-   * Current state (observed state) and desired goal state
+   * Controller gains and dynamics parameters
    */
-    Eigen::VectorXf des_state, current_state;
-    
 
-    /**
-     * Controller gains and dynamics parameters
-     */
-
-    CONT_t CONT;
-    HEXA_t HEXA;
+  CONT_t CONT;
+  HEXA_t HEXA;
 
   public:
 
 
-    /**
-     * Constructor - Initializes controller gains and dynamics params
-     */
+  /**
+   * Constructor - Initializes controller gains and dynamics params
+   */
 
-    HexaController();
-    /**
-     * Destructor 
-     */
+  HexaController();
+  /**
+   * Destructor 
+   */
 
-    ~HexaController();
-    /**
-     * @brief Initialize gains for the controller
-     */
-    void InitializeDynamics();
+  ~HexaController();
+  /**
+   * @brief Initialize gains for the controller
+   * @param nh The local node handle
+   */
+  void InitializeDynamics(ros::NodeHandle nh);
 
-    /**
-     * @brief Initialize hexarotor dynamics parameters
-     */
-    void InitializeGains();
-    /**
-     * @brief The main controller function which calls the attitude, altitude and position controller
-     * @param X Current Observed State
-     * @param DesX Desired Goal State
-     * @return 4x1 vector - [thurst, roll, pitch, yaw]' , all numbers in the range 0-255
-     */
-    Eigen::Vector4i Controller(const geometry_msgs::PoseStamped, const geometry_msgs::TwistStamped, const geometry_msgs::PoseStamped);
+  /**
+   * @brief Initialize hexarotor dynamics parameters
+   */
+  void InitializeGains();
+  /**
+   * @brief The main controller function which calls the attitude, altitude and position controller
+   * @param X Current Observed State
+   * @param DesX Desired Goal State
+   * @return 4x1 vector - [thurst, roll, pitch, yaw]' , all numbers in the range 0-255
+   */
+  uav_msgs::ControllerCommand Controller(const geometry_msgs::PoseStamped, const geometry_msgs::TwistStamped, const geometry_msgs::PoseStamped);
 
-    /**
-     * @brief Attitude controller
-     * @param X Current Observed State
-     * @param DesX Desired Goal State
-     * @return A 3x1 vector of floats for Roll,Pitch and Yaw thrusts
-     */
-    Eigen::Vector3f AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX);
+  /**
+   * @brief Attitude controller
+   * @param X Current Observed State
+   * @param DesX Desired Goal State
+   * @return A 3x1 vector of floats for Roll,Pitch and Yaw thrusts
+   */
+  Eigen::Vector3f AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX);
 
-    /**
-     * @brief Position controller
-     * @param X Current Observed State
-     * @param DesX Desired Goal State
-     * @return A 2x1 vector of floats for Roll and Pitch thrusts
-     */
-    Eigen::Vector2f PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX);
+  /**
+   * @brief Position controller
+   * @param X Current Observed State
+   * @param DesX Desired Goal State
+   * @return A 2x1 vector of floats for Roll and Pitch thrusts
+   */
+  Eigen::Vector2f PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX);
 
-    /**
-     * @brief Altitude controller
-     * @param X Current Observed State
-     * @param DesX Desired Goal State
-     * @return A single float for the average thrust
-     */
-    float AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX);
+  /**
+   * @brief Altitude controller
+   * @param X Current Observed State
+   * @param DesX Desired Goal State
+   * @return A single float for the average thrust
+   */
+  float AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX);
 
-   /**
-    * @brief Set the desired state (X,Y,Z,roll,pitch,yaw)
-    * @param goal_pose The goal pose published on the /goal_pose topic (from RVIZ)
-    */
-   void SetDesState(const geometry_msgs::PoseStamped goal_pose);
+  /**
+   * @brief Set the desired state (X,Y,Z,roll,pitch,yaw)
+   * @param goal_pose The goal pose published on the /goal_pose topic (from RVIZ)
+   */
+  Eigen::VectorXf SetDesState(const geometry_msgs::PoseStamped goal_pose);
 
-   /**
-    * @brief Set the current state (X,Y,Z,roll,pitch,yaw,X_dot,Y_dot,Z_dot,p,q,r)
-    * @param current_pose (X,Y,Z,quaternion) from the observer (EKF)
-    * @param current_velocities (X_dot,Y_dot,Z_dot,p,q,r) from the observer (EKF)
-    */
-   void SetCurrState(const geometry_msgs::PoseStamped current_pose, const geometry_msgs::TwistStamped current_velocities);
+  /**
+   * @brief Set the current state (X,Y,Z,roll,pitch,yaw,X_dot,Y_dot,Z_dot,p,q,r)
+   * @param current_pose (X,Y,Z,quaternion) from the observer (EKF)
+   * @param current_velocities (X_dot,Y_dot,Z_dot,p,q,r) from the observer (EKF)
+   */
+  Eigen::VectorXf SetCurrState(const geometry_msgs::PoseStamped current_pose, const geometry_msgs::TwistStamped current_velocities);
 
-/**
- * @brief Updates the transforms between the world and body frames based on current observation
- * @param X The current observed state
- */
-   void UpdateTransforms(Eigen::VectorXf X);
+  /**
+   * @brief Updates the transforms between the world and body frames based on current observation
+   * @param X The current observed state
+   */
+  void UpdateTransforms(Eigen::VectorXf X);
+
+  /**
+   * @brief Callback for the dynamic reconfigure GUI
+   * @param config Callback message from GUI
+   * @param level Callback level from GUI (Not used)
+   */
+  void dynamic_reconfigure_callback(uav_local_planner::TutorialsConfig &config, uint32_t level);
 
 };

@@ -1,0 +1,10 @@
+<launch>
+
+  <!-- Bring up the uav_local_planner node and load the motor_coef yaml file into the param server-->
+  <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
+    <rosparam file="$(find uav_local_planner)/config/motor_coef.yaml" command="load"/>
+  </node>
+
+  <!-- Bring up the dynamic reconfigure GUI for controller gains-->
+  <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>
+</launch>

@@ -10,9 +10,11 @@
   <url>http://ros.org/wiki/uav_local_planner</url>
     <depend package="eigen"/>
     <depend package="roscpp"/>
+    <depend package="rospy"/>
     <depend package="uav_msgs"/>
     <depend package="geometry_msgs"/>
     <depend package="tf"/>
+    <depend package="dynamic_reconfigure"/>
 </package>
 
 
