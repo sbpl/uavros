@@ -1,7 +1,5 @@
-#include <ros/ros.h>
 #include <Eigen/Core>
 #include <Eigen/LU>
-#include <cmath>
 
 // Hexarotor dynamics parameters
 typedef struct{

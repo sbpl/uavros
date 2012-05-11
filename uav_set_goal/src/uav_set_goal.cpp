@@ -1,11 +1,17 @@
 #include <ros/ros.h>
-#include<interactive_markers/menu_handler.h>
-#include<interactive_markers/interactive_marker_server.h>
-#include<geometry_msgs/PoseStamped.h>
+#include <interactive_markers/menu_handler.h>
+#include <interactive_markers/interactive_marker_server.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <uav_msgs/FlightModeRequest.h> 
+
+#define MENU_ENTRY_NEW_GOAL 1
+#define MENU_ENTRY_HOVER 2
+#define MENU_ENTRY_LAND 3
+#define MENU_ENTRY_TAKE_OFF 4
 
 interactive_markers::MenuHandler menu_handler;
 ros::Publisher goal_pose_pub;
-
+ros::Publisher flight_mode_pub;
 
 void processFeedback(
     const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback )
@@ -16,12 +22,36 @@ void processFeedback(
 
   if(feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::MENU_SELECT)
   {
-    ROS_INFO_STREAM("Received new goal !" );
+    if(feedback->menu_entry_id == MENU_ENTRY_NEW_GOAL)
+    {
+    ROS_INFO_STREAM("Sending new goal !" );
     geometry_msgs::PoseStamped goal_pose;
     goal_pose.header.stamp = ros::Time::now();
     goal_pose.header.frame_id = "/map";
     goal_pose.pose = feedback->pose;
     goal_pose_pub.publish(goal_pose);
+    }
+    else if(feedback->menu_entry_id == MENU_ENTRY_HOVER)
+    {
+      ROS_INFO_STREAM("Sending hover request");
+      uav_msgs::FlightModeRequest mode_msg;
+      mode_msg.mode = uav_msgs::FlightModeRequest::HOVER;
+      flight_mode_pub.publish(mode_msg);
+    }
+    else if(feedback->menu_entry_id == MENU_ENTRY_LAND)
+    {
+      ROS_INFO_STREAM("Sending land request");
+      uav_msgs::FlightModeRequest mode_msg;
+      mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
+      flight_mode_pub.publish(mode_msg);
+    }
+    else if(feedback->menu_entry_id == MENU_ENTRY_TAKE_OFF)
+    {
+      ROS_INFO_STREAM("Sending take off request");
+      uav_msgs::FlightModeRequest mode_msg;
+      mode_msg.mode = uav_msgs::FlightModeRequest::TAKE_OFF;
+      flight_mode_pub.publish(mode_msg);
+    }
   }
 
 }
@@ -31,15 +61,15 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "uav_set_goal");
   ros::NodeHandle nh;
   goal_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/goal_pose",1);
-
+  flight_mode_pub = nh.advertise<uav_msgs::FlightModeRequest>("/flight_mode",1);
   // create an interactive marker server on the topic namespace simple_marker
   interactive_markers::InteractiveMarkerServer server("uav_set_goal");
 
   // create an interactive marker for our server
   visualization_msgs::InteractiveMarker int_marker;
   int_marker.header.frame_id = "/map";
-  int_marker.name = "goal_cube";
-  int_marker.description = "Simple 4-DOF Control (X,Y,Z,Yaw)";
+  int_marker.name = "UAV Goal Marker";
+  int_marker.description = "";
 
   // create a grey box marker
   visualization_msgs::Marker box_marker;
@@ -61,9 +91,12 @@ int main(int argc, char** argv)
   int_marker.controls.push_back( box_control );
 
   // Menu Stuff
-  menu_handler.insert( "Send Goal !", &processFeedback );
+  menu_handler.insert( "Send Goal", &processFeedback );
+  menu_handler.insert( "Hover", &processFeedback );
+  menu_handler.insert( "Land", &processFeedback );
+  menu_handler.insert( "Take off", &processFeedback );
   menu_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MENU;
-  menu_control.description="Goal Options";
+  menu_control.description="UAV Control Options";
   menu_control.name = "menu_only_control";
   menu_control.always_visible = true;
   int_marker.controls.push_back(menu_control);
