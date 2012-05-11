@@ -11,6 +11,7 @@
 #include <arm_navigation_msgs/CollisionMap.h>
 #include <tf/transform_listener.h>
 #include <uav_collision_checking/uav_collision_space.h>
+#include <uav_local_planner/controller.h>
 
 enum UAVControllerState {
   LANDED,
@@ -27,10 +28,10 @@ class UAVLocalPlanner{
 
     void controllerThread();
 
-    uav_msgs::ControllerCommand land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped);
-    uav_msgs::ControllerCommand takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped);
+    uav_msgs::ControllerCommand land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, UAVControllerState& state);
+    uav_msgs::ControllerCommand takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, UAVControllerState& state);
     uav_msgs::ControllerCommand hover(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped);
-    uav_msgs::ControllerCommand followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, bool isNewPath);
+    uav_msgs::ControllerCommand followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, UAVControllerState& state, bool isNewPath);
 
 
   private:
@@ -44,6 +45,9 @@ class UAVLocalPlanner{
     void goalCallback(geometry_msgs::PoseStampedConstPtr goal);
     void twistCallback(geometry_msgs::TwistStampedConstPtr goal);
     void flightModeCallback(uav_msgs::FlightModeRequestConstPtr req);
+
+    HexaController controller;
+    dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> dynamic_reconfigure_server_;
 
     double sizex_, sizey_, sizez_, resolution_;
 
@@ -77,8 +81,14 @@ class UAVLocalPlanner{
 
     double controller_frequency_;
     double collision_map_tolerance_, pose_tolerance_;
+    double landing_height_, nominal_height_, nominal_linear_velocity_, nominal_angular_velocity_;
 
     tf::TransformListener tf_;
+
+    uav_msgs::ControllerCommand last_u_;
+    geometry_msgs::PoseStamped hover_pose_;
+    UAVControllerState last_state_;
+    unsigned int path_idx_;
 };
 
 #endif

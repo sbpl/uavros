@@ -1,4 +1,3 @@
-
 #include<uav_local_planner/local_planner.h>
 
 UAVLocalPlanner::UAVLocalPlanner()
@@ -10,9 +9,17 @@ UAVLocalPlanner::UAVLocalPlanner()
   ph.param("size_y",sizey_,4.0);
   ph.param("size_z",sizez_,4.0);
   ph.param("resolution",resolution_,0.1);
-  //TODO: add params for controller gains and frequency
-  //TODO: add params for landing height and nominal height
-  //TODO: add params for nominal linear and angular velocity
+
+  ph.param("controller_frequency",controller_frequency_,50.0);
+  ph.param("collision_map_tolerance",collision_map_tolerance_,0.5);
+  ph.param("pose_tolerance",pose_tolerance_,0.05);
+
+  ph.param("landing_height",landing_height_,0.3);
+  ph.param("nominal_height",nominal_height_,1.0);
+  ph.param("nominal_linear_velocity",nominal_linear_velocity_,0.3);
+  ph.param("nominal_angular_velocity",nominal_angular_velocity_,M_PI/2);
+
+  path_idx_ = 0;
 
   //publish UAV commands and goals (in case we detect a collision up ahead we publish the same goal state to engage the planner)
   waypoint_vis_pub_ = nh.advertise<visualization_msgs::Marker>("/controller/next_waypoint",1);
@@ -41,6 +48,10 @@ UAVLocalPlanner::UAVLocalPlanner()
   goal_sub_ = nh.subscribe("goal", 1, &UAVLocalPlanner::goalCallback,this);
   twist_sub_ = nh.subscribe("twist", 1, &UAVLocalPlanner::twistCallback,this);
   flight_mode_sub_ = nh.subscribe("flight_mode_request", 1, &UAVLocalPlanner::flightModeCallback,this);
+
+  dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
+  f = boost::bind(&HexaController::dynamic_reconfigure_callback, controller, _1, _2);
+  dynamic_reconfigure_server_.setCallback(f);
 }
 
 UAVLocalPlanner::~UAVLocalPlanner(){
@@ -64,6 +75,7 @@ void UAVLocalPlanner::controllerThread(){
   ros::Rate r(controller_frequency_);
   double last_collision_map_update = ros::Time::now().toSec();
   UAVControllerState state = LANDED;
+  last_state_ = LANDED;
   while(n.ok()){
     //if the robot is hovering and we get a new path, switch to following.
     //conversely, if we get a new goal but don't have a fresh path yet, go back to hover
@@ -88,57 +100,104 @@ void UAVLocalPlanner::controllerThread(){
       ROS_ERROR("[controller] UAV pose is old...hit the deck!");
     }
 
-    uav_msgs::ControllerCommand c;
+    if(state==HOVER && last_state_!=HOVER){
+      ROS_INFO("[controller] transitioning to hover (setting the hover pose)");
+      hover_pose_ = pose;
+    }
+
+    last_state_ = state;
+    uav_msgs::ControllerCommand u;
     switch(state){
       case LANDED:
         ROS_DEBUG("[controller] state: LANDED");
         break;
       case LANDING:
         ROS_DEBUG("[controller] state: LANDING");
-        c = land(pose,velocity);
+        u = land(pose,velocity,state);
         break;
       case TAKE_OFF:
         ROS_DEBUG("[controller] state: TAKE_OFF");
-        c = takeOff(pose,velocity);
+        u = takeOff(pose,velocity,state);
         break;
       case HOVER:
         ROS_DEBUG("[controller] state: HOVER");
-        c = hover(pose,velocity);
+        u = hover(pose,velocity);
         break;
       case FOLLOWING:
         ROS_DEBUG("[controller] state: FOLLOWING");
-        c = followPath(pose,velocity,isNewPath);
+        u = followPath(pose,velocity,state,isNewPath);
         break;
       default:
         ROS_ERROR("[controller] In an invalid state! Landing...");
         state = LANDING;
         break;
     }
+    last_u_ = u;
     if(!LANDED)
-      command_pub_.publish(c);
+      command_pub_.publish(u);
   }
 }
 
 /***************** STATE FUNCTIONS *****************/
 
-uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped){
-  uav_msgs::ControllerCommand c;
-  return c;
+uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, UAVControllerState& state){
+  uav_msgs::ControllerCommand u;
+  if(pose.pose.position.z <= landing_height_){
+    u = last_u_;
+    u.roll = 0;
+    u.pitch = 0;
+    u.yaw = 0;
+    if(u.thrust==0)
+      state = LANDED;
+    else
+      u.thrust -= 1;
+  }
+  else{
+    geometry_msgs::PoseStamped target = pose;
+    target.pose.position.z -= 0.4;
+    //if(target.pose.position.z < landing_height_)
+      //target.pose.position.z = landing_height_ - 0.1;
+    u = controller.Controller(pose, vel, target);
+  }
+  return u;
 }
 
-uav_msgs::ControllerCommand UAVLocalPlanner::takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped){
-  uav_msgs::ControllerCommand c;
-  return c;
+uav_msgs::ControllerCommand UAVLocalPlanner::takeOff(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, UAVControllerState& state){
+  geometry_msgs::PoseStamped target = pose;
+  if(pose.pose.position.z >= nominal_height_)
+    state = HOVER;
+  else
+    target.pose.position.z += 0.4;
+  return controller.Controller(pose, vel, target);
 }
 
-uav_msgs::ControllerCommand UAVLocalPlanner::hover(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped){
-  uav_msgs::ControllerCommand c;
-  return c;
+uav_msgs::ControllerCommand UAVLocalPlanner::hover(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel){
+  return controller.Controller(pose, vel, hover_pose_);
 }
 
-uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, bool isNewPath){
-  uav_msgs::ControllerCommand c;
-  return c;
+uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, UAVControllerState& state, bool isNewPath){
+  if(isNewPath)
+    path_idx_ = 0;
+  double dx = pose.pose.position.x - controller_path_->poses[path_idx_].pose.position.x;
+  double dy = pose.pose.position.y - controller_path_->poses[path_idx_].pose.position.y;
+  double dz = pose.pose.position.z - controller_path_->poses[path_idx_].pose.position.z;
+  double dist = sqrt(dx*dx + dy*dy + dz*dz);
+  unsigned int i;
+  for(i=path_idx_+1; i<controller_path_->poses.size(); i++){
+    dx = pose.pose.position.x - controller_path_->poses[i].pose.position.x;
+    dy = pose.pose.position.y - controller_path_->poses[i].pose.position.y;
+    dz = pose.pose.position.z - controller_path_->poses[i].pose.position.z;
+    double temp = sqrt(dx*dx + dy*dy + dz*dz);
+    if(temp > dist)
+      break;
+    dist = temp;
+  }
+  path_idx_ = i-1;
+  if(i == controller_path_->poses.size())
+    i--;
+
+  geometry_msgs::PoseStamped target = controller_path_->poses[i];
+  return controller.Controller(pose, vel, target);
 }
 
 /***************** UPDATE FUNCTIONS *****************/
@@ -174,8 +233,8 @@ bool UAVLocalPlanner::updatePath(UAVControllerState& state){
     ret = true;
 
     boost::unique_lock<boost::mutex> goal_lock(goal_mutex_);
-    if(latest_goal_.header.stamp.toSec()>controller_path_->header.stamp.toSec()){
-      //switch from following to hover if the new path is old
+    if(controller_path_->poses.empty() || latest_goal_.header.stamp.toSec()>controller_path_->header.stamp.toSec()){
+      //switch from following to hover if the new path is old (or empty)
       if(state==FOLLOWING)
         state = HOVER;
     }
