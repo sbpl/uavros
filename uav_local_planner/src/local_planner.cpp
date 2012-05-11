@@ -196,8 +196,12 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamp
   if(i == controller_path_->poses.size())
     i--;
 
+  //TODO: collision check the path from our pose to the target pose (just check the straight line)
+  //TODO: collision check the path from the target to the next few points (use a time horizon)
   geometry_msgs::PoseStamped target = controller_path_->poses[i];
-  return controller.Controller(pose, vel, target);
+  uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
+  //TODO: collision check the controls for some very short period of time
+  return u;
 }
 
 /***************** UPDATE FUNCTIONS *****************/
