@@ -1,0 +1,14 @@
+<package>
+  <description brief="uav_state_publisher">
+
+     uav_state_publisher
+
+  </description>
+  <author>Michael Phillips</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/uav_state_publisher</url>
+
+</package>
+
+
