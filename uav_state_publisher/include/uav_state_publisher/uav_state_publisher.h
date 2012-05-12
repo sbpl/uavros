@@ -53,13 +53,11 @@ class UAVStatePublisher{
         double* q_;
     };
 
-    void slamCallback(geometry_msgs::PoseStampedConstPtr p);
     void ekfCallback(nav_msgs::OdometryConstPtr p);
     void lidarCallback(sensor_msgs::LaserScanConstPtr scan);
 
     nav_msgs::Odometry state_;
     ros::Publisher state_pub_;
-    ros::Subscriber slam_sub_;
     ros::Subscriber ekf_sub_;
     ros::Subscriber lidar_sub_;
 
@@ -68,10 +66,7 @@ class UAVStatePublisher{
 
     double min_lidar_angle_, max_lidar_angle_;
 
-    FIFO x_fifo_;
-    FIFO y_fifo_;
     FIFO z_fifo_;
-    FIFO xy_time_fifo_;
     FIFO z_time_fifo_;
 
 };
