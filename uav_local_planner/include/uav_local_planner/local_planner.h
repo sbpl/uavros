@@ -45,6 +45,7 @@ class UAVLocalPlanner{
     void goalCallback(geometry_msgs::PoseStampedConstPtr goal);
     void twistCallback(geometry_msgs::TwistStampedConstPtr goal);
     void flightModeCallback(uav_msgs::FlightModeRequestConstPtr req);
+    void visualizeTargetPose(geometry_msgs::PoseStamped p);
 
     HexaController controller;
     dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> dynamic_reconfigure_server_;

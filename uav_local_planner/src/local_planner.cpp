@@ -157,6 +157,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pos
     target.pose.position.z -= 0.4;
     //if(target.pose.position.z < landing_height_)
       //target.pose.position.z = landing_height_ - 0.1;
+    visualizeTargetPose(target);
     u = controller.Controller(pose, vel, target);
   }
   return u;
@@ -168,10 +169,12 @@ uav_msgs::ControllerCommand UAVLocalPlanner::takeOff(geometry_msgs::PoseStamped 
     state = HOVER;
   else
     target.pose.position.z += 0.4;
+  visualizeTargetPose(target);
   return controller.Controller(pose, vel, target);
 }
 
 uav_msgs::ControllerCommand UAVLocalPlanner::hover(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel){
+  visualizeTargetPose(hover_pose_);
   return controller.Controller(pose, vel, hover_pose_);
 }
 
@@ -199,6 +202,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamp
   //TODO: collision check the path from our pose to the target pose (just check the straight line)
   //TODO: collision check the path from the target to the next few points (use a time horizon)
   geometry_msgs::PoseStamped target = controller_path_->poses[i];
+  visualizeTargetPose(target);
   uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
   //TODO: collision check the controls for some very short period of time
   return u;
@@ -347,6 +351,28 @@ void UAVLocalPlanner::flightModeCallback(uav_msgs::FlightModeRequestConstPtr req
   boost::unique_lock<boost::mutex> lock(flight_mode_mutex_);
   flight_mode_ = *req;
   lock.unlock();
+}
+
+/***************** VISUALIZATION *****************/
+
+void UAVLocalPlanner::visualizeTargetPose(geometry_msgs::PoseStamped p){
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.header.stamp = ros::Time(0);
+  marker.type = visualization_msgs::Marker::ARROW;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose = p.pose;
+  marker.scale.z = 0.3;
+  marker.scale.y = 0.05;
+  marker.scale.x = 0.05;
+  marker.color.r = 1.0;
+  marker.color.g = 0.0;
+  marker.color.b = 0.0;
+  marker.color.a = 1.0;
+  marker.ns = "controller target";
+  marker.id = 0;
+  marker.lifetime = ros::Duration(0);
+  waypoint_vis_pub_.publish(marker);
 }
 
 /***************** MAIN *****************/
