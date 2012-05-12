@@ -1,0 +1,14 @@
+<package>
+  <description brief="uav_launch">
+
+     uav_launch
+
+  </description>
+  <author>Venkatraman</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/uav_launch</url>
+
+</package>
+
+
