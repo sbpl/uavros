@@ -1,5 +1,5 @@
 #Subscribed Topics
-scan_topic: scan_laser
+scan_topic: fixed_laser
 sys_msg_topic: syscommand
 
 # Frame Names

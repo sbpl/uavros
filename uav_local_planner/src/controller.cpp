@@ -14,7 +14,7 @@ HexaController::HexaController()
   HexaController::InitializeDynamics(nh);
 }
 
-// Destructor 
+// Destructor
 HexaController::~HexaController()
 {
 }
@@ -23,7 +23,7 @@ void HexaController::InitializeGains()
 {
   // Roll and Pitch Gains
   CONT.RPkp = 20;       //10 150
-  CONT.RPkd = 2.5*8/8; //6*10/8;        
+  CONT.RPkd = 2.5*8/8; //6*10/8;
   CONT.RPki = 0.6*2/40; //12/50;
 
   // Yaw Gains
@@ -87,27 +87,28 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
     ROS_ASSERT(Fex[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
     HEXA.Fex[i] = static_cast<double>(Fex[i]);
   }
-  for (int32_t i = 0; i < Vex.size(); ++i) 
+  for (int32_t i = 0; i < Vex.size(); ++i)
   {
     ROS_ASSERT(Vex[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
     HEXA.Vex[i] = static_cast<double>(Vex[i]);
   }
-  for (int32_t i = 0; i < Uex.size(); ++i) 
+  for (int32_t i = 0; i < Uex.size(); ++i)
   {
     ROS_ASSERT(Uex[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
     HEXA.Uex[i] = static_cast<int>(Uex[i]);
   }
-  for (int32_t i = 0; i < FV2U_coef.size(); ++i) 
+  for (int32_t i = 0; i < FV2U_coef.size(); ++i)
   {
     ROS_ASSERT(FV2U_coef[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
     HEXA.FV2U_coef[i] = static_cast<double>(FV2U_coef[i]);
   }
-  for (int32_t i = 0; i < UV2F_coef.size(); ++i) 
+  for (int32_t i = 0; i < UV2F_coef.size(); ++i)
   {
     ROS_ASSERT(UV2F_coef[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
     HEXA.UV2F_coef[i] = static_cast<double>(UV2F_coef[i]);
   }
 
+  //TODO: these should come in as parameters
   // Arm Length
   HEXA.L = 0.35;
 
@@ -121,7 +122,7 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
   HEXA.Moment2Fratio = 1/40;
 
   // N based on 2 kg max force per blade
-  HEXA.maxF = 20;                    
+  HEXA.maxF = 20;
 
   // N for which which we really can't issue a control
   HEXA.minF = 0.2;
@@ -131,7 +132,7 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
     -HEXA.L, -HEXA.L*sin(M_PI/6), HEXA.L*sin(M_PI/6), HEXA.L, HEXA.L*sin(M_PI/6), -HEXA.L*sin(M_PI/6),
     -1*HEXA.Moment2Fratio, 1*HEXA.Moment2Fratio, -1*HEXA.Moment2Fratio, 1*HEXA.Moment2Fratio, -1*HEXA.Moment2Fratio, 1*HEXA.Moment2Fratio;
 
-  // Inertia Matrix for the Hexarotor
+  // TODO: rea inInertia Matrix for the Hexarotor
   HEXA.I << 0.1, 0, 0,
     0, 0.1, 0,
     0, 0, 0.15;
@@ -142,10 +143,10 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
   // Gravity Vector
   HEXA.g << 0, 0, -9.81;
 
-  // TODO: Description for this
+  // TODO: Description for this   WTF is this?
   HEXA.F.setZero(6);
 
-  // This should be read in from the system
+  // TODO: This should be read in from the system
   HEXA.V = 145; // in tenths of volts
 
   // Initialize transforms to identity
@@ -273,9 +274,9 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
       err[i] += 2*M_PI;
   }
 
-  RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;  
-  RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki; 
-  RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki; 
+  RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
+  RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
+  RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
 
   CONT.RI += err[0];
   CONT.PI += err[1];
@@ -301,7 +302,7 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   err.segment(3,3) = HEXA.ANG.R_W2B*(DesX.segment(3,3) - X.segment(3,3));
 
   RP_Pose[1] = err[0]*CONT.Posekp + err[3]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
-  RP_Pose[0] = -err[1]*CONT.Posekp + -err[4]*CONT.Posekd + CONT.RposeI*CONT.Poseki; 
+  RP_Pose[0] = -err[1]*CONT.Posekp + -err[4]*CONT.Posekd + CONT.RposeI*CONT.Poseki;
 
   CONT.RposeI += err[1];
   CONT.PposeI += err[0];
@@ -313,7 +314,7 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
 
 float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
-  float T;  
+  float T;
   // Limit Integral windup
   if(abs(CONT.TI)>CONT.windupY)
     CONT.TI = copysign(1,CONT.TI)*CONT.windupY;
@@ -328,7 +329,7 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
 
   CONT.TI += err[0];
-  
+
   ROS_INFO("Altitude controller returned %f",T);
   return T;
 
@@ -361,29 +362,29 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   F[0] = cRPY_f[0];
   F[1] = cRPY_f[1];
   F[2] = cRPY_f[2];
-  F[3] = T_f; 
-  
+  F[3] = T_f;
+
   ROS_INFO("Controller force before mapping to 0-255: %f %f %f %f", F[0],F[1],F[2],F[3]);
 
 
   unsigned int num_Fex_terms = HEXA.Fex.size();
   unsigned int num_Vex_terms = HEXA.Vex.size();
   Eigen::Vector4f u;
-  u.setZero(); 
+  u.setZero();
 
   // Apply magic polynomial (that maps forces to numbers) to get values in range 0-255
   for(unsigned int j = 0;j < 4; j++)
   {
     for(unsigned int i = 0;i <num_Fex_terms; i++)
     {
-      // The following line ensures that we do not call pow with a negative base and exponent<1 
+      // The following line ensures that we do not call pow with a negative base and exponent<1
       if(F[j]<0&&HEXA.Fex[i]<1)
         continue;
       u[j] += HEXA.FV2U_coef[i]*pow(F[j],HEXA.Fex[i]);
     }
     for(unsigned int i = num_Fex_terms;i <num_Fex_terms+num_Vex_terms; i++)
     {
-      // The following line ensures that we do not call pow with a negative base and exponent<1 
+      // The following line ensures that we do not call pow with a negative base and exponent<1
       if(HEXA.V<0&&HEXA.Vex[i-num_Fex_terms]<1)
         continue;
       u[j] += HEXA.FV2U_coef[i]*pow(HEXA.V,HEXA.Vex[i-num_Fex_terms]);
