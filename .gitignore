@@ -1,0 +1,6 @@
+*~
+*.*~
+CMakeFiles
+*.swp
+HexaDriver/build/**/*
+bin/**
