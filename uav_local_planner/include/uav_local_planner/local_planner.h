@@ -6,7 +6,7 @@
 #include <uav_msgs/FlightModeRequest.h>
 #include <uav_msgs/ControllerCommand.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 #include <arm_navigation_msgs/CollisionMap.h>
 #include <tf/transform_listener.h>
@@ -43,7 +43,7 @@ class UAVLocalPlanner{
     void collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm);
     void pathCallback(nav_msgs::PathConstPtr path);
     void goalCallback(geometry_msgs::PoseStampedConstPtr goal);
-    void twistCallback(geometry_msgs::TwistStampedConstPtr goal);
+    void stateCallback(nav_msgs::OdometryConstPtr state);
     void flightModeCallback(uav_msgs::FlightModeRequestConstPtr req);
     void visualizeTargetPose(geometry_msgs::PoseStamped p);
 
@@ -58,7 +58,7 @@ class UAVLocalPlanner{
     ros::Subscriber collision_map_sub_;
     ros::Subscriber path_sub_;
     ros::Subscriber goal_sub_;
-    ros::Subscriber twist_sub_;
+    ros::Subscriber state_sub_;
     ros::Subscriber flight_mode_sub_;
     
     UAVCollisionSpace* cspace_;
@@ -70,13 +70,13 @@ class UAVLocalPlanner{
     nav_msgs::Path* callback_path_;
     uav_msgs::FlightModeRequest flight_mode_;
     geometry_msgs::PoseStamped latest_goal_;
-    geometry_msgs::TwistStamped latest_twist_;
+    nav_msgs::Odometry latest_state_;
 
     boost::thread* controller_thread_;
     boost::mutex grid_mutex_;
     boost::mutex path_mutex_;
     boost::mutex goal_mutex_;
-    boost::mutex twist_mutex_;
+    boost::mutex state_mutex_;
     boost::mutex flight_mode_mutex_;
     bool new_grid_, new_path_;
 

@@ -49,7 +49,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   geometry_msgs::TransformStamped trans;
   trans.header.stamp = p->header.stamp;
   trans.header.frame_id = "map";
-  trans.child_frame_id = "base_link";
+  trans.child_frame_id = "body_frame";
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
   trans.transform.translation.z = state_.pose.pose.position.z;
