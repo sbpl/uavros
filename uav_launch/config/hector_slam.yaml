@@ -3,9 +3,9 @@ scan_topic: fixed_laser
 sys_msg_topic: syscommand
 
 # Frame Names
-map_frame: map
-base_frame: base_footprint
-odom_frame: nav
+map_frame: slam_map
+base_frame: body_frame
+odom_frame: body_frame
 
 # TF Use
 use_tf_scan_transformation: true
