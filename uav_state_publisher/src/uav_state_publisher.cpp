@@ -3,7 +3,7 @@
 using namespace std;
 
 UAVStatePublisher::UAVStatePublisher()
-  : x_fifo_(5),y_fifo_(5),z_fifo_(5),xy_time_fifo_(5),z_time_fifo_(5), tf_(ros::NodeHandle(), ros::Duration(10), true){
+  : tf_(ros::NodeHandle(), ros::Duration(10), true),z_fifo_(5),z_time_fifo_(5) {
   ros::NodeHandle nh;
   ros::NodeHandle ph;
 
@@ -14,34 +14,8 @@ UAVStatePublisher::UAVStatePublisher()
   state_pub_ = nh.advertise<nav_msgs::Odometry>("uav_state", 1);
   
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
-  slam_sub_ = nh.subscribe("slam_out_pose", 1, &UAVStatePublisher::slamCallback,this);
   ekf_sub_ = nh.subscribe("ekf_state", 1, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
-}
-
-//on the order of 40Hz
-void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr p){
-  //get the x,y
-  state_.pose.pose.position.x = p->pose.position.x;
-  state_.pose.pose.position.y = p->pose.position.y;
-  x_fifo_.insert(state_.pose.pose.position.x);
-  y_fifo_.insert(state_.pose.pose.position.y);
-  xy_time_fifo_.insert(p->header.stamp.toSec());
-
-  //get the yaw
-  btQuaternion q;
-  tf::quaternionMsgToTF(state_.pose.pose.orientation, q);
-  double roll, pitch, yaw, dummy1, dummy2;
-  btMatrix3x3(q).getEulerZYX(dummy1, pitch, roll);
-
-  tf::quaternionMsgToTF(p->pose.orientation, q);
-  btMatrix3x3(q).getEulerZYX(yaw, dummy1, dummy2);
-
-  q.setEulerZYX(yaw,pitch,roll);
-  state_.pose.pose.orientation.x = q.getX();
-  state_.pose.pose.orientation.y = q.getY();
-  state_.pose.pose.orientation.z = q.getZ();
-  state_.pose.pose.orientation.w = q.getW();
 }
 
 //on the order of 50Hz
@@ -49,45 +23,33 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   //get angular velocities
   state_.twist.twist.angular = p->twist.twist.angular;
 
-  //get the roll and pitch
-  btQuaternion q;
-  tf::quaternionMsgToTF(state_.pose.pose.orientation, q);
-  double roll, pitch, yaw, dummy1, dummy2;
-  btMatrix3x3(q).getEulerZYX(yaw, dummy1, dummy2);
+  //get the orientation
+  state_.pose.pose.orientation = p->pose.pose.orientation;
 
-  tf::quaternionMsgToTF(p->pose.pose.orientation, q);
-  btMatrix3x3(q).getEulerZYX(dummy1, pitch, roll);
+  //get the x and y
+  state_.pose.pose.position.x = p->pose.pose.position.x;
+  state_.pose.pose.position.y = p->pose.pose.position.y;
 
-  q.setEulerZYX(yaw,pitch,roll);
-  state_.pose.pose.orientation.x = q.getX();
-  state_.pose.pose.orientation.y = q.getY();
-  state_.pose.pose.orientation.z = q.getZ();
-  state_.pose.pose.orientation.w = q.getW();
+  //get the x and y velocities
+  state_.twist.twist.linear.x = p->twist.twist.linear.x;
+  state_.twist.twist.linear.y = p->twist.twist.linear.y;
 
   //TODO: do a smarter computation of linear velocities using slam and the ekf
   //      5 x from slam, 4 dx, avg, assign the velocity to the 3rd x
   //      store dx from ekf, take difference between the corresponding time above and most recent
   //compute dx, dy, and dz
-  double dx = 0;
-  double dy = 0;
   double dz = 0;
-  for(int i=1; i<x_fifo_.size(); i++){
-    dx += (x_fifo_[i]-x_fifo_[i-1])/(xy_time_fifo_[i]-xy_time_fifo_[i-1]);
-    dy += (y_fifo_[i]-y_fifo_[i-1])/(xy_time_fifo_[i]-xy_time_fifo_[i-1]);
+  for(int i=1; i<z_fifo_.size(); i++){
     dz += (z_fifo_[i]-z_fifo_[i-1])/(z_time_fifo_[i]-z_time_fifo_[i-1]);
   }
-  dx /= x_fifo_.size();
-  dy /= x_fifo_.size();
-  dz /= x_fifo_.size();
-  state_.twist.twist.linear.x = dx;
-  state_.twist.twist.linear.y = dy;
+  dz /= z_fifo_.size();
   state_.twist.twist.linear.z = dz;
 
   //publish the map to base_link transform
   geometry_msgs::TransformStamped trans;
   trans.header.stamp = p->header.stamp;
   trans.header.frame_id = "map";
-  trans.child_frame_id = "base_link";
+  trans.child_frame_id = "body_frame";
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
   trans.transform.translation.z = state_.pose.pose.position.z;
