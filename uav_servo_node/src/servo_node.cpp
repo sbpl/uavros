@@ -149,8 +149,19 @@ ROS_INFO("sent");
 int main(int argc, char** argv){
   ros::init(argc, argv, "servo_node");
   ServoNode s;
-  if(s.initialize())
+  if(s.initialize()){
+    ROS_ERROR("Failed to initialize servo. Publishing a 0 joint state...");
+    ros::Rate r(50.0);
+    while(ros::ok()){
+      sensor_msgs::JointState msg;
+      msg.header.stamp = ros::Time::now();
+      msg.name.push_back("panning_laser_to_body");
+      msg.position.push_back(0);
+      s.angle_pub.publish(msg);
+      r.sleep();
+    }
     return 1;
+  }
 
   //set up periodic call
   while(ros::ok()){
