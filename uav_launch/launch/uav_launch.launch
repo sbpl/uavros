@@ -40,7 +40,7 @@
   </node>
 
  <!-- Servos -->
- <node name="panning_servo" pkg="servo_node" type="servo_node" > <!--if="$(arg use_servos_)"> -->
+ <node name="panning_servo" pkg="uav_servo_node" type="servo_node" > <!--if="$(arg use_servos_)"> -->
    <param name="servoID" value="0" />
    <param name="minAngle" value="-20" />
    <param name="maxAngle" value="20" />
@@ -72,12 +72,6 @@
               <!-- Bring up the State Publisher -->
               <!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
 
-<node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher">
-  <remap from="pan_scan" to="pan_laser"/>
-  <remap from="ekf_state" to="ekf_state"/>
-  <!--TODO: Fill in the correct ekf_state remapping argument -->
-  <remap from="slam_out_pose" to="slam_out_pose"/>
-</node>
 
 
 <!-- .................................................................................................... -->
