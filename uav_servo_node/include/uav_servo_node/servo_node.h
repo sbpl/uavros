@@ -13,8 +13,8 @@ class ServoNode{
     ~ServoNode();
     int initialize();
     int updateServo();
-  private:
     ros::Publisher angle_pub;
+  private:
     ros::NodeHandle nh;
 
     char* dev;
