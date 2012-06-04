@@ -30,7 +30,7 @@ ServoNode::ServoNode() : nh("~"){
   scan = minAngle != maxAngle;
   state = DYNAMIXEL_STATE_INITIALIZED;
   position = 0;
-  angle_pub = nh.advertise<sensor_msgs::JointState>("/servoAngle", 3);
+  angle_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 3);
 }
 
 int ServoNode::initialize(){
