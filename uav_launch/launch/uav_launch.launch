@@ -27,7 +27,7 @@
      <remap from="slam_out_pose" to="slam_out_pose"/>
    </node>
 
-
+ <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 map slam_map 100" />
 
 
   <!-- .................................................................................................... -->

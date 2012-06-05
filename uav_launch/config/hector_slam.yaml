@@ -10,24 +10,26 @@ odom_frame: body_frame
 # TF Use
 use_tf_scan_transformation: true
 use_tf_pose_start_estimate: false
-pub_map_odom_transform: true
+pub_map_odom_transform: false
 
 # Map Size/Start Point
 map_resolution: 0.050
 map_size: 2048
 map_start_x: 0.5
 map_start_y: 0.5
-map_multi_res_levels: 2
+map_multi_res_levels: 3
 
 # Map Update Parameters
 update_factor_free: 0.4
 update_factor_occupied: 0.9
 map_update_distance_thresh: 0.4
 map_update_angle_thresh: 0.06
-laser_z_min_value: -1.0
-laser_z_max_value: 1.0
+laser_z_min_value: -10.0
+laser_z_max_value: 10.0
+laser_min_dist: 0.4
+laser_max_dist: 29.0
 
 # Advertising Config
 advertise_map_service: true
 tf_map_scanmatch_transform_frame_name: scanmatcher_frame
-
+pub_map_scanmatch_transform: false

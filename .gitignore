@@ -2,5 +2,7 @@
 *.*~
 CMakeFiles
 *.swp
-HexaDriver/build/**/*
+*/build/**/*
 bin/**
+*-swp
+.svn/*
