@@ -3,7 +3,7 @@
 using namespace std;
 
 UAVStatePublisher::UAVStatePublisher()
-  : tf_(ros::NodeHandle(), ros::Duration(10), true),z_fifo_(5),z_time_fifo_(5) {
+: tf_(ros::NodeHandle(), ros::Duration(10), true),z_fifo_(5),z_time_fifo_(5) {
   ros::NodeHandle nh;
   ros::NodeHandle ph;
 
@@ -53,10 +53,10 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
   trans.transform.translation.z = state_.pose.pose.position.z;
-  ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
+  //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);
-// ROS_ERROR("Publish this\n");
+  // ROS_ERROR("Publish this\n");
   //publish the state
   state_pub_.publish(state_);
 }
@@ -70,7 +70,6 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   float ang = scan->angle_min;
   int i;
 
-  ROS_ERROR("in Lidar Callback\n");
   for(i=0; i<num_rays; i++){
     if(ang>=min_lidar_angle_)
       break;
@@ -99,12 +98,12 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     zs.push_back(pout.point.z);
     ang += scan->angle_increment;
   }
-
+ROS_ERROR("size: %d first: %f\n", zs.size(),zs[0]);
   //TODO: do something smarter that will filter out tables
   //get z by taking the median
   sort(zs.begin(),zs.end());
   state_.pose.pose.position.z = zs[zs.size()/2];
-  ROS_ERROR("LC z: %f\n", state_.pose.pose.position.z);
+  //ROS_ERROR("LC z: %f\n", state_.pose.pose.position.z);
   z_fifo_.insert(state_.pose.pose.position.z);
   z_time_fifo_.insert(scan->header.stamp.toSec());
 }

@@ -64,7 +64,7 @@
     <!-- Subscribes to scan_laser and syscommand (for resetting).
       Publishes on slam_out_pose, map_metadata, map, poseupdate (Currently only slam_out_pose is used)-->
 
-<node pkg="hector_mapping" type="hector_mapping" name="hector_slam" output="screen">
+<node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
   <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
 </node>
 
@@ -92,7 +92,7 @@
   Publishes on controller_cmd topic (ControllerCommand msg) -->
 
 
-    <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner">
+    <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
       <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
       <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
       <remap from="goal" to="goal_pose"/>

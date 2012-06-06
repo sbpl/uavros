@@ -133,8 +133,10 @@ void UAVLocalPlanner::controllerThread(){
         break;
     }
     last_u_ = u;
+    ROS_ERROR("beavis\n");
+//     printf("beavis f\n");
     if(!LANDED)
-      command_pub_.publish(u);
+      command_pub_.publish(u);  //TODO: empty message being published....
     r.sleep();
   }
 }
