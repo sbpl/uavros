@@ -222,7 +222,7 @@ bool UAVLocalPlanner::updateCollisionMap(){
     updated = true;
   }
   lock.unlock();
-  
+
   //if we did a swap, then update the collision space to use the new occupancy grid
   if(updated)
     cspace_->setGrid(controller_grid_);
@@ -300,7 +300,7 @@ void UAVLocalPlanner::collisionMapCallback(arm_navigation_msgs::CollisionMapCons
   callback_grid_->updateFromCollisionMap(*cm);
   callback_grid_->visualize();
 
-  //take the grid mutex and swap into the latest occupancy grid 
+  //take the grid mutex and swap into the latest occupancy grid
   boost::unique_lock<boost::mutex> lock(path_mutex_);
   OccupancyGrid* temp = latest_grid_;
   latest_grid_ = callback_grid_;
