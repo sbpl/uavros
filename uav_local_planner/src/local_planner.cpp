@@ -1,7 +1,6 @@
 #include<uav_local_planner/local_planner.h>
 
-UAVLocalPlanner::UAVLocalPlanner()
-  : tf_(ros::NodeHandle(), ros::Duration(10), true){
+UAVLocalPlanner::UAVLocalPlanner(){
   ros::NodeHandle nh;
   ros::NodeHandle ph("~");
 
@@ -77,6 +76,7 @@ void UAVLocalPlanner::controllerThread(){
   UAVControllerState state = LANDED;
   last_state_ = LANDED;
   while(n.ok()){
+    ROS_INFO("[controller] annoying print at the top of the main loop!");
     //if the robot is hovering and we get a new path, switch to following.
     //conversely, if we get a new goal but don't have a fresh path yet, go back to hover
     bool isNewPath = updatePath(state);
@@ -135,6 +135,7 @@ void UAVLocalPlanner::controllerThread(){
     last_u_ = u;
     if(!LANDED)
       command_pub_.publish(u);
+    r.sleep();
   }
 }
 
