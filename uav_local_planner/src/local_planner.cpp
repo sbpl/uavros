@@ -76,6 +76,7 @@ void UAVLocalPlanner::controllerThread(){
   UAVControllerState state = LANDED;
   last_state_ = LANDED;
   while(n.ok()){
+    ROS_INFO("[controller] annoying print at the top of the main loop!");
     //if the robot is hovering and we get a new path, switch to following.
     //conversely, if we get a new goal but don't have a fresh path yet, go back to hover
     bool isNewPath = updatePath(state);
