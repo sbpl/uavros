@@ -1,7 +1,6 @@
 #include<uav_local_planner/local_planner.h>
 
-UAVLocalPlanner::UAVLocalPlanner()
-  : tf_(ros::NodeHandle(), ros::Duration(10), true){
+UAVLocalPlanner::UAVLocalPlanner(){
   ros::NodeHandle nh;
   ros::NodeHandle ph("~");
 
@@ -135,6 +134,7 @@ void UAVLocalPlanner::controllerThread(){
     last_u_ = u;
     if(!LANDED)
       command_pub_.publish(u);
+    r.sleep();
   }
 }
 

@@ -84,7 +84,6 @@ class UAVLocalPlanner{
     double collision_map_tolerance_, pose_tolerance_;
     double landing_height_, nominal_height_, nominal_linear_velocity_, nominal_angular_velocity_;
 
-    tf::TransformListener tf_;
 
     uav_msgs::ControllerCommand last_u_;
     geometry_msgs::PoseStamped hover_pose_;
