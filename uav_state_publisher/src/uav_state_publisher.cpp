@@ -7,12 +7,12 @@ UAVStatePublisher::UAVStatePublisher()
   ros::NodeHandle nh;
   ros::NodeHandle ph;
 
-  ph.param("min_lidar_angle",min_lidar_angle_,-100.0*M_PI/180.0);
-  ph.param("max_lidar_angle",max_lidar_angle_,-80.0*M_PI/180.0);
+  ph.param("min_lidar_angle",min_lidar_angle_,80.0*M_PI/180.0);
+  ph.param("max_lidar_angle",max_lidar_angle_,100.0*M_PI/180.0);
 
   //publish an odometry message (it's the only message with all the state variables we want)
   state_pub_ = nh.advertise<nav_msgs::Odometry>("uav_state", 1);
-  
+
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
   ekf_sub_ = nh.subscribe("ekf_state", 1, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
@@ -55,7 +55,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   trans.transform.translation.z = state_.pose.pose.position.z;
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);
-
+// ROS_ERROR("Publish this\n");
   //publish the state
   state_pub_.publish(state_);
 }
@@ -100,7 +100,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   //TODO: do something smarter that will filter out tables
   //get z by taking the median
   sort(zs.begin(),zs.end());
-  state_.pose.pose.position.z = zs[zs.size()/2];
+  state_.pose.pose.position.z = 0; //zs[zs.size()/2];
   z_fifo_.insert(state_.pose.pose.position.z);
   z_time_fifo_.insert(scan->header.stamp.toSec());
 }

@@ -8,14 +8,14 @@
 #define PI 3.14159
 
 //states for the built-in mini-state machine
-enum { DYNAMIXEL_STATE_UNINITIALIZED, 
+enum { DYNAMIXEL_STATE_UNINITIALIZED,
        DYNAMIXEL_STATE_INITIALIZED,
-       DYNAMIXEL_STATE_MOVE_CMD_SENT,    
+       DYNAMIXEL_STATE_MOVE_CMD_SENT,
        DYNAMIXEL_STATE_STOPPED
      };
 
 ServoNode::ServoNode() : nh("~"){
-  dev = (char*)"/dev/ttyUSB0";
+  dev = (char*)"/dev/ttyUSB1";
   baudRate = 57600;
 
   nh.param("servoID", moduleId, 0);
@@ -30,7 +30,7 @@ ServoNode::ServoNode() : nh("~"){
   scan = minAngle != maxAngle;
   state = DYNAMIXEL_STATE_INITIALIZED;
   position = 0;
-  angle_pub = nh.advertise<sensor_msgs::JointState>("/servoAngle", 3);
+  angle_pub = nh.advertise<sensor_msgs::JointState>("/joint_states", 3);
 }
 
 int ServoNode::initialize(){
@@ -40,7 +40,7 @@ int ServoNode::initialize(){
     ROS_ERROR("servo_node: module could not connect\n");
     return -1;
   }
-  
+
   //check to see if the servo is hooked up
   if (dynamixel.StartDevice()){
     ROS_ERROR("servo_node: module could not get status\n");
@@ -70,17 +70,17 @@ int ServoNode::updateServo(){
 
       case DYNAMIXEL_STATE_STOPPED:
 ROS_INFO("stopped");
-      
+
         desAngle = dir > 0 ? maxAngle : minAngle;
-      
+
         if (dynamixel.MoveToPos(desAngle,vel)){
           ROS_ERROR("servo_node: module could not send MoveToPos command\n");
           return -1;
         }
-      
+
         state = DYNAMIXEL_STATE_MOVE_CMD_SENT;
         cmdTimer.Tic();
-        
+
         //fall through here to get the position
 
       case DYNAMIXEL_STATE_MOVE_CMD_SENT:
