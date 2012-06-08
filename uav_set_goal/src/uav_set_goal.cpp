@@ -2,7 +2,7 @@
 #include <interactive_markers/menu_handler.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <uav_msgs/FlightModeRequest.h> 
+#include <uav_msgs/FlightModeRequest.h>
 
 #define MENU_ENTRY_NEW_GOAL 1
 #define MENU_ENTRY_HOVER 2
@@ -100,9 +100,9 @@ int main(int argc, char** argv)
   menu_control.name = "menu_only_control";
   menu_control.always_visible = true;
   int_marker.controls.push_back(menu_control);
-  
-  
-  
+
+
+
   control.orientation.w = 1;
   control.orientation.x = 1;
   control.orientation.y = 0;
@@ -135,7 +135,7 @@ int main(int argc, char** argv)
   // tell the server to call processFeedback() when feedback arrives for it
   server.insert(int_marker, &processFeedback);
 
-  
+
   menu_handler.apply(server, int_marker.name );
   // 'commit' changes and send to all clients
   server.applyChanges();

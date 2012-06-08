@@ -1,3 +1,11 @@
+Mass: 4.2
+Inertia: [0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.15]
+NumProps: 6
+ArmLength: 0.35
+MaxForce: 20
+MinForce: 0.2
+Moment2Force: 0.025
+BladeLength: 0.13
 Fex: [0.5, 1.0]
 Vex: [0.5, 1.0, 2.0]
 Uex: [1, 2]

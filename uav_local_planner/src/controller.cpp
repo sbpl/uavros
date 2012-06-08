@@ -21,7 +21,7 @@ HexaController::~HexaController()
 
 void HexaController::InitializeGains()
 {
-  // Roll and Pitch Gains
+  // Roll and Pitch Gains    TODO: read in from param server
   CONT.RPkp = 20;       //10 150
   CONT.RPkd = 2.5*8/8; //6*10/8;
   CONT.RPki = 0.6*2/40; //12/50;
@@ -63,6 +63,7 @@ void HexaController::InitializeGains()
 void HexaController::InitializeDynamics(ros::NodeHandle nh)
 {
 
+  /*
   // Set motor_coef by reading rosparams
   XmlRpc::XmlRpcValue Fex, Uex, Vex, FV2U_coef, UV2F_coef;
   nh.getParam("Fex", Fex);
@@ -106,27 +107,27 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
   {
     ROS_ASSERT(UV2F_coef[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
     HEXA.UV2F_coef[i] = static_cast<double>(UV2F_coef[i]);
-  }
+  }*/
 
-  //TODO: these should come in as parameters
-  // Arm Length
-  HEXA.L = 0.35;
-
-  // Blade Radius
-  HEXA.bladeL = 0.13;
+//   //TODO: these should come in as parameters
+//   // Arm Length
+//   HEXA.L = 0.35;
+//
+//   // Blade Radius
+//   HEXA.bladeL = 0.13;
 
   // Weight in kg
   HEXA.mass = 4.5;
 
-  // TODO: This is pure crap... (description from Jon's MATLAB version)
-  HEXA.Moment2Fratio = 1/40;
+//   // TODO: This is pure crap... (description from Jon's MATLAB version)
+//   HEXA.Moment2Fratio = 1/40;
 
   // N based on 2 kg max force per blade
   HEXA.maxF = 20;
 
   // N for which which we really can't issue a control
   HEXA.minF = 0.2;
-
+/*
   // Transform from motor forces to angular rates on the helo
   HEXA.F_select << 0, -HEXA.L*sin(M_PI/3), -HEXA.L*sin(M_PI/3), 0, -HEXA.L*sin(M_PI/3), HEXA.L*sin(M_PI/3),
     -HEXA.L, -HEXA.L*sin(M_PI/6), HEXA.L*sin(M_PI/6), HEXA.L, HEXA.L*sin(M_PI/6), -HEXA.L*sin(M_PI/6),
@@ -139,16 +140,16 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
 
   // Inverse of the Inertia Matrix
   HEXA.I_inv =  HEXA.I.inverse();
-
+*/
   // Gravity Vector
   HEXA.g << 0, 0, -9.81;
 
   // TODO: Description for this   WTF is this?
   HEXA.F.setZero(6);
-
+/*
   // TODO: This should be read in from the system
   HEXA.V = 145; // in tenths of volts
-
+*/
   // Initialize transforms to identity
   HEXA.ANG.R_B2W.setIdentity();
   HEXA.ANG.R_W2B.setIdentity();
@@ -324,7 +325,7 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   err[1] = DesX[5]-X[5];
 
   // This accounts for gravity, should also account for other controls
-  float FF = -HEXA.g[2]*HEXA.mass/(HEXA.ANG.R_B2W(2,2)*6);
+  float FF = -HEXA.g[2]*HEXA.mass/(HEXA.ANG.R_B2W(2,2)*6);  //TODO: change 6 to num of props from param server
   FF = min(FF,HEXA.maxF);
   T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
 
@@ -364,8 +365,8 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   F[2] = cRPY_f[2];
   F[3] = T_f;
 
-  ROS_INFO("Controller force before mapping to 0-255: %f %f %f %f", F[0],F[1],F[2],F[3]);
-
+ // ROS_INFO("Controller force before mapping to 0-255: %f %f %f %f", F[0],F[1],F[2],F[3]);
+/*
 
   unsigned int num_Fex_terms = HEXA.Fex.size();
   unsigned int num_Vex_terms = HEXA.Vex.size();
@@ -397,13 +398,13 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
     //TODO: round instead of ceil
     u[j] = ceil(u[j])*(fabs(F[j])>HEXA.minF);
   }
-
+*/
   uav_msgs::ControllerCommand ctrl_cmd;
-  ctrl_cmd.roll = u[0];
-  ctrl_cmd.pitch = u[1];
-  ctrl_cmd.yaw = u[2];
-  ctrl_cmd.thrust = u[3];
- ROS_INFO("Controller Command RPYT (0-255): %u %u %u %u", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
+  ctrl_cmd.roll = static_cast<float>(F[0]);  //was u
+  ctrl_cmd.pitch = static_cast<float>(F[1]);
+  ctrl_cmd.yaw = static_cast<float>(F[2]);
+  ctrl_cmd.thrust = static_cast<float>(F[3]);
+ ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
   return ctrl_cmd;
 
 }

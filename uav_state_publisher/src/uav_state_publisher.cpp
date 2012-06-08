@@ -49,11 +49,21 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   geometry_msgs::TransformStamped trans;
   trans.header.stamp = p->header.stamp;
   trans.header.frame_id = "map";
-  trans.child_frame_id = "body_frame";
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
-  trans.transform.translation.z = state_.pose.pose.position.z;
+  trans.transform.translation.z = -z_fifo_[z_fifo_.size()-1];
   //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
+  trans.child_frame_id = "body_frame_stabilized";
+
+  geometry_msgs::Quaternion gmq;
+  gmq.w=1;
+  gmq.x=0;
+  gmq.y=0;
+  gmq.z=0;
+
+  trans.transform.rotation = gmq;
+  tf_broadcaster.sendTransform(trans);
+  trans.child_frame_id = "body_frame";
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);
   // ROS_ERROR("Publish this\n");
@@ -90,7 +100,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     p.point.y = scan->ranges[i]*sin(ang);
     p.point.z = 0;
     try{
-      tf_.transformPoint("map", p, pout);
+      tf_.transformPoint("/body_frame_stabilized", p, pout);  // TODO: make all this hard coded crap into parameters
     }
     catch (tf::TransformException ex){
       ROS_ERROR("%s",ex.what());
@@ -98,7 +108,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     zs.push_back(pout.point.z);
     ang += scan->angle_increment;
   }
-ROS_ERROR("size: %d first: %f\n", zs.size(),zs[0]);
+// ROS_ERROR("size: %d first: %f\n", zs.size(),zs[0]);
   //TODO: do something smarter that will filter out tables
   //get z by taking the median
   sort(zs.begin(),zs.end());

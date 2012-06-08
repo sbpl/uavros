@@ -1,7 +1,7 @@
 Header header
-uint8 thrust
-uint8 roll
-uint8 pitch
-uint8 yaw
+float32 thrust
+float32 roll
+float32 pitch
+float32 yaw
 
 

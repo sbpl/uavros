@@ -40,7 +40,7 @@ typedef struct{
   // Generalized  Force vector ?
   Eigen::VectorXf F;
 
-  // ANG contains body to world and world to body rotation matrices 
+  // ANG contains body to world and world to body rotation matrices
   struct{
     Eigen::Matrix3f R_B2W, R_W2B;
   }ANG;

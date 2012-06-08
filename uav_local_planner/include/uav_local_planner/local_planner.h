@@ -39,7 +39,7 @@ class UAVLocalPlanner{
     bool updatePath(UAVControllerState& state);
     void getFlightMode(UAVControllerState& state);
     void getRobotPose(geometry_msgs::PoseStamped& pose, geometry_msgs::TwistStamped& velocity);
-  
+
     void collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm);
     void pathCallback(nav_msgs::PathConstPtr path);
     void goalCallback(geometry_msgs::PoseStampedConstPtr goal);
@@ -60,7 +60,7 @@ class UAVLocalPlanner{
     ros::Subscriber goal_sub_;
     ros::Subscriber state_sub_;
     ros::Subscriber flight_mode_sub_;
-    
+
     UAVCollisionSpace* cspace_;
     OccupancyGrid* controller_grid_;
     OccupancyGrid* latest_grid_;

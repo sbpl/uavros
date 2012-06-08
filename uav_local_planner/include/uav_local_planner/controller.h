@@ -5,15 +5,15 @@
 #include <uav_local_planner/hexa_dynamics.h>
 #include <uav_local_planner/UAVControllerConfig.h>
 #include <dynamic_reconfigure/server.h>
- 
+
 
 //Controller Gains and Variables (Copied over from Jon's MATLAB version)
 
 typedef struct{
 
   // Roll and Pitch Gains
-  float RPkp;       
-  float RPkd;    
+  float RPkp;
+  float RPkd;
   float RPki;
 
   // Yaw Gains
@@ -67,7 +67,7 @@ class HexaController{
 
   HexaController();
   /**
-   * Destructor 
+   * Destructor
    */
 
   ~HexaController();
