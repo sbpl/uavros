@@ -5,7 +5,9 @@
 #include <uav_local_planner/hexa_dynamics.h>
 #include <uav_local_planner/UAVControllerConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include <tf/transform_listener.h>
 
+//TODO: combine this with the local planner in a more coherent fashion
 
 //Controller Gains and Variables (Copied over from Jon's MATLAB version)
 
@@ -130,7 +132,7 @@ class HexaController{
    * @brief Updates the transforms between the world and body frames based on current observation
    * @param X The current observed state
    */
-  void UpdateTransforms(Eigen::VectorXf X);
+//   void UpdateTransforms(Eigen::VectorXf X);
 
   /**
    * @brief Callback for the dynamic reconfigure GUI
@@ -138,5 +140,9 @@ class HexaController{
    * @param level Callback level from GUI (Not used)
    */
   void dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level);
+
+private:
+  tf::TransformListener tf_;
+
 
 };

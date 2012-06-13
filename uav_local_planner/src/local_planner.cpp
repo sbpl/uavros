@@ -1,6 +1,7 @@
 #include<uav_local_planner/local_planner.h>
 
-UAVLocalPlanner::UAVLocalPlanner(){
+UAVLocalPlanner::UAVLocalPlanner()
+{
   ros::NodeHandle nh;
   ros::NodeHandle ph("~");
 
@@ -146,7 +147,6 @@ void UAVLocalPlanner::controllerThread(){
 uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, UAVControllerState& state){
   uav_msgs::ControllerCommand u;
 
-  //TODO: change to do all calcs in forces then have HexaDriver do the conversion to commands
   if(pose.pose.position.z <= landing_height_){
     u = last_u_;
     u.roll = 0;
