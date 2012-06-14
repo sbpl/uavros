@@ -14,7 +14,7 @@ UAVStatePublisher::UAVStatePublisher()
   state_pub_ = nh.advertise<nav_msgs::Odometry>("uav_state", 1);
 
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
-  ekf_sub_ = nh.subscribe("ekf_state", 1, &UAVStatePublisher::ekfCallback,this);
+  ekf_sub_ = nh.subscribe("ekf_state", 3, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
 }
 
@@ -51,7 +51,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   trans.header.frame_id = "map";
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
-  trans.transform.translation.z = -z_fifo_[z_fifo_.size()-1];
+  trans.transform.translation.z = state_.pose.pose.position.z;
   //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
   trans.child_frame_id = "body_frame_stabilized";
 
@@ -108,11 +108,11 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     zs.push_back(pout.point.z);
     ang += scan->angle_increment;
   }
-// ROS_ERROR("size: %d first: %f\n", zs.size(),zs[0]);
+  // ROS_ERROR("size: %d first: %f\n", zs.size(),zs[0]);
   //TODO: do something smarter that will filter out tables
   //get z by taking the median
   sort(zs.begin(),zs.end());
-  state_.pose.pose.position.z = zs[zs.size()/2];
+  state_.pose.pose.position.z = -zs[zs.size()/2];
   //ROS_ERROR("LC z: %f\n", state_.pose.pose.position.z);
   z_fifo_.insert(state_.pose.pose.position.z);
   z_time_fifo_.insert(scan->header.stamp.toSec());

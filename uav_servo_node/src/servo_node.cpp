@@ -151,7 +151,7 @@ int main(int argc, char** argv){
   ServoNode s;
   if(s.initialize()){
     ROS_ERROR("Failed to initialize servo. Publishing a 0 joint state...");
-    ros::Rate r(50.0);
+    ros::Rate r(40.0);
     while(ros::ok()){
       sensor_msgs::JointState msg;
       msg.header.stamp = ros::Time::now();

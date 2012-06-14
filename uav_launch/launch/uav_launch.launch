@@ -1,127 +1,102 @@
 <launch>
-
-  <!-- .................................................................................................... -->
-
-
+  <!-- ......................................................................................... -->
   <!-- Bring up the driver -->
   <!--TODO: Driver node ! -->
   <!-- Subscribes to controller_cmd.  Publishes raw_imu -->
-<node name="ManHack" pkg="HexaDriver" type="HexaDriver" required="true" >
-<rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
+  <node name="ManHack" pkg="HexaDriver" type="HexaDriver" required="true" >
+    <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
+  </node>
 
-</node>
-
-  <!-- .................................................................................................... -->
-
+  <!-- ....................................................................................... -->
   <!-- TODO: Load the urdf into the param server-->
-<param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
+  <param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
 
- <!-- Robot State Publisher  -->
- <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" >
- </node>
+  <!-- Robot State Publisher  -->
+  <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" >
+    <param name="publish_frequency" value="50.0" />
+  </node>
 
- <!-- Bring up the State Publisher -->
-   <!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
-   <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher">
-     <remap from="pan_scan" to="panning_laser"/>
-     <remap from="ekf_state" to="ekf_state"/>
-     <!--TODO: Fill in the correct ekf_state remapping argument -->
-     <remap from="slam_out_pose" to="slam_out_pose"/>
-   </node>
+  <!-- Bring up the State Publisher -->
+  <!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
+  <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher">
+    <remap from="pan_scan" to="panning_laser"/>
+    <remap from="ekf_state" to="ekf_state"/>
+    <!--TODO: Fill in the correct ekf_state remapping argument -->
+    <remap from="slam_out_pose" to="slam_out_pose"/>
+  </node>
 
- <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
+  <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
 
-
-  <!-- .................................................................................................... -->
+  <!-- ................................................................................. -->
   <!-- Bring up the hokuyos -->
   <!-- Vertical hokuyo -->
-<node name="panning_laser" pkg="hokuyo_node" type="hokuyo_node" >
-    <!-- if="$(arg use_tilt_laser_)"> -->
-      <param name="port" value="/dev/ttyACM0" />
-      <param name="frame_id" value="panning_laser_frame" />
-      <param name="min_ang" value="-0.7" />
-      <param name="max_ang" value="2.35" />
-      <remap from="/scan" to="panning_laser" />
-</node>
-
-    <!-- Horizontal hokuyo -->
-  <node name="fixed_laser" pkg="hokuyo_node" type="hokuyo_node">
+  <!-- if="$(arg use_tilt_laser_)"-->
+  <node name="panning_laser" pkg="hokuyo_node" type="hokuyo_node" >
     <param name="port" value="/dev/ttyACM1" />
+    <param name="frame_id" value="panning_laser_frame" />
+    <param name="min_ang" value="-0.7" />
+    <param name="max_ang" value="2.35" />
+    <remap from="/scan" to="panning_laser" />
+  </node>
+
+  <!-- Horizontal hokuyo -->
+  <node name="fixed_laser" pkg="hokuyo_node" type="hokuyo_node">
+    <param name="port" value="/dev/ttyACM0" />
     <param name="frame_id" value="fixed_laser_frame" />
     <param name="min_ang" value="-2.356" />
     <param name="max_ang" value="2.356" />
     <remap from="/scan" to="fixed_laser" />
   </node>
 
- <!-- Servos -->
- <node name="panning_servo" pkg="uav_servo_node" type="servo_node" > <!--if="$(arg use_servos_)"> -->
-   <param name="servoID" value="0" />
-   <param name="minAngle" value="-20" />
-   <param name="maxAngle" value="20" />
-   <param name="velocity" value="80" />
- </node>
-
-    <!-- .................................................................................................... -->
-    <!-- Hector Slam -->
-    <!-- Subscribes to scan_laser and syscommand (for resetting).
-      Publishes on slam_out_pose, map_metadata, map, poseupdate (Currently only slam_out_pose is used)-->
-
-<node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
-  <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
-</node>
-
-<!-- TODO: There is hector_geotiff node that can be brought up to save the trajectory of the UAV-->
-
-<!-- .................................................................................................... -->
-<!-- Hector Localization -->
-<!-- Subscribes to raw_imu, pressure_height, magnetic, fix (gps), fix_velocity (gps velocity), poseupdate (TODO:Mike - poseupdate from hector_slam can be routed here !! We don't need to do x_dot, y_dot) and syscommand.
-  Publishes state, pose, velocity, imu, global, angular_velocity_bias, linaer_acceleration_bias and fix/pose.  -->
-<node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
-  <remap from="state" to="ekf_state"/>
-  <param name="with_covariances" value="false"/>
-  <!--Only one param. No yaml file needed -->
+  <!-- Servos -->
+  <!--if="$(arg use_servos_)" -->
+  <node name="panning_servo" pkg="uav_servo_node" type="servo_node" >
+    <param name="servoID" value="0" />
+    <param name="minAngle" value="-20" />
+    <param name="maxAngle" value="20" />
+    <param name="velocity" value="80" />
   </node>
 
-              <!-- .................................................................................................... -->
-              <!-- Bring up the State Publisher -->
-              <!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
+  <!-- .................................................................................... -->
+  <!-- Hector Slam -->
+  <node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
+    <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
+  </node>
 
+  <!-- TODO: There is hector_geotiff node that can be brought up to save the trajectory of the UAV-->
 
+  <!-- ................................................................................ -->
+  <!-- Hector Localization -->
+  <!-- Subscribes to raw_imu, pressure_height, magnetic, fix (gps), fix_velocity (gps velocity), poseupdate (TODO:Mike - poseupdate from hector_slam can be routed here !! We don't need to do x_dot, y_dot) and syscommand.      -->
+  <node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
+    <remap from="state" to="ekf_state"/>
+    <param name="with_covariances" value="false"/>
+  </node>
+  <!--Only one param. No yaml file needed -->
 
-<!-- .................................................................................................... -->
-<!-- Bring up the UAV Local Planner -->
-<!-- Subscribes to goal, path, twist, local_collision_map, flight_mode_request.
-  Publishes on controller_cmd topic (ControllerCommand msg) -->
+  <!-- ....................................................................... -->
+  <!-- Bring up the UAV Local Planner -->
+  <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
+    <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
+    <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
+    <remap from="goal" to="goal_pose"/>
+    <remap from="path" to="path" />
+    <!-- Future use -->
+    <remap from="twist" to="uav_state"/>
+    <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Check this. -->
+    <remap from="local_collision_map" to="local_collision_map"/>
+    <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
+    <remap from="flight_mode_request" to="flight_mode"/>
+  </node>
+  <!-- Bring up the dynamic reconfigure GUI for controller gains-->
+  <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>
 
-
-    <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
-      <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
-      <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
-      <remap from="goal" to="goal_pose"/>
-      <remap from="path" to="path" />
-      <!-- Future use -->
-      <remap from="twist" to="uav_state"/>
-      <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Check this. -->
-      <remap from="local_collision_map" to="local_collision_map"/>
-      <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
-      <remap from="flight_mode_request" to="flight_mode"/>
-    </node>
-    <!-- Bring up the dynamic reconfigure GUI for controller gains-->
-    <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>
-
-
-
-
-
-
-<!-- .................................................................................................... -->
-<!-- Bring up RVIZ -->
-<node pkg="rviz" type="rviz" name="rviz"/>
-
-<!-- Bring up the interactive marker goal setting node -->
-<!-- Publishes on the flight_mode and goal_pose topics -->
-<node pkg="uav_set_goal" type="uav_set_goal" name="uav_set_goal"/>
-<!-- .................................................................................................... -->
-
-</launch>
+  <!-- ............................................................................. -->
+  <!-- Bring up RVIZ -->
+  <node pkg="rviz" type="rviz" name="rviz"/>
+  <!-- Bring up the interactive marker goal setting node -->
+  <!-- Publishes on the flight_mode and goal_pose topics -->
+  <node pkg="uav_set_goal" type="uav_set_goal" name="uav_set_goal"/>
+  <!-- .................................................................................... -->
+  </launch>
 

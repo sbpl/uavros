@@ -82,7 +82,7 @@ class UAVLocalPlanner{
 
     double controller_frequency_;
     double collision_map_tolerance_, pose_tolerance_;
-    double landing_height_, nominal_height_, nominal_linear_velocity_, nominal_angular_velocity_;
+    double landing_height_, nominal_height_, nominal_linear_velocity_, nominal_angular_velocity_, landing_z_;
 
 
     uav_msgs::ControllerCommand last_u_;
