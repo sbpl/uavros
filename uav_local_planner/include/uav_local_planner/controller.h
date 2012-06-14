@@ -51,7 +51,7 @@ typedef struct{
   float windupPose;
 }CONT_t;
 
-class HexaController{
+class HexaController {
 
   /**
    * Controller gains and dynamics parameters

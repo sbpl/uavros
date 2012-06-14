@@ -7,8 +7,7 @@
 
 
 // Constructor
-HexaController::HexaController()
-: tf_(ros::NodeHandle(), ros::Duration(10), true)
+HexaController::HexaController() : tf_(ros::NodeHandle(), ros::Duration(10), true)
 {
   ros::NodeHandle nh("~");
   HexaController::InitializeGains();
@@ -317,7 +316,7 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   Eigen::VectorXf current_state, des_state;
   current_state = SetCurrState(current_pose, current_velocities);
   des_state = SetDesState(goal_pose);
-  /*UpdateTransforms*/(current_state);
+  /*UpdateTransforms(current_state);*/
 
   Eigen::Vector4f F;
   Eigen::Vector3f RPY_f, cRPY_f;

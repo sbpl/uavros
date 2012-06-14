@@ -5,15 +5,20 @@
 
 int main(int argc, char** argv)
 {
+  printf("print\n");
   ros::init(argc,argv,"uav_local_planner");
   ros::NodeHandle nh;
+  printf("after\n");
+  ROS_ERROR("error\n");
+  ROS_INFO("info\n");
+  std::cout << "wtf" << std::endl;
   HexaController* hexa_controller = new HexaController();
 
   // Dynamic reconfigure stuff
-  dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> server;
-  dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
-  f = boost::bind(&HexaController::dynamic_reconfigure_callback, hexa_controller, _1, _2);
-  server.setCallback(f);
+//   dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> server;
+//   dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
+//   f = boost::bind(&HexaController::dynamic_reconfigure_callback, hexa_controller, _1, _2);
+//   server.setCallback(f);
 
   geometry_msgs::PoseStamped goal_pose;
   goal_pose.pose.position.x = 0;
@@ -21,9 +26,9 @@ int main(int argc, char** argv)
   goal_pose.pose.position.z = 0;
   goal_pose.pose.orientation.x = 0;
   goal_pose.pose.orientation.y = 0;
-  goal_pose.pose.orientation.z = 1;
+  goal_pose.pose.orientation.z = 0;
   goal_pose.pose.orientation.w = 1;
-   
+
 
   geometry_msgs::PoseStamped current_pose;
   current_pose.pose.position.x = -0.5;
@@ -31,7 +36,7 @@ int main(int argc, char** argv)
   current_pose.pose.position.z = -0.5;
   current_pose.pose.orientation.x = 0;
   current_pose.pose.orientation.y = 0;
-  current_pose.pose.orientation.z = 1;
+  current_pose.pose.orientation.z = 0;
   current_pose.pose.orientation.w = 1;
 
   geometry_msgs::TwistStamped current_velocities;
@@ -41,10 +46,10 @@ int main(int argc, char** argv)
   current_velocities.twist.angular.x = 0.3;
   current_velocities.twist.angular.y = 0.2;
   current_velocities.twist.angular.z = 0;
-
-  uav_msgs::ControllerCommand u;
-  u = hexa_controller->Controller(current_pose, current_velocities, goal_pose);
-
+std::cout << "dude!" << std::endl;
+   uav_msgs::ControllerCommand u;
+   u = hexa_controller->Controller(current_pose, current_velocities, goal_pose);
+std::cout << u;
   ros::spin();
   return 0;
 }
