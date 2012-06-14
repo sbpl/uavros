@@ -53,16 +53,26 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   trans.transform.translation.y = state_.pose.pose.position.y;
   trans.transform.translation.z = state_.pose.pose.position.z;
   //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
+
   trans.child_frame_id = "body_frame_stabilized";
 
   geometry_msgs::Quaternion gmq;
-  gmq.w=1;
-  gmq.x=0;
-  gmq.y=0;
-  gmq.z=0;
+  tf::Quaternion tfq;
+  tf::quaternionMsgToTF(state_.pose.pose.orientation, tfq);
+  //   gmq.w=1;
+  //   gmq.x=0;
+  //   gmq.y=0;
+  //   gmq.z=0;
 
-  trans.transform.rotation = gmq;
+  //   make gmq have the same yaw as the helo
+  double yaw, roll, pitch;
+  btMatrix3x3(tfq).getRPY(roll, pitch, yaw);
+
+  ROS_ERROR("Yaw is %f\n");
+
+  trans.transform.rotation = tf::createQuaternionMsgFromYaw(yaw);
   tf_broadcaster.sendTransform(trans);
+
   trans.child_frame_id = "body_frame";
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);

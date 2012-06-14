@@ -1,6 +1,7 @@
 #include<uav_local_planner/local_planner.h>
 
-UAVLocalPlanner::UAVLocalPlanner(){
+UAVLocalPlanner::UAVLocalPlanner()
+{
   ros::NodeHandle nh;
   ros::NodeHandle ph("~");
 
@@ -39,7 +40,7 @@ UAVLocalPlanner::UAVLocalPlanner(){
   new_path_ = false;
 
   //spawn the controller thread
-  controller_thread_ = new boost::thread(boost::bind(&UAVLocalPlanner::controllerThread, this));
+   controller_thread_ = new boost::thread(boost::bind(&UAVLocalPlanner::controllerThread, this));
 
   //subscribe to the collision map, tf, path, goal, and flight mode
   collision_map_sub_ = nh.subscribe("local_collision_map", 1, &UAVLocalPlanner::collisionMapCallback,this);
@@ -48,9 +49,9 @@ UAVLocalPlanner::UAVLocalPlanner(){
   state_sub_ = nh.subscribe("uav_state", 1, &UAVLocalPlanner::stateCallback,this);
   flight_mode_sub_ = nh.subscribe("flight_mode_request", 1, &UAVLocalPlanner::flightModeCallback,this);
 
-  dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
-  f = boost::bind(&HexaController::dynamic_reconfigure_callback, controller, _1, _2);
-  dynamic_reconfigure_server_.setCallback(f);
+//   dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
+//   f = boost::bind(&HexaController::dynamic_reconfigure_callback, controller, _1, _2);
+//   dynamic_reconfigure_server_.setCallback(f);
 }
 
 UAVLocalPlanner::~UAVLocalPlanner(){
@@ -145,6 +146,7 @@ void UAVLocalPlanner::controllerThread(){
 
 uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, UAVControllerState& state){
   uav_msgs::ControllerCommand u;
+
 //TODO: make land x-y equal to x-y position at start of landing
   //TODO: change to do all calcs in forces then have HexaDriver do the conversion to commands
   if(pose.pose.position.z <= landing_height_){

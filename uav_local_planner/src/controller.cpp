@@ -7,7 +7,7 @@
 
 
 // Constructor
-HexaController::HexaController()
+HexaController::HexaController() : tf_(ros::NodeHandle(), ros::Duration(10), true)
 {
   ros::NodeHandle nh("~");
   HexaController::InitializeGains();
@@ -62,65 +62,9 @@ void HexaController::InitializeGains()
 
 void HexaController::InitializeDynamics(ros::NodeHandle nh)
 {
-
-  /*
-  // Set motor_coef by reading rosparams
-  XmlRpc::XmlRpcValue Fex, Uex, Vex, FV2U_coef, UV2F_coef;
-  nh.getParam("Fex", Fex);
-  nh.getParam("Vex", Vex);
-  nh.getParam("Uex", Uex);
-  nh.getParam("FV2U_coef", FV2U_coef);
-  nh.getParam("UV2F_coef", UV2F_coef);
-  ROS_ASSERT(Fex.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(Uex.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(Vex.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(FV2U_coef.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(UV2F_coef.getType() == XmlRpc::XmlRpcValue::TypeArray);
-
-  HEXA.Fex.setZero(Fex.size());
-  HEXA.Uex.setZero(Uex.size());
-  HEXA.Vex.setZero(Vex.size());
-  HEXA.FV2U_coef.setZero(FV2U_coef.size());
-  HEXA.UV2F_coef.setZero(UV2F_coef.size());
-
-  for (int32_t i = 0; i < Fex.size(); ++i)
-  {
-    ROS_ASSERT(Fex[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-    HEXA.Fex[i] = static_cast<double>(Fex[i]);
-  }
-  for (int32_t i = 0; i < Vex.size(); ++i)
-  {
-    ROS_ASSERT(Vex[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-    HEXA.Vex[i] = static_cast<double>(Vex[i]);
-  }
-  for (int32_t i = 0; i < Uex.size(); ++i)
-  {
-    ROS_ASSERT(Uex[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
-    HEXA.Uex[i] = static_cast<int>(Uex[i]);
-  }
-  for (int32_t i = 0; i < FV2U_coef.size(); ++i)
-  {
-    ROS_ASSERT(FV2U_coef[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-    HEXA.FV2U_coef[i] = static_cast<double>(FV2U_coef[i]);
-  }
-  for (int32_t i = 0; i < UV2F_coef.size(); ++i)
-  {
-    ROS_ASSERT(UV2F_coef[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-    HEXA.UV2F_coef[i] = static_cast<double>(UV2F_coef[i]);
-  }*/
-
 //   //TODO: these should come in as parameters
-//   // Arm Length
-//   HEXA.L = 0.35;
-//
-//   // Blade Radius
-//   HEXA.bladeL = 0.13;
-
   // Weight in kg
   HEXA.mass = 4.5;
-
-//   // TODO: This is pure crap... (description from Jon's MATLAB version)
-//   HEXA.Moment2Fratio = 1/40;
 
   // N based on 2 kg max force per blade
   HEXA.maxF = 20;
@@ -146,13 +90,11 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
 
   // TODO: Description for this   WTF is this?
   HEXA.F.setZero(6);
-/*
-  // TODO: This should be read in from the system
-  HEXA.V = 145; // in tenths of volts
-*/
+
+  //TODO:  remove this
   // Initialize transforms to identity
-  HEXA.ANG.R_B2W.setIdentity();
-  HEXA.ANG.R_W2B.setIdentity();
+//   HEXA.ANG.R_B2W.setIdentity();
+//   HEXA.ANG.R_W2B.setIdentity();
 }
 
 void HexaController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
@@ -231,24 +173,24 @@ Eigen::VectorXf HexaController::SetCurrState(const geometry_msgs::PoseStamped cu
   return current_state;
 }
 
-void HexaController::UpdateTransforms(Eigen::VectorXf X)
-{
-
-  float phi = X[6], theta = X[7], psi = X[8];
-  float cth = cos(theta);
-  float cph = cos(phi);
-  float cps = cos(psi);
-
-  float sth = sin(theta);
-  float sph = sin(phi);
-  float sps = sin(psi);
-
-  HEXA.ANG.R_B2W << cps*cth - sph*sps*sth, -cph*sps, cps*sth + cth*sph*sps,
-    cth*sps + cps*sph*sth, cph*cps, sps*sth - cps*cth*sph,
-    -cph*sth, sph, cph*cth;
-  HEXA.ANG.R_W2B = HEXA.ANG.R_B2W.transpose();
-
-}
+// void HexaController::UpdateTransforms(Eigen::VectorXf X)
+// {
+//
+//   float phi = X[6], theta = X[7], psi = X[8];
+//   float cth = cos(theta);
+//   float cph = cos(phi);
+//   float cps = cos(psi);
+//
+//   float sth = sin(theta);
+//   float sph = sin(phi);
+//   float sps = sin(psi);
+//
+//   HEXA.ANG.R_B2W << cps*cth - sph*sps*sth, -cph*sps, cps*sth + cth*sph*sps,
+//     cth*sps + cps*sph*sth, cph*cps, sps*sth - cps*cth*sph,
+//     -cph*sth, sph, cph*cth;
+//   HEXA.ANG.R_W2B = HEXA.ANG.R_B2W.transpose();
+//
+// }
 
 Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
@@ -297,16 +239,39 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   if(abs(CONT.PposeI)>CONT.windupPose)
     CONT.PposeI = copysign(1,CONT.PposeI)*CONT.windupPose;
 
-  Eigen::VectorXf err;
-  err.setZero(6);
-  err.segment(0,3) = HEXA.ANG.R_W2B*(DesX.segment(0,3) - X.segment(0,3));
-  err.segment(3,3) = HEXA.ANG.R_W2B*(DesX.segment(3,3) - X.segment(3,3));
+  tf::StampedTransform transform;
+  this->tf_.lookupTransform("body_frame", "map", ros::Time(0), transform);
+  tf::Point err_p, err_v, temp;
 
-  RP_Pose[1] = err[0]*CONT.Posekp + err[3]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
-  RP_Pose[0] = -err[1]*CONT.Posekp + -err[4]*CONT.Posekd + CONT.RposeI*CONT.Poseki;
+                        //position
+  temp.setX(DesX(0) - X(0));
+  temp.setY(DesX(1) - X(1));
+  temp.setZ(DesX(2) - X(2));
 
-  CONT.RposeI += err[1];
-  CONT.PposeI += err[0];
+  err_p = transform * temp;
+
+  //velocity
+  temp.setX(-X(6));
+  temp.setY(-X(7));
+  temp.setZ(-X(8));
+
+  err_v = transform * temp;
+
+  ROS_ERROR("The goal is at %f %f relative\n", err_p[0], err_p[1]);
+  //   Eigen::VectorXf err;
+  //   Eigen::Vector3f temp;
+  //   err.setZero(6);
+  //   temp = DesX.segment(0,3) - X.segment(0,3);
+  //   err.segment(0,3) = tf_
+  //   err.segment(3,3) = HEXA.ANG.R_W2B*(DesX.segment(3,3) - X.segment(3,3));
+
+  //roll
+  RP_Pose[0] = -err_p[1]*CONT.Posekp + -err_v[1]*CONT.Posekd - CONT.RposeI*CONT.Poseki;
+  CONT.RposeI += err_p[1];
+
+  //pitch
+  RP_Pose[1] = err_p[0]*CONT.Posekp + err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
+  CONT.PposeI += err_p[0];
 
   ROS_INFO("Position controller returned %f %f",RP_Pose[0],RP_Pose[1]);
   // TODO: Error Logging
@@ -324,8 +289,16 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   err[0] = DesX[2]-X[2];
   err[1] = DesX[5]-X[5];
 
+  tf::StampedTransform transform;
+  this->tf_.lookupTransform("body_frame", "body_frame_stabilized", ros::Time(0), transform);
+
+  btMatrix3x3 rot;
+  rot = transform.getBasis();
+  double rot22;
+  rot22 = rot[2].getZ();
+
   // This accounts for gravity, should also account for other controls
-  float FF = -HEXA.g[2]*HEXA.mass/(HEXA.ANG.R_B2W(2,2)*6);  //TODO: change 6 to num of props from param server
+  float FF = -HEXA.g[2]*HEXA.mass/(rot22*6);  //TODO: change 6 to num of props from param server
   FF = min(FF,HEXA.maxF);
   T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
 
@@ -343,7 +316,7 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   Eigen::VectorXf current_state, des_state;
   current_state = SetCurrState(current_pose, current_velocities);
   des_state = SetDesState(goal_pose);
-  UpdateTransforms(current_state);
+  /*UpdateTransforms(current_state);*/
 
   Eigen::Vector4f F;
   Eigen::Vector3f RPY_f, cRPY_f;
