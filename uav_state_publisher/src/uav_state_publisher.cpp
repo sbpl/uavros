@@ -16,13 +16,14 @@ UAVStatePublisher::UAVStatePublisher()
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
   ekf_sub_ = nh.subscribe("ekf_state", 3, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
-  slam_sub_ = nh.subscribe("slam_state", 3, &UAVStatePublisher::slamCallback,this);
+  slam_sub_ = nh.subscribe("slam_pose_out", 3, &UAVStatePublisher::slamCallback,this);
 }
 
-void UAVStatePublisher::slamCallback(geometry_msgs::PoseStamped slam_msg) {
-  state_.pose.pose.orientation = slam_msg->pose.pose.orientation;
-  state_.pose.pose.position.x = slam_msg->pose.pose.position.x;
-  state_.pose.pose.position.y = slam_msg->pose.pose.position.y;
+void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg) {
+  state_.pose.pose.orientation = slam_msg->pose.orientation;
+  state_.pose.pose.position.x = slam_msg->pose.position.x;
+  state_.pose.pose.position.y = slam_msg->pose.position.y;
+  ROS_ERROR("got the slam stuff....\n");
 }
 
 
@@ -65,27 +66,19 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
 
   trans.child_frame_id = "body_frame_stabilized";
 
-  geometry_msgs::Quaternion gmq;
-  tf::Quaternion tfq;
-  tf::quaternionMsgToTF(state_.pose.pose.orientation, tfq);
-  //   gmq.w=1;
-  //   gmq.x=0;
-  //   gmq.y=0;
-  //   gmq.z=0;
-
-  //   make gmq have the same yaw as the helo
+  //geometry_msgs::Quaternion gmq;
+  //   tf::Quaternion tfq;ros tf
+//   tf::quaternionMsgToTF(state_.pose.pose.orientation, tfq);
   double yaw, roll, pitch;
-  btMatrix3x3(tfq).getRPY(roll, pitch, yaw);
-
-//   ROS_ERROR("Yaw is %f\n");
-
+//   btMatrix3x3(tfq).getRPY(roll, pitch, yaw);
+  yaw = tf::getYaw(state_.pose.pose.orientation);
+  ROS_ERROR("yaw is %f\n", yaw);
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(yaw);
   tf_broadcaster.sendTransform(trans);
 
   trans.child_frame_id = "body_frame";
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);
-  // ROS_ERROR("Publish this\n");
   //publish the state
   state_pub_.publish(state_);
 }
