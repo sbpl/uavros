@@ -14,8 +14,8 @@ UAVLocalPlanner::UAVLocalPlanner()
   ph.param("collision_map_tolerance",collision_map_tolerance_,0.5);
   ph.param("pose_tolerance",pose_tolerance_,0.1);
 
-  ph.param("landing_height",landing_height_,0.5);
-  ph.param("nominal_height",nominal_height_,1.0);
+  ph.param("landing_height",landing_height_,0.4);
+  ph.param("nominal_height",nominal_height_,0.8);
   ph.param("nominal_linear_velocity",nominal_linear_velocity_,0.3);
   ph.param("nominal_angular_velocity",nominal_angular_velocity_,M_PI/2);
 
@@ -135,6 +135,9 @@ void UAVLocalPlanner::controllerThread(){
         break;
     }
     last_u_ = u;
+
+    printf("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
+
 
     if(!LANDED)
       command_pub_.publish(u);  //TODO: empty message being published....

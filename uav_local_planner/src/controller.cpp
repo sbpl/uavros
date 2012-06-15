@@ -27,9 +27,9 @@ void HexaController::InitializeGains()
   CONT.RPki = 0.6*2/40; //12/50;
 
   // Yaw Gains
-  CONT.Ykp = 6;
-  CONT.Ykd = 6*15/8;
-  CONT.Yki = 12/580;
+  CONT.Ykp = .6;  //divided by 10
+  CONT.Ykd = 6*15/80;  // divided by 10
+  CONT.Yki = 12/58000;    //divided by 100 ??
 
   // Thrust Gains
 
@@ -132,7 +132,7 @@ Eigen::VectorXf HexaController::SetDesState(const geometry_msgs::PoseStamped goa
   btQuaternion q;
   tf::quaternionMsgToTF(goal_pose.pose.orientation, q);
   btMatrix3x3(q).getRPY(roll, pitch, yaw); //TODO: Check if this is right
-  ROS_INFO("Roll, Pitch, Yaw from Quaternion:  %f %f %f",roll,pitch,yaw);
+ // ROS_INFO("Roll, Pitch, Yaw from Quaternion:  %f %f %f",roll,pitch,yaw);
 
   // Roll, Pitch, Yaw in world frame
   des_state[3] = roll;
@@ -220,12 +220,13 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
   RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
   RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
+  ROS_WARN("yaw errors are P:%1.3f I:%1.3f D:%1.3f - :%1.3f I:%1.3f D:%1.3f\n", err[2], CONT.YI, err[5], CONT.Ykp*err[2], CONT.Ykd*err[5], CONT.YI*CONT.Yki);
 
   CONT.RI += err[0];
   CONT.PI += err[1];
   CONT.YI += err[2];
 
-  ROS_INFO("Attitude controller returned %f %f %f",RPY[0],RPY[1],RPY[2]);
+  ROS_INFO("Attitude controller returned %f %f 2.3%f",RPY[0],RPY[1],RPY[2]);
   return RPY;
   //TODO: Error Logging
 }
@@ -377,7 +378,7 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   ctrl_cmd.pitch = static_cast<float>(F[1]);
   ctrl_cmd.yaw = static_cast<float>(F[2]);
   ctrl_cmd.thrust = static_cast<float>(F[3]);
- ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
+ //ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
   return ctrl_cmd;
 
 }

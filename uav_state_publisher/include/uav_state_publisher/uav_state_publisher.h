@@ -63,6 +63,8 @@ class UAVStatePublisher{
     ros::Subscriber slam_sub_;
     ros::Subscriber lidar_sub_;
 
+    double saved_yaw_;
+
     tf::TransformListener tf_;
     tf::TransformBroadcaster tf_broadcaster;
 

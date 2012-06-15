@@ -16,14 +16,15 @@ UAVStatePublisher::UAVStatePublisher()
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
   ekf_sub_ = nh.subscribe("ekf_state", 3, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
-  slam_sub_ = nh.subscribe("slam_pose_out", 3, &UAVStatePublisher::slamCallback,this);
+  slam_sub_ = nh.subscribe("slam_out_pose", 3, &UAVStatePublisher::slamCallback,this);
 }
 
 void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg) {
-  state_.pose.pose.orientation = slam_msg->pose.orientation;
+  saved_yaw_ = tf::getYaw(slam_msg->pose.orientation);
+
   state_.pose.pose.position.x = slam_msg->pose.position.x;
   state_.pose.pose.position.y = slam_msg->pose.position.y;
-  ROS_ERROR("got the slam stuff....\n");
+  printf("############################################got the slam stuff....\n");
 }
 
 
@@ -34,7 +35,11 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   state_.twist.twist.angular = p->twist.twist.angular;
 
   //get the orientation
- // state_.pose.pose.orientation = p->pose.pose.orientation;
+double roll, pitch, yaw;
+btQuaternion q;
+tf::quaternionMsgToTF(p->pose.pose.orientation, q);
+btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
+state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
 
   //get the x and y
  // state_.pose.pose.position.x = p->pose.pose.position.x;
@@ -69,13 +74,15 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   //geometry_msgs::Quaternion gmq;
   //   tf::Quaternion tfq;ros tf
 //   tf::quaternionMsgToTF(state_.pose.pose.orientation, tfq);
-  double yaw, roll, pitch;
+//  double yaw, roll, pitch;
 //   btMatrix3x3(tfq).getRPY(roll, pitch, yaw);
-  yaw = tf::getYaw(state_.pose.pose.orientation);
-  ROS_ERROR("yaw is %f\n", yaw);
-  trans.transform.rotation = tf::createQuaternionMsgFromYaw(yaw);
-  tf_broadcaster.sendTransform(trans);
 
+
+//  yaw = tf::getYaw(state_.pose.pose.orientation);
+  //ROS_ERROR("yaw is %f\n", yaw);
+  trans.transform.rotation = tf::createQuaternionMsgFromYaw(saved_yaw_);
+  tf_broadcaster.sendTransform(trans);
+ROS_WARN("height is %f\n", trans.transform.translation.z);
   trans.child_frame_id = "body_frame";
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);

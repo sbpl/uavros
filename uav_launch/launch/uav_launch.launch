@@ -3,7 +3,7 @@
   <!-- Bring up the driver -->
   <!--TODO: Driver node ! -->
   <!-- Subscribes to controller_cmd.  Publishes raw_imu -->
-  <node name="ManHack" pkg="HexaDriver" type="HexaDriver" required="true" >
+  <node name="ManHack" pkg="HexaDriver" type="HexaDriver" required="true" output="screen">
     <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
   </node>
 
@@ -12,7 +12,7 @@
   <param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
 
   <!-- Robot State Publisher  -->
-  <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" >
+  <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" output="screen">
     <param name="publish_frequency" value="50.0" />
   </node>
 
@@ -89,7 +89,7 @@
     <remap from="flight_mode_request" to="flight_mode"/>
   </node>
   <!-- Bring up the dynamic reconfigure GUI for controller gains-->
-  <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>
+  <!-- <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/> -->
 
   <!-- ............................................................................. -->
   <!-- Bring up RVIZ -->
