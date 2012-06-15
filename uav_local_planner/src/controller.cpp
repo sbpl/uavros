@@ -257,7 +257,7 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
 
   err_v = transform * temp;
 
-  ROS_ERROR("The goal is at %f %f relative\n", err_p[0], err_p[1]);
+  ROS_ERROR("The goal is at x%f y%f relative\n", err_p[0], err_p[1]);
   //   Eigen::VectorXf err;
   //   Eigen::Vector3f temp;
   //   err.setZero(6);
@@ -266,7 +266,7 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   //   err.segment(3,3) = HEXA.ANG.R_W2B*(DesX.segment(3,3) - X.segment(3,3));
 
   //roll
-  RP_Pose[0] = -err_p[1]*CONT.Posekp + -err_v[1]*CONT.Posekd - CONT.RposeI*CONT.Poseki;
+  RP_Pose[0] = -err_p[1]*CONT.Posekp + -err_v[1]*CONT.Posekd + -CONT.RposeI*CONT.Poseki;
   CONT.RposeI += err_p[1];
 
   //pitch
@@ -330,11 +330,11 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
 
   cRPY_f[0] = Pose_f[0];
   cRPY_f[1] = Pose_f[1];
-  cRPY_f[2] = 0;
-  cRPY_f = cRPY_f + RPY_f;
+  cRPY_f[2] = RPY_f[2];
+ // cRPY_f = cRPY_f + RPY_f;
 
-  F[0] = cRPY_f[0];
-  F[1] = cRPY_f[1];
+  F[0] = cRPY_f[0]/10;
+  F[1] = cRPY_f[1]/10;
   F[2] = cRPY_f[2];
   F[3] = T_f;
 

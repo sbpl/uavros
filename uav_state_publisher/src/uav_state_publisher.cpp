@@ -68,7 +68,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   double yaw, roll, pitch;
   btMatrix3x3(tfq).getRPY(roll, pitch, yaw);
 
-  ROS_ERROR("Yaw is %f\n");
+//   ROS_ERROR("Yaw is %f\n");
 
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(yaw);
   tf_broadcaster.sendTransform(trans);

@@ -97,7 +97,7 @@ void UAVLocalPlanner::controllerThread(){
     geometry_msgs::TwistStamped velocity;
     getRobotPose(pose,velocity);
     if(ros::Time::now().toSec()-pose.header.stamp.toSec() > pose_tolerance_){
-      printf("[controller] UAV pose is old...hit the deck!\n");
+      printf(".");//[controller] UAV pose is old...hit the deck!\n");
     }
    // printf("[controller] uav z: %f\n",pose.pose.position.z);
 
