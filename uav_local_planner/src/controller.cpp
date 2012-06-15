@@ -22,25 +22,25 @@ HexaController::~HexaController()
 void HexaController::InitializeGains()
 {
   // Roll and Pitch Gains    TODO: read in from param server
-  CONT.RPkp = 25;//20;       //10 150
-  CONT.RPkd = 2.5*8/8; //6*10/8;
-  CONT.RPki = 0.6*2/40; //12/50;
+  CONT.RPkp = 20/10;//20;       //10 150
+  CONT.RPkd = 0;//2.5*8/80; //6*10/8;
+  CONT.RPki = 0;//0.6*2/400; //12/50;
 
   // Yaw Gains
-  CONT.Ykp = 10;//6;
-  CONT.Ykd = 6*15/80;
-  CONT.Yki = 12/58;
+  CONT.Ykp = 1;//6;
+  CONT.Ykd = 0;//6*15/800;
+  CONT.Yki = 0;//12/580;
 
   // Thrust Gains
 
-  CONT.Tkp = 10/5;   //divide by 5
+  CONT.Tkp = 2;//10/5;   //divide by 5
   CONT.Tkd = 6;
   CONT.Tki = 0.1;
 
   //Roll and Pitch Gains for Position
 
-  CONT.Posekp = 8;
-  CONT.Posekd = 8*6/8;
+  CONT.Posekp = .8;
+  CONT.Posekd = 0;//8*6/80;
   CONT.Poseki = 0;
 
   // Initialize the integral terms
@@ -64,7 +64,7 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
 {
 //   //TODO: these should come in as parameters
   // Weight in kg
-  HEXA.mass = 4.5;
+  HEXA.mass = 5;
 
   // N based on 2 kg max force per blade
   HEXA.maxF = 20;
@@ -193,7 +193,7 @@ Eigen::VectorXf HexaController::SetCurrState(const geometry_msgs::PoseStamped cu
 //
 // }
 
-Eigen::Vector3f HexaController.::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
+Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
   Eigen::Vector3f RPY;
   // Limit integral windup
@@ -335,9 +335,9 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   cRPY_f[2] = RPY_f[2];
  // cRPY_f = cRPY_f + RPY_f;
 
-  F[0] = cRPY_f[0]/10;
-  F[1] = cRPY_f[1]/10;
-  F[2] = cRPY_f[2]/10;
+  F[0] = cRPY_f[0];
+  F[1] = cRPY_f[1];
+  F[2] = cRPY_f[2];
   F[3] = T_f;
 
  // ROS_INFO("Controller force before mapping to 0-255: %f %f %f %f", F[0],F[1],F[2],F[3]);
@@ -375,6 +375,7 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   }
 */
   uav_msgs::ControllerCommand ctrl_cmd;
+  ctrl_cmd.header.stamp = ros::Time::now();
   ctrl_cmd.roll = static_cast<float>(F[0]);  //was u
   ctrl_cmd.pitch = static_cast<float>(F[1]);
   ctrl_cmd.yaw = static_cast<float>(F[2]);

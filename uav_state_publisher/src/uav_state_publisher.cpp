@@ -87,6 +87,7 @@ ROS_WARN("height is %f\n", trans.transform.translation.z);
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);
   //publish the state
+  state_.header.stamp = ros::Time::now();
   state_pub_.publish(state_);
 }
 

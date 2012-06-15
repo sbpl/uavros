@@ -49,9 +49,9 @@ UAVLocalPlanner::UAVLocalPlanner()
   state_sub_ = nh.subscribe("uav_state", 1, &UAVLocalPlanner::stateCallback,this);
   flight_mode_sub_ = nh.subscribe("flight_mode_request", 1, &UAVLocalPlanner::flightModeCallback,this);
 
-//   dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
-//   f = boost::bind(&HexaController::dynamic_reconfigure_callback, controller, _1, _2);
-//   dynamic_reconfigure_server_.setCallback(f);
+   dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
+   f = boost::bind(&HexaController::dynamic_reconfigure_callback, &controller, _1, _2);
+   dynamic_reconfigure_server_.setCallback(f);
 }
 
 UAVLocalPlanner::~UAVLocalPlanner(){
@@ -103,7 +103,13 @@ void UAVLocalPlanner::controllerThread(){
 
     if(state==HOVER && last_state_!=HOVER){
       printf("[controller] transitioning to hover (setting the hover pose)\n");
-      hover_pose_ = pose;
+      hover_pose_.pose.position.x = 0;
+      hover_pose_.pose.position.y = 0;
+      hover_pose_.pose.position.z = .8;
+      hover_pose_.pose.orientation.x = 0;
+      hover_pose_.pose.orientation.y = 0;
+      hover_pose_.pose.orientation.z = 0;
+      hover_pose_.pose.orientation.w = 1;
     }
 
     last_state_ = state;
