@@ -15,7 +15,7 @@ UAVLocalPlanner::UAVLocalPlanner()
   ph.param("pose_tolerance",pose_tolerance_,0.1);
 
   ph.param("landing_height",landing_height_,0.4);
-  ph.param("nominal_height",nominal_height_,0.8);
+  ph.param("nominal_height",nominal_height_,0.6);
   ph.param("nominal_linear_velocity",nominal_linear_velocity_,0.3);
   ph.param("nominal_angular_velocity",nominal_angular_velocity_,M_PI/2);
 

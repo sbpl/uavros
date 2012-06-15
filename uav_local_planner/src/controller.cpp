@@ -22,14 +22,14 @@ HexaController::~HexaController()
 void HexaController::InitializeGains()
 {
   // Roll and Pitch Gains    TODO: read in from param server
-  CONT.RPkp = 20;       //10 150
+  CONT.RPkp = 25;//20;       //10 150
   CONT.RPkd = 2.5*8/8; //6*10/8;
   CONT.RPki = 0.6*2/40; //12/50;
 
   // Yaw Gains
-  CONT.Ykp = .6;  //divided by 10
-  CONT.Ykd = 6*15/80;  // divided by 10
-  CONT.Yki = 12/58000;    //divided by 100 ??
+  CONT.Ykp = 10;//6;
+  CONT.Ykd = 6*15/80;
+  CONT.Yki = 12/58;
 
   // Thrust Gains
 
@@ -138,7 +138,7 @@ Eigen::VectorXf HexaController::SetDesState(const geometry_msgs::PoseStamped goa
   des_state[3] = roll;
   des_state[4] = pitch;
   des_state[5] = yaw;
-
+  printf("$$$$$$$$ des yaw %f\n", yaw);
   return des_state;
 }
 
@@ -160,6 +160,7 @@ Eigen::VectorXf HexaController::SetCurrState(const geometry_msgs::PoseStamped cu
   current_state[3] = roll;
   current_state[4] = pitch;
   current_state[5] = yaw;
+  printf("$$$$$$$$ cur yaw %f\n", yaw);
 
   // Linear velocities in world frame
   current_state[6] = current_velocities.twist.linear.x;
@@ -206,8 +207,8 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   // Calculate erros in angular velocity and angle
   Eigen::VectorXf err;
   err.setZero(6);
-  err.segment(0,3) = DesX.segment(6,3) - X.segment(6,3);
-  err.segment(3,3) = DesX.segment(9,3) - X.segment(9,3);
+  err.segment(0,3) = DesX.segment(3,3) - X.segment(3,3);
+  err.segment(3,3) =  - X.segment(9,3);
 
   for(int i=0;i<3;i++)
   {
@@ -220,7 +221,7 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
   RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
   RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
-  ROS_WARN("yaw errors are P:%1.3f I:%1.3f D:%1.3f - :%1.3f I:%1.3f D:%1.3f\n", err[2], CONT.YI, err[5], CONT.Ykp*err[2], CONT.Ykd*err[5], CONT.YI*CONT.Yki);
+  ROS_WARN("yaw errors are P:%1.3f I:%1.3f D:%1.3f - P:%1.3f I:%1.3f D:%1.3f\n", err[2], CONT.YI, err[5], CONT.Ykp*err[2], CONT.YI*CONT.Yki, CONT.Ykd*err[5]);
 
   CONT.RI += err[0];
   CONT.PI += err[1];
@@ -336,7 +337,7 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
 
   F[0] = cRPY_f[0]/10;
   F[1] = cRPY_f[1]/10;
-  F[2] = cRPY_f[2];
+  F[2] = cRPY_f[2]/10;
   F[3] = T_f;
 
  // ROS_INFO("Controller force before mapping to 0-255: %f %f %f %f", F[0],F[1],F[2],F[3]);
