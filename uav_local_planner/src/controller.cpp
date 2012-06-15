@@ -33,7 +33,7 @@ void HexaController::InitializeGains()
 
   // Thrust Gains
 
-  CONT.Tkp = 10;
+  CONT.Tkp = 10/5;   //divide by 5
   CONT.Tkd = 6;
   CONT.Tki = 0.1;
 
@@ -193,7 +193,7 @@ Eigen::VectorXf HexaController::SetCurrState(const geometry_msgs::PoseStamped cu
 //
 // }
 
-Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
+Eigen::Vector3f HexaController.::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
   Eigen::Vector3f RPY;
   // Limit integral windup
@@ -221,12 +221,12 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
   RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
   RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
-  ROS_WARN("yaw errors are P:%1.3f I:%1.3f D:%1.3f - P:%1.3f I:%1.3f D:%1.3f\n", err[2], CONT.YI, err[5], CONT.Ykp*err[2], CONT.YI*CONT.Yki, CONT.Ykd*err[5]);
+ // ROS_WARN("yaw errors are P:%1.3f I:%1.3f D:%1.3f - P:%1.3f I:%1.3f D:%1.3f\n", err[2], CONT.YI, err[5], CONT.Ykp*err[2], CONT.YI*CONT.Yki, CONT.Ykd*err[5]);
 
   CONT.RI += err[0];
   CONT.PI += err[1];
   CONT.YI += err[2];
-
+printf("%%%%%% RPY  R:%f P:%f Y:%f goal R:%f P:%f Y:%f\n", X(3), X(4), X(5), DesX(3), DesX(4), DesX(5));
   ROS_INFO("Attitude controller returned %f %f 2.3%f",RPY[0],RPY[1],RPY[2]);
   return RPY;
   //TODO: Error Logging

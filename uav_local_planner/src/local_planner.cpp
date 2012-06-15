@@ -111,6 +111,7 @@ void UAVLocalPlanner::controllerThread(){
     switch(state){
       case LANDED:
         printf("[controller] state: LANDED\n");
+        hover_pose_ = pose;
         break;
       case LANDING:
     //    printf("[controller] state: LANDING\n");
@@ -135,7 +136,8 @@ void UAVLocalPlanner::controllerThread(){
         break;
     }
     last_u_ = u;
-
+    printf("###### pose   X:%f Y:%f Z:%f \n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
+    printf("$$$$$$ goal   X:%f Y:%f Z:%f \n", hover_pose_.pose.position.x, hover_pose_.pose.position.y, hover_pose_.pose.position.z);
     printf("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
 
 
@@ -163,7 +165,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pos
       u.thrust -= 0.02;
   }
   else{
-    geometry_msgs::PoseStamped target = pose;
+    geometry_msgs::PoseStamped target = hover_pose_;
     if(pose.pose.position.z <= landing_z_ + 0.2)
       landing_z_ -= 0.0002;
     target.pose.position.z = landing_z_;
@@ -174,11 +176,11 @@ uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pos
 }
 
 uav_msgs::ControllerCommand UAVLocalPlanner::takeOff(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, UAVControllerState& state){
-  geometry_msgs::PoseStamped target = pose;
+  geometry_msgs::PoseStamped target = hover_pose_;
   if(pose.pose.position.z >= nominal_height_)
     state = HOVER;
   else
-    target.pose.position.z += 0.4;
+    target.pose.position.z = pose.pose.position.z + 0.4;
   visualizeTargetPose(target);
   return controller.Controller(pose, vel, target);
 }
