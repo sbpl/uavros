@@ -16,7 +16,16 @@ UAVStatePublisher::UAVStatePublisher()
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
   ekf_sub_ = nh.subscribe("ekf_state", 3, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
+  slam_sub_ = nh.subscribe("slam_state", 3, &UAVStatePublisher::slamCallback,this);
 }
+
+void UAVStatePublisher::slamCallback(geometry_msgs::PoseStamped slam_msg) {
+  state_.pose.pose.orientation = slam_msg->pose.pose.orientation;
+  state_.pose.pose.position.x = slam_msg->pose.pose.position.x;
+  state_.pose.pose.position.y = slam_msg->pose.pose.position.y;
+}
+
+
 
 //on the order of 50Hz
 void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
@@ -24,11 +33,11 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   state_.twist.twist.angular = p->twist.twist.angular;
 
   //get the orientation
-  state_.pose.pose.orientation = p->pose.pose.orientation;
+ // state_.pose.pose.orientation = p->pose.pose.orientation;
 
   //get the x and y
-  state_.pose.pose.position.x = p->pose.pose.position.x;
-  state_.pose.pose.position.y = p->pose.pose.position.y;
+ // state_.pose.pose.position.x = p->pose.pose.position.x;
+ // state_.pose.pose.position.y = p->pose.pose.position.y;
 
   //get the x and y velocities
   state_.twist.twist.linear.x = p->twist.twist.linear.x;

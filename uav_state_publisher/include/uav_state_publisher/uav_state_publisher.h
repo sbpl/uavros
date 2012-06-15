@@ -55,10 +55,12 @@ class UAVStatePublisher{
 
     void ekfCallback(nav_msgs::OdometryConstPtr p);
     void lidarCallback(sensor_msgs::LaserScanConstPtr scan);
+    void slamCallback(geometry_msgs::PoseStamped slam_msg)
 
     nav_msgs::Odometry state_;
     ros::Publisher state_pub_;
     ros::Subscriber ekf_sub_;
+    ros::Subscriber slam_sub_;
     ros::Subscriber lidar_sub_;
 
     tf::TransformListener tf_;
