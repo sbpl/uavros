@@ -114,7 +114,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     }
     geometry_msgs::PointStamped p;
     geometry_msgs::PointStamped pout;
-    p.header.stamp = ros::Time();
+    p.header.stamp = ros::Time(0);
     p.header.frame_id = scan->header.frame_id;
     p.point.x = scan->ranges[i]*cos(ang);
     p.point.y = scan->ranges[i]*sin(ang);

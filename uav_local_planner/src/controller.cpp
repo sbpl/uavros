@@ -64,7 +64,7 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
 {
 //   //TODO: these should come in as parameters
   // Weight in kg
-  HEXA.mass = 5;
+  HEXA.mass = 5.5;
 
   // N based on 2 kg max force per blade
   HEXA.maxF = 20;
@@ -258,6 +258,9 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   temp.setZ(-X(8));
 
   err_v = transform * temp;
+  printf("vel in map frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", X[6], X[7], X[8]);
+
+  printf("vel in body frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", err_v[0], err_v[1], err_v[2]);
 
   ROS_ERROR("The goal is at x%f y%f relative\n", err_p[0], err_p[1]);
   //   Eigen::VectorXf err;
@@ -268,11 +271,11 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   //   err.segment(3,3) = HEXA.ANG.R_W2B*(DesX.segment(3,3) - X.segment(3,3));
 
   //roll
-  RP_Pose[0] = -err_p[1]*CONT.Posekp + -err_v[1]*CONT.Posekd + -CONT.RposeI*CONT.Poseki;
+  RP_Pose[0] = -err_p[1]*CONT.Posekp + err_v[1]*CONT.Posekd + -CONT.RposeI*CONT.Poseki;
   CONT.RposeI += err_p[1];
 
   //pitch
-  RP_Pose[1] = err_p[0]*CONT.Posekp + err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
+  RP_Pose[1] = err_p[0]*CONT.Posekp + -err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
   CONT.PposeI += err_p[0];
 
   ROS_INFO("Position controller returned %f %f",RP_Pose[0],RP_Pose[1]);
@@ -302,7 +305,7 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   // This accounts for gravity, should also account for other controls
   float FF = -HEXA.g[2]*HEXA.mass/(rot22*6);  //TODO: change 6 to num of props from param server
   FF = min(FF,HEXA.maxF);
-  T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
+  T = err[0]*CONT.Tkp + -err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
 
   CONT.TI += err[0];
 

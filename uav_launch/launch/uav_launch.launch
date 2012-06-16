@@ -96,7 +96,7 @@
   <!-- <node pkg="rviz" type="rviz" name="rviz"/> -->
   <!-- Bring up the interactive marker goal setting node -->
   <!-- Publishes on the flight_mode and goal_pose topics -->
-  <!--<node pkg="uav_set_goal" type="uav_set_goal" name="uav_set_goal"/>-->
+  <node pkg="uav_set_goal" type="uav_set_goal" name="uav_set_goal"/>
   <!-- .................................................................................... -->
   </launch>
 
