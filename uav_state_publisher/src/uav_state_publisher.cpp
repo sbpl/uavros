@@ -69,20 +69,15 @@ state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pit
   trans.transform.translation.z = state_.pose.pose.position.z;
   //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
 
+  trans.child_frame_id = "body_frame_map_aligned";
+  trans.transform.rotation = tf::createQuaternionMsgFromYaw(0);
+  tf_broadcaster.sendTransform(trans);
+
   trans.child_frame_id = "body_frame_stabilized";
-
-  //geometry_msgs::Quaternion gmq;
-  //   tf::Quaternion tfq;ros tf
-//   tf::quaternionMsgToTF(state_.pose.pose.orientation, tfq);
-//  double yaw, roll, pitch;
-//   btMatrix3x3(tfq).getRPY(roll, pitch, yaw);
-
-
-//  yaw = tf::getYaw(state_.pose.pose.orientation);
-  //ROS_ERROR("yaw is %f\n", yaw);
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(saved_yaw_);
   tf_broadcaster.sendTransform(trans);
-ROS_WARN("height is %f\n", trans.transform.translation.z);
+
+  //ROS_WARN("height is %f\n", trans.transform.translation.z);
   trans.child_frame_id = "body_frame";
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);

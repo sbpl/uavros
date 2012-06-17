@@ -138,7 +138,7 @@ Eigen::VectorXf HexaController::SetDesState(const geometry_msgs::PoseStamped goa
   des_state[3] = roll;
   des_state[4] = pitch;
   des_state[5] = yaw;
-  printf("$$$$$$$$ des yaw %f\n", yaw);
+//  printf("$$$$$$$$ des yaw %f\n", yaw);
   return des_state;
 }
 
@@ -160,7 +160,7 @@ Eigen::VectorXf HexaController::SetCurrState(const geometry_msgs::PoseStamped cu
   current_state[3] = roll;
   current_state[4] = pitch;
   current_state[5] = yaw;
-  printf("$$$$$$$$ cur yaw %f\n", yaw);
+ // printf("$$$$$$$$ cur yaw %f\n", yaw);
 
   // Linear velocities in world frame
   current_state[6] = current_velocities.twist.linear.x;
@@ -226,7 +226,7 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   CONT.RI += err[0];
   CONT.PI += err[1];
   CONT.YI += err[2];
-printf("%%%%%% RPY  R:%f P:%f Y:%f goal R:%f P:%f Y:%f\n", X(3), X(4), X(5), DesX(3), DesX(4), DesX(5));
+//printf("%%%%%% RPY  R:%f P:%f Y:%f goal R:%f P:%f Y:%f\n", X(3), X(4), X(5), DesX(3), DesX(4), DesX(5));
   ROS_INFO("Attitude controller returned %f %f 2.3%f",RPY[0],RPY[1],RPY[2]);
   return RPY;
   //TODO: Error Logging
@@ -242,7 +242,7 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
     CONT.PposeI = copysign(1,CONT.PposeI)*CONT.windupPose;
 
   tf::StampedTransform transform;
-  this->tf_.lookupTransform("body_frame", "map", ros::Time(0), transform);
+  this->tf_.lookupTransform("body_frame", "body_frame_map_aligned", ros::Time(0), transform);
   tf::Point err_p, err_v, temp;
 
                         //position
@@ -258,11 +258,11 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   temp.setZ(-X(8));
 
   err_v = transform * temp;
-  printf("vel in map frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", X[6], X[7], X[8]);
+ // printf("vel in map frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", X[6], X[7], X[8]);
 
-  printf("vel in body frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", err_v[0], err_v[1], err_v[2]);
+//  printf("vel in body frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", err_v[0], err_v[1], err_v[2]);
 
-  ROS_ERROR("The goal is at x%f y%f relative\n", err_p[0], err_p[1]);
+ // ROS_ERROR("The goal is at x%f y%f relative\n", err_p[0], err_p[1]);
   //   Eigen::VectorXf err;
   //   Eigen::Vector3f temp;
   //   err.setZero(6);
