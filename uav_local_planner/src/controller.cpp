@@ -64,7 +64,7 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
 {
 //   //TODO: these should come in as parameters
   // Weight in kg
-  HEXA.mass = 5.5;
+  HEXA.mass = 5.0;
 
   // N based on 2 kg max force per blade
   HEXA.maxF = 20;
