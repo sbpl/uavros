@@ -142,9 +142,10 @@ void UAVLocalPlanner::controllerThread(){
         break;
     }
     last_u_ = u;
-    printf("###### pose   X:%f Y:%f Z:%f \n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
-    printf("$$$$$$ goal   X:%f Y:%f Z:%f \n", hover_pose_.pose.position.x, hover_pose_.pose.position.y, hover_pose_.pose.position.z);
+    printf("###### pose   X:%f Y:%f Z:%f R:%f P:%f Y:%f\n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
+    // printf("$$$$$$ goal   X:%f Y:%f Z:%f \n", hover_pose_.pose.position.x, hover_pose_.pose.position.y, hover_pose_.pose.position.z);
     printf("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
+    printf("**************************    +=Right     +=Forward   +=CCW       +=Up\n");
 
 
     if(!LANDED)

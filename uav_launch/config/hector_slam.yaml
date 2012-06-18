@@ -24,8 +24,8 @@ update_factor_free: 0.4
 update_factor_occupied: 0.9
 map_update_distance_thresh: 0.4
 map_update_angle_thresh: 0.06
-laser_z_min_value: -10.0
-laser_z_max_value: 10.0
+laser_z_min_value: -0.5
+laser_z_max_value: 0.5
 laser_min_dist: 0.4
 laser_max_dist: 29.0
 

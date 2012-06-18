@@ -227,7 +227,7 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   CONT.PI += err[1];
   CONT.YI += err[2];
 //printf("%%%%%% RPY  R:%f P:%f Y:%f goal R:%f P:%f Y:%f\n", X(3), X(4), X(5), DesX(3), DesX(4), DesX(5));
-  ROS_INFO("Attitude controller returned %f %f 2.3%f",RPY[0],RPY[1],RPY[2]);
+//  ROS_INFO("Attitude controller returned %f %f 2.3%f",RPY[0],RPY[1],RPY[2]);
   return RPY;
   //TODO: Error Logging
 }
@@ -271,14 +271,16 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   //   err.segment(3,3) = HEXA.ANG.R_W2B*(DesX.segment(3,3) - X.segment(3,3));
 
   //roll
-  RP_Pose[0] = -err_p[1]*CONT.Posekp + err_v[1]*CONT.Posekd + -CONT.RposeI*CONT.Poseki;
+  RP_Pose[0] = -err_p[1]*CONT.Posekp + -err_v[1]*CONT.Posekd + -CONT.RposeI*CONT.Poseki;
   CONT.RposeI += err_p[1];
 
   //pitch
-  RP_Pose[1] = err_p[0]*CONT.Posekp + -err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
+  RP_Pose[1] = err_p[0]*CONT.Posekp + err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
   CONT.PposeI += err_p[0];
 
-  ROS_INFO("Position controller returned %f %f",RP_Pose[0],RP_Pose[1]);
+
+  printf("###### roll- y:%f v:%f      pitch- x:%f v:%f\n", err_p[1], err_v[1], err_p[0], err_v[0]);
+ // ROS_INFO("Position controller returned %f %f",RP_Pose[0],RP_Pose[1]);
   // TODO: Error Logging
   return  RP_Pose;
 }
@@ -305,11 +307,11 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   // This accounts for gravity, should also account for other controls
   float FF = -HEXA.g[2]*HEXA.mass/(rot22*6);  //TODO: change 6 to num of props from param server
   FF = min(FF,HEXA.maxF);
-  T = err[0]*CONT.Tkp + -err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
+  T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
 
   CONT.TI += err[0];
 
-  ROS_INFO("Altitude controller returned %f",T);
+ // ROS_INFO("Altitude controller returned %f",T);
   return T;
 
 
@@ -332,9 +334,9 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   RPY_f = AttitudeCtrl(current_state, des_state);
   Pose_f = PositionCtrl(current_state, des_state);
   T_f = AltitudeCtrl(current_state, des_state);
-
-  cRPY_f[0] = Pose_f[0];
-  cRPY_f[1] = Pose_f[1];
+printf("ctrl out - ATT: r%f p%f y%f POS: r%f p:%f\n", RPY_f[0], RPY_f[1], RPY_f[2], Pose_f[0], Pose_f[1]);
+  cRPY_f[0] = Pose_f[0] + RPY_f[0];
+  cRPY_f[1] = Pose_f[1] + RPY_f[1];
   cRPY_f[2] = RPY_f[2];
  // cRPY_f = cRPY_f + RPY_f;
 

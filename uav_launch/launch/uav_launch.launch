@@ -89,7 +89,7 @@
     <remap from="flight_mode_request" to="flight_mode"/>
   </node>
   <!-- Bring up the dynamic reconfigure GUI for controller gains-->
-   <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>
+  <!-- <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>  -->
 
   <!-- ............................................................................. -->
   <!-- Bring up RVIZ -->
