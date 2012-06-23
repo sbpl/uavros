@@ -115,7 +115,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     p.point.y = scan->ranges[i]*sin(ang);
     p.point.z = 0;
     try{
-      tf_.transformPoint("/body_frame_stabilized", p, pout);  // TODO: make all this hard coded crap into parameters
+      tf_.transformPoint("/body_frame_map_aligned", p, pout);  // TODO: make all this hard coded crap into parameters
     }
     catch (tf::TransformException ex){
       ROS_ERROR("%s",ex.what());
