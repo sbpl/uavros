@@ -105,7 +105,7 @@ void UAVLocalPlanner::controllerThread(){
       printf("[controller] transitioning to hover (setting the hover pose)\n");
       hover_pose_.pose.position.x = 0;
       hover_pose_.pose.position.y = 0;
-      hover_pose_.pose.position.z = .8;
+      hover_pose_.pose.position.z = 1.2;
       hover_pose_.pose.orientation.x = 0;
       hover_pose_.pose.orientation.y = 0;
       hover_pose_.pose.orientation.z = 0;

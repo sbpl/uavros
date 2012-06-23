@@ -311,6 +311,7 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 
   CONT.TI += err[0];
 
+  printf("Altitude error is %f with alt at %f\n", err[0], X[2]);
  // ROS_INFO("Altitude controller returned %f",T);
   return T;
 
