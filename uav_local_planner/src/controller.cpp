@@ -67,10 +67,13 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
   HEXA.mass = 5.0;
 
   // N based on 2 kg max force per blade
-  HEXA.maxF = 10.0;
+  HEXA.maxF = 12.0;
 
   // N for which which we really can't issue a control
   HEXA.minF = 4.0;
+
+// Maximum allowable position error for position ctrl and alt ctrl
+  HEXA.maxError = 0.5; //TODO: make a param
 
   // Gravity Vector
   HEXA.g << 0, 0, -9.81;
@@ -221,10 +224,14 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
 
   err_p = transform * temp;
   for(int idx=0; idx<3; idx++) {
-    if (err_p[idx] > HEXA.maxError)
+    if (err_p[idx] > HEXA.maxError){
       err_p[idx] = HEXA.maxError;
-    else if (err_p[idx] < -HEXA.maxError)
+      ROS_ERROR("Above max error %d\n", idx);
+    }
+    else if (err_p[idx] < -HEXA.maxError) {
       err_p[idx] = -HEXA.maxError;
+      ROS_ERROR("Below -max error %d\n", idx);
+    }
   }
 
   //velocity
@@ -271,8 +278,14 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   err[0] = DesX[2]-X[2];
   err[1] = DesX[5]-X[5];
 
-  if (err[0] > HEXA.maxError) err[0] = HEXA.maxError;
-  else if (err[0] < -HEXA.maxError) err[0] = -HEXA.maxError;
+  if (err[0] > HEXA.maxError) {
+    err[0] = HEXA.maxError;
+    ROS_ERROR("Above max error thrust\n");
+  }
+  else if (err[0] < -HEXA.maxError) {
+    err[0] = -HEXA.maxError;
+    ROS_ERROR("Below -max error thrust\n");
+  }
 
   tf::StampedTransform transform;
   this->tf_.lookupTransform("body_frame", "body_frame_stabilized", ros::Time(0), transform);
@@ -285,7 +298,7 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   // This accounts for gravity, should also account for other controls
   float FF = -HEXA.g[2]*HEXA.mass/(rot22*6);  //TODO: change 6 to num of props from param server
   FF = min(FF,HEXA.maxF);
-  T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + FF;
+  T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + 8.0;
 
   CONT.TI += err[0];
 
