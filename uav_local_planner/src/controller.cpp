@@ -12,6 +12,7 @@ HexaController::HexaController() : tf_(ros::NodeHandle(), ros::Duration(10), tru
   ros::NodeHandle nh("~");
   HexaController::InitializeGains();
   HexaController::InitializeDynamics(nh);
+  PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_out", 1);
 }
 
 // Destructor
@@ -301,6 +302,14 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + 8.5;
 
   CONT.TI += err[0];
+
+geometry_msgs::PointStamped PID_pt;
+PID_pt.header.stamp = ros::Time::now();
+PID_pt.point.x = err[0]*CONT.Tkp;
+PID_pt.point.y = CONT.TI*CONT.Tki;
+PID_pt.point.z = err[1]*CONT.Tkd;
+PID_pub_.publish(PID_pt);
+
 
   printf("Altitude error is %f (v:%f) with alt at %f v:%f\n", err[0],err[1], X[2], X[5]);
   printf("Altitude Controller returning %f thrust with %f FF\n", T, FF);

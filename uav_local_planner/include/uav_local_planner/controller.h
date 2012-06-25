@@ -143,6 +143,7 @@ class HexaController {
 
 private:
   tf::TransformListener tf_;
+  ros::Publisher PID_pub_;
 
 
 
