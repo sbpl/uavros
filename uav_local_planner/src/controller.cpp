@@ -70,7 +70,7 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
   HEXA.mass = 5.0;
 
   // N based on 2 kg max force per blade
-  HEXA.maxF = 12.0;
+  HEXA.maxF = 14.0;
 
   // N for which which we really can't issue a control
   HEXA.minF = 4.0;
