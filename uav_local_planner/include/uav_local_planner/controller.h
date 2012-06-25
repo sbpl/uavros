@@ -13,6 +13,8 @@
 
 typedef struct{
 
+  float DefaultThrust_;
+
   // Roll and Pitch Gains
   float RPkp;
   float RPkd;

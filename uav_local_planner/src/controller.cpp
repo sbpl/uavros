@@ -22,6 +22,8 @@ HexaController::~HexaController()
 
 void HexaController::InitializeGains()
 {
+
+  CONT.DefaultThrust_ = 9.5;
   // Roll and Pitch Gains    TODO: read in from param server
   CONT.RPkp = 20/10;//20;       //10 150
   CONT.RPkd = 0;//2.5*8/80; //6*10/8;
@@ -90,7 +92,10 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
 
 void HexaController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
 {
-  ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", config.RPkp, config.RPkd, config.RPki, config.Ykp, config.Ykd, config.Yki, config.Tkp, config.Tkd, config.Tki, config.Posekp, config.Posekd, config.Poseki);
+  ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", config.RPkp, config.RPkd, config.RPki, config.Ykp, config.Ykd, config.Yki, config.Tkp, config.Tkd, config.Tki, config.Posekp, config.Posekd, config.Poseki, config.HovT);
+
+  CONT.DefaultThrust_ = config.HovT;
+
   CONT.RPkp = config.RPkp;
   CONT.RPkd = config.RPkd;
   CONT.RPki = config.RPki;
@@ -299,7 +304,7 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   // This accounts for gravity, should also account for other controls
   float FF = -HEXA.g[2]*HEXA.mass/(rot22*6);  //TODO: change 6 to num of props from param server
   FF = min(FF,HEXA.maxF);
-  T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + 9.5;
+  T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + CONT.DefaultThrust_;
 
   CONT.TI += err[0];
 
