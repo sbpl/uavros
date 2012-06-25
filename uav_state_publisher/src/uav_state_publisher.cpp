@@ -1,5 +1,7 @@
-#include<uav_state_publisher/uav_state_publisher.h>
-#include<vector>
+#include <uav_state_publisher/uav_state_publisher.h>
+#include <vector>
+
+
 using namespace std;
 
 UAVStatePublisher::UAVStatePublisher()
@@ -12,11 +14,15 @@ UAVStatePublisher::UAVStatePublisher()
 
   //publish an odometry message (it's the only message with all the state variables we want)
   state_pub_ = nh.advertise<nav_msgs::Odometry>("uav_state", 1);
+  pointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("HeightLaser", 1);
+  point_pub_ = nh.advertise<sensor_msgs::PointCloud2>("HeightLaserMedian", 1);
 
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
   ekf_sub_ = nh.subscribe("ekf_state", 3, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
   slam_sub_ = nh.subscribe("slam_out_pose", 3, &UAVStatePublisher::slamCallback,this);
+
+
 }
 
 void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg) {
@@ -94,6 +100,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   zs.reserve(num_rays);
   float ang = scan->angle_min;
   int i;
+  vector<geometry_msgs::Point> voxels;
 
   for(i=0; i<num_rays; i++){
     if(ang>=min_lidar_angle_)
@@ -121,16 +128,38 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
       ROS_ERROR("%s",ex.what());
     }
     zs.push_back(pout.point.z);
+    voxels.push_back(pout.point);
     ang += scan->angle_increment;
   }
   // ROS_ERROR("size: %d first: %f\n", zs.size(),zs[0]);
   //TODO: do something smarter that will filter out tables
   //get z by taking the median
+
+  pcl::PointCloud<pcl::PointXYZ> pclCloud;
+  for(unsigned int i=0; i<voxels.size(); i++)
+    pclCloud.push_back(pcl::PointXYZ(voxels[i].x, voxels[i].y, voxels[i].z));
+  sensor_msgs::PointCloud2 cloud;
+  pcl::toROSMsg (pclCloud, cloud);
+  cloud.header.frame_id = "/body_frame_map_aligned";
+  cloud.header.stamp = ros::Time::now();
+  pointCloud_pub_.publish(cloud);
+
   sort(zs.begin(),zs.end());
   state_.pose.pose.position.z = -zs[zs.size()/2];
   //ROS_ERROR("LC z: %f\n", state_.pose.pose.position.z);
   z_fifo_.insert(state_.pose.pose.position.z);
   z_time_fifo_.insert(scan->header.stamp.toSec());
+
+  pcl::PointCloud<pcl::PointXYZ> pclmedianpt;
+  pclmedianpt.push_back(pcl::PointXYZ(state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z));
+  sensor_msgs::PointCloud2 medianpt;
+  pcl::toROSMsg(pclmedianpt, medianpt);
+
+  medianpt.header.frame_id = "/map";
+  medianpt.header.stamp = ros::Time::now();
+
+  point_pub_.publish(medianpt);
+
 }
 
 int main(int argc, char **argv){

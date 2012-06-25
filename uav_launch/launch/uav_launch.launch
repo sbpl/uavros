@@ -27,7 +27,7 @@
 
   <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
 
-  <!-- ................................................................................. -->
+ <!-- ....................sensor_msgs imu............................................................. -->
   <!-- Bring up the hokuyos -->
   <!-- Vertical hokuyo -->
   <!-- if="$(arg use_tilt_laser_)"-->
@@ -71,6 +71,8 @@
   <node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
     <remap from="state" to="ekf_state"/>
     <param name="with_covariances" value="false"/>
+    <param name="system/gyro_stddev" value="0.1" />
+  <param name="system/acceleration_stddev" value="1.0" />
   </node>
   <!--Only one param. No yaml file needed -->
 
@@ -79,11 +81,11 @@
   <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
     <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
     <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
-    <remap from="goal" to="goal_pose"/>
+    <remap from="goal" to="goal_pose"/>acceleration_stddev
     <remap from="path" to="path" />
     <!-- Future use -->
     <remap from="twist" to="uav_state"/>
-    <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Check this. -->
+    <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Che/hector_localization/system/gyro_stddevck this. -->
     <remap from="local_collision_map" to="local_collision_map"/>
     <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
     <remap from="flight_mode_request" to="flight_mode"/>

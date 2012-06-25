@@ -6,6 +6,8 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/LaserScan.h>
+#include <pcl/point_types.h>
+#include <pcl/ros/conversions.h>
 
 class UAVStatePublisher{
 
@@ -59,6 +61,8 @@ class UAVStatePublisher{
 
     nav_msgs::Odometry state_;
     ros::Publisher state_pub_;
+    ros::Publisher pointCloud_pub_;
+    ros::Publisher point_pub_;
     ros::Subscriber ekf_sub_;
     ros::Subscriber slam_sub_;
     ros::Subscriber lidar_sub_;
