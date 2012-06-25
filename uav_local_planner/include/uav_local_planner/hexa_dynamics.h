@@ -18,6 +18,9 @@ typedef struct{
   // N for which which we really can't issue a control
   float minF;
 
+  // max position error for PID control
+  float maxError;
+
   // Gravity Vector
   Eigen::Vector3f g;
 

@@ -62,29 +62,16 @@ void HexaController::InitializeGains()
 
 void HexaController::InitializeDynamics(ros::NodeHandle nh)
 {
-//   //TODO: these should come in as parameters
+  //   //TODO: these should come in as parameters
   // Weight in kg
   HEXA.mass = 5.0;
 
   // N based on 2 kg max force per blade
-  HEXA.maxF = 20;
+  HEXA.maxF = 10.0;
 
   // N for which which we really can't issue a control
-  HEXA.minF = 0.2;
-/*
-  // Transform from motor forces to angular rates on the helo
-  HEXA.F_select << 0, -HEXA.L*sin(M_PI/3), -HEXA.L*sin(M_PI/3), 0, -HEXA.L*sin(M_PI/3), HEXA.L*sin(M_PI/3),
-    -HEXA.L, -HEXA.L*sin(M_PI/6), HEXA.L*sin(M_PI/6), HEXA.L, HEXA.L*sin(M_PI/6), -HEXA.L*sin(M_PI/6),
-    -1*HEXA.Moment2Fratio, 1*HEXA.Moment2Fratio, -1*HEXA.Moment2Fratio, 1*HEXA.Moment2Fratio, -1*HEXA.Moment2Fratio, 1*HEXA.Moment2Fratio;
+  HEXA.minF = 4.0;
 
-  // TODO: rea inInertia Matrix for the Hexarotor
-  HEXA.I << 0.1, 0, 0,
-    0, 0.1, 0,
-    0, 0, 0.15;
-
-  // Inverse of the Inertia Matrix
-  HEXA.I_inv =  HEXA.I.inverse();
-*/
   // Gravity Vector
   HEXA.g << 0, 0, -9.81;
 
@@ -93,28 +80,28 @@ void HexaController::InitializeDynamics(ros::NodeHandle nh)
 
   //TODO:  remove this
   // Initialize transforms to identity
-//   HEXA.ANG.R_B2W.setIdentity();
-//   HEXA.ANG.R_W2B.setIdentity();
+  //   HEXA.ANG.R_B2W.setIdentity();
+  //   HEXA.ANG.R_W2B.setIdentity();
 }
 
 void HexaController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
 {
-ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", config.RPkp, config.RPkd, config.RPki, config.Ykp, config.Ykd, config.Yki, config.Tkp, config.Tkd, config.Tki, config.Posekp, config.Posekd, config.Poseki);
-CONT.RPkp = config.RPkp;
-CONT.RPkd = config.RPkd;
-CONT.RPki = config.RPki;
+  ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", config.RPkp, config.RPkd, config.RPki, config.Ykp, config.Ykd, config.Yki, config.Tkp, config.Tkd, config.Tki, config.Posekp, config.Posekd, config.Poseki);
+  CONT.RPkp = config.RPkp;
+  CONT.RPkd = config.RPkd;
+  CONT.RPki = config.RPki;
 
-CONT.Ykp = config.Ykp;
-CONT.Ykd = config.Ykd;
-CONT.Yki = config.Yki;
+  CONT.Ykp = config.Ykp;
+  CONT.Ykd = config.Ykd;
+  CONT.Yki = config.Yki;
 
-CONT.Tkp = config.Tkp;
-CONT.Tkd = config.Tkd;
-CONT.Tki = config.Tki;
+  CONT.Tkp = config.Tkp;
+  CONT.Tkd = config.Tkd;
+  CONT.Tki = config.Tki;
 
-CONT.Posekp = config.Posekp;
-CONT.Posekd = config.Posekd;
-CONT.Poseki = config.Poseki;
+  CONT.Posekp = config.Posekp;
+  CONT.Posekd = config.Posekd;
+  CONT.Poseki = config.Poseki;
 }
 
 Eigen::VectorXf HexaController::SetDesState(const geometry_msgs::PoseStamped goal_pose)
@@ -132,13 +119,13 @@ Eigen::VectorXf HexaController::SetDesState(const geometry_msgs::PoseStamped goa
   btQuaternion q;
   tf::quaternionMsgToTF(goal_pose.pose.orientation, q);
   btMatrix3x3(q).getRPY(roll, pitch, yaw); //TODO: Check if this is right
- // ROS_INFO("Roll, Pitch, Yaw from Quaternion:  %f %f %f",roll,pitch,yaw);
+  // ROS_INFO("Roll, Pitch, Yaw from Quaternion:  %f %f %f",roll,pitch,yaw);
 
   // Roll, Pitch, Yaw in world frame
   des_state[3] = roll;
   des_state[4] = pitch;
   des_state[5] = yaw;
-//  printf("$$$$$$$$ des yaw %f\n", yaw);
+  //  printf("$$$$$$$$ des yaw %f\n", yaw);
   return des_state;
 }
 
@@ -160,7 +147,7 @@ Eigen::VectorXf HexaController::SetCurrState(const geometry_msgs::PoseStamped cu
   current_state[3] = roll;
   current_state[4] = pitch;
   current_state[5] = yaw;
- // printf("$$$$$$$$ cur yaw %f\n", yaw);
+  // printf("$$$$$$$$ cur yaw %f\n", yaw);
 
   // Linear velocities in world frame
   current_state[6] = current_velocities.twist.linear.x;
@@ -174,24 +161,6 @@ Eigen::VectorXf HexaController::SetCurrState(const geometry_msgs::PoseStamped cu
   return current_state;
 }
 
-// void HexaController::UpdateTransforms(Eigen::VectorXf X)
-// {
-//
-//   float phi = X[6], theta = X[7], psi = X[8];
-//   float cth = cos(theta);
-//   float cph = cos(phi);
-//   float cps = cos(psi);
-//
-//   float sth = sin(theta);
-//   float sph = sin(phi);
-//   float sps = sin(psi);
-//
-//   HEXA.ANG.R_B2W << cps*cth - sph*sps*sth, -cph*sps, cps*sth + cth*sph*sps,
-//     cth*sps + cps*sph*sth, cph*cps, sps*sth - cps*cth*sph,
-//     -cph*sth, sph, cph*cth;
-//   HEXA.ANG.R_W2B = HEXA.ANG.R_B2W.transpose();
-//
-// }
 
 Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
@@ -204,32 +173,32 @@ Eigen::Vector3f HexaController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   if(abs(CONT.YI)>CONT.windupY)
     CONT.YI = copysign(1,CONT.YI)*CONT.windupY;
 
-  // Calculate erros in angular velocity and angle
-  Eigen::VectorXf err;
-  err.setZero(6);
-  err.segment(0,3) = DesX.segment(3,3) - X.segment(3,3);
-  err.segment(3,3) =  - X.segment(9,3);
+  // Calculate errors in angular velocity and angle
+    Eigen::VectorXf err;
+    err.setZero(6);
+    err.segment(0,3) = DesX.segment(3,3) - X.segment(3,3);
+    err.segment(3,3) =  - X.segment(9,3);
 
-  for(int i=0;i<3;i++)
-  {
-    if(err[i] > M_PI)
-      err[i] -= 2*M_PI;
-    else if(err[i] < -M_PI)
-      err[i] += 2*M_PI;
-  }
+    for(int i=0;i<3;i++)
+    {
+      if(err[i] > M_PI)
+        err[i] -= 2*M_PI;
+      else if(err[i] < -M_PI)
+        err[i] += 2*M_PI;
+    }
 
-  RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
-  RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
-  RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
- // ROS_WARN("yaw errors are P:%1.3f I:%1.3f D:%1.3f - P:%1.3f I:%1.3f D:%1.3f\n", err[2], CONT.YI, err[5], CONT.Ykp*err[2], CONT.YI*CONT.Yki, CONT.Ykd*err[5]);
+    RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
+    RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
+    RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
+    // ROS_WARN("yaw errors are P:%1.3f I:%1.3f D:%1.3f - P:%1.3f I:%1.3f D:%1.3f\n", err[2], CONT.YI, err[5], CONT.Ykp*err[2], CONT.YI*CONT.Yki, CONT.Ykd*err[5]);
 
-  CONT.RI += err[0];
-  CONT.PI += err[1];
-  CONT.YI += err[2];
-//printf("%%%%%% RPY  R:%f P:%f Y:%f goal R:%f P:%f Y:%f\n", X(3), X(4), X(5), DesX(3), DesX(4), DesX(5));
-//  ROS_INFO("Attitude controller returned %f %f 2.3%f",RPY[0],RPY[1],RPY[2]);
-  return RPY;
-  //TODO: Error Logging
+    CONT.RI += err[0];
+    CONT.PI += err[1];
+    CONT.YI += err[2];
+    //printf("%%%%%% RPY  R:%f P:%f Y:%f goal R:%f P:%f Y:%f\n", X(3), X(4), X(5), DesX(3), DesX(4), DesX(5));
+    //  ROS_INFO("Attitude controller returned %f %f 2.3%f",RPY[0],RPY[1],RPY[2]);
+    return RPY;
+    //TODO: Error Logging
 }
 
 Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
@@ -245,12 +214,18 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   this->tf_.lookupTransform("body_frame", "body_frame_map_aligned", ros::Time(0), transform);
   tf::Point err_p, err_v, temp;
 
-                        //position
+  //position
   temp.setX(DesX(0) - X(0));
   temp.setY(DesX(1) - X(1));
   temp.setZ(DesX(2) - X(2));
 
   err_p = transform * temp;
+  for(int idx=0; idx<3; idx++) {
+    if (err_p[idx] > HEXA.maxError)
+      err_p[idx] = HEXA.maxError;
+    else if (err_p[idx] < -HEXA.maxError)
+      err_p[idx] = -HEXA.maxError;
+  }
 
   //velocity
   temp.setX(-X(6));
@@ -258,11 +233,11 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   temp.setZ(-X(8));
 
   err_v = transform * temp;
- // printf("vel in map frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", X[6], X[7], X[8]);
+  // printf("vel in map frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", X[6], X[7], X[8]);
 
-//  printf("vel in body frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", err_v[0], err_v[1], err_v[2]);
+  //  printf("vel in body frame xdot:%2.3f ydot:%2.3f zdot:%2.3f\n", err_v[0], err_v[1], err_v[2]);
 
- // ROS_ERROR("The goal is at x%f y%f relative\n", err_p[0], err_p[1]);
+  // ROS_ERROR("The goal is at x%f y%f relative\n", err_p[0], err_p[1]);
   //   Eigen::VectorXf err;
   //   Eigen::Vector3f temp;
   //   err.setZero(6);
@@ -280,7 +255,7 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
 
 
   printf("###### roll- y:%f v:%f      pitch- x:%f v:%f\n", err_p[1], err_v[1], err_p[0], err_v[0]);
- // ROS_INFO("Position controller returned %f %f",RP_Pose[0],RP_Pose[1]);
+  // ROS_INFO("Position controller returned %f %f",RP_Pose[0],RP_Pose[1]);
   // TODO: Error Logging
   return  RP_Pose;
 }
@@ -295,6 +270,9 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   Eigen::Vector2f err;
   err[0] = DesX[2]-X[2];
   err[1] = DesX[5]-X[5];
+
+  if (err[0] > HEXA.maxError) err[0] = HEXA.maxError;
+  else if (err[0] < -HEXA.maxError) err[0] = -HEXA.maxError;
 
   tf::StampedTransform transform;
   this->tf_.lookupTransform("body_frame", "body_frame_stabilized", ros::Time(0), transform);
@@ -311,8 +289,9 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 
   CONT.TI += err[0];
 
-  printf("Altitude error is %f with alt at %f\n", err[0], X[2]);
- // ROS_INFO("Altitude controller returned %f",T);
+  printf("Altitude error is %f (v:%f) with alt at %f v:%f\n", err[0],err[1], X[2], X[5]);
+  printf("Altitude Controller returning %f thrust with %f FF\n", T, FF);
+  // ROS_INFO("Altitude controller returned %f",T);
   return T;
 
 
@@ -335,58 +314,34 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   RPY_f = AttitudeCtrl(current_state, des_state);
   Pose_f = PositionCtrl(current_state, des_state);
   T_f = AltitudeCtrl(current_state, des_state);
-printf("ctrl out - ATT: r%f p%f y%f POS: r%f p:%f\n", RPY_f[0], RPY_f[1], RPY_f[2], Pose_f[0], Pose_f[1]);
+  printf("ctrl out - ATT: r%f p%f y%f POS: r%f p:%f\n", RPY_f[0], RPY_f[1], RPY_f[2], Pose_f[0], Pose_f[1]);
   cRPY_f[0] = Pose_f[0] + RPY_f[0];
   cRPY_f[1] = Pose_f[1] + RPY_f[1];
   cRPY_f[2] = RPY_f[2];
- // cRPY_f = cRPY_f + RPY_f;
+  // cRPY_f = cRPY_f + RPY_f;
 
   F[0] = cRPY_f[0];
   F[1] = cRPY_f[1];
   F[2] = cRPY_f[2];
   F[3] = T_f;
 
- // ROS_INFO("Controller force before mapping to 0-255: %f %f %f %f", F[0],F[1],F[2],F[3]);
-/*
-
-  unsigned int num_Fex_terms = HEXA.Fex.size();
-  unsigned int num_Vex_terms = HEXA.Vex.size();
-  Eigen::Vector4f u;
-  u.setZero();
-
-  // Apply magic polynomial (that maps forces to numbers) to get values in range 0-255
-  for(unsigned int j = 0;j < 4; j++)
-  {
-    for(unsigned int i = 0;i <num_Fex_terms; i++)
-    {
-      // The following line ensures that we do not call pow with a negative base and exponent<1
-      if(F[j]<0&&HEXA.Fex[i]<1)
-        continue;
-      u[j] += HEXA.FV2U_coef[i]*pow(F[j],HEXA.Fex[i]);
-    }
-    for(unsigned int i = num_Fex_terms;i <num_Fex_terms+num_Vex_terms; i++)
-    {
-      // The following line ensures that we do not call pow with a negative base and exponent<1
-      if(HEXA.V<0&&HEXA.Vex[i-num_Fex_terms]<1)
-        continue;
-      u[j] += HEXA.FV2U_coef[i]*pow(HEXA.V,HEXA.Vex[i-num_Fex_terms]);
-    }
+  if (F[3] > HEXA.maxF) {
+    ROS_ERROR("Thrust force above allowable value!!\n");
+    F[3] = HEXA.maxF;
+  }
+  else if (F[3] < HEXA.minF) {
+    ROS_ERROR("Thrust force below minimum value!!\n");
+    F[3] = HEXA.minF;
   }
 
-  // Check for minimum applicable force
-  for(unsigned int j = 0;j < 4; j++)
-  {
-    //TODO: round instead of ceil
-    u[j] = ceil(u[j])*(fabs(F[j])>HEXA.minF);
-  }
-*/
+
   uav_msgs::ControllerCommand ctrl_cmd;
   ctrl_cmd.header.stamp = ros::Time::now();
   ctrl_cmd.roll = static_cast<float>(F[0]);  //was u
   ctrl_cmd.pitch = static_cast<float>(F[1]);
   ctrl_cmd.yaw = static_cast<float>(F[2]);
   ctrl_cmd.thrust = static_cast<float>(F[3]);
- //ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
+  //ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
   return ctrl_cmd;
 
 }
