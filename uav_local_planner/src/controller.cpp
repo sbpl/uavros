@@ -282,7 +282,7 @@ float HexaController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 
   Eigen::Vector2f err;
   err[0] = DesX[2]-X[2];
-  err[1] = DesX[5]-X[5];
+  err[1] = -X[5];
 
   if (err[0] > HEXA.maxError) {
     err[0] = HEXA.maxError;
