@@ -30,7 +30,7 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
 
   state_.pose.pose.position.x = slam_msg->pose.position.x;
   state_.pose.pose.position.y = slam_msg->pose.position.y;
-  printf("############################################got the slam stuff....\n");
+ // printf("############################################got the slam stuff....\n");
 }
 
 
@@ -102,6 +102,13 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   int i;
   vector<geometry_msgs::Point> voxels;
 
+  try {
+    tf_.lookupTransform( "body_frame","panning_laser_frame", ros::Time(0), Pan2BodyTransform_);
+  }
+  catch (tf::TransformException ex){
+    ROS_ERROR("save of partial transform failed....\n %s\n", ex.what());
+  }
+
   for(i=0; i<num_rays; i++){
     if(ang>=min_lidar_angle_)
       break;
@@ -121,12 +128,34 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     p.point.x = scan->ranges[i]*cos(ang);
     p.point.y = scan->ranges[i]*sin(ang);
     p.point.z = 0;
+
+
+    //if unable to get a panning to body frame map aligned transform, then use the stored panning to body and get a body to body frame map aligned transform
     try{
       tf_.transformPoint("/body_frame_map_aligned", p, pout);  // TODO: make all this hard coded crap into parameters
-    }
+      }
     catch (tf::TransformException ex){
-      ROS_ERROR("%s",ex.what());
+      ROS_ERROR("[UAV_state_pub]  %s",ex.what());
+    //}
+    //printf("Using point %f %f %f", pout.point.x, pout.point.y, pout.point.z);
+
+      tf::Point ptfout, ptf(p.point.x, p.point.y, p.point.z);
+      ptfout = Pan2BodyTransform_ * ptf;
+      p.point.x = ptfout.getX();
+      p.point.y = ptfout.getY();
+      p.point.z = ptfout.getZ();
+      p.header.frame_id = "/body_frame";
+
+      try{
+        tf_.transformPoint("/body_frame_map_aligned", p, pout);
+      }
+      catch (tf::TransformException ex2){
+        ROS_ERROR("[UAV_state_pub] can't even get a partial transform! %s\n", ex2.what());
+      }
+      // printf("alt point %f %f %f\n", pout.point.x, pout.point.y, pout.point.z);
     }
+
+
     zs.push_back(pout.point.z);
     voxels.push_back(pout.point);
     ang += scan->angle_increment;

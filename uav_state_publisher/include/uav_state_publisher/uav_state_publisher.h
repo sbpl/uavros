@@ -8,6 +8,10 @@
 #include <sensor_msgs/LaserScan.h>
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
+#include <geometry_msgs/PointStamped.h>
+#include <Eigen/Core>
+#include <Eigen/LU>
+
 
 class UAVStatePublisher{
 
@@ -66,6 +70,9 @@ class UAVStatePublisher{
     ros::Subscriber ekf_sub_;
     ros::Subscriber slam_sub_;
     ros::Subscriber lidar_sub_;
+
+    tf::StampedTransform Pan2BodyTransform_;
+
 
     double saved_yaw_;
 

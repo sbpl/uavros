@@ -267,7 +267,7 @@ Eigen::Vector2f HexaController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf 
   CONT.PposeI += err_p[0];
 
 
-  printf("###### roll- y:%f v:%f      pitch- x:%f v:%f\n", err_p[1], err_v[1], err_p[0], err_v[0]);
+ // printf("###### roll- y:%f v:%f      pitch- x:%f v:%f\n", err_p[1], err_v[1], err_p[0], err_v[0]);
   // ROS_INFO("Position controller returned %f %f",RP_Pose[0],RP_Pose[1]);
   // TODO: Error Logging
   return  RP_Pose;
@@ -316,8 +316,8 @@ PID_pt.point.z = err[1]*CONT.Tkd;
 PID_pub_.publish(PID_pt);
 
 
-  printf("Altitude error is %f (v:%f) with alt at %f v:%f\n", err[0],err[1], X[2], X[5]);
-  printf("Altitude Controller returning %f thrust with %f FF\n", T, FF);
+ // printf("Altitude error is %f (v:%f) with alt at %f v:%f\n", err[0],err[1], X[2], X[5]);
+ // printf("Altitude Controller returning %f thrust with %f FF\n", T, FF);
   // ROS_INFO("Altitude controller returned %f",T);
   return T;
 
@@ -341,7 +341,7 @@ uav_msgs::ControllerCommand HexaController::Controller(const geometry_msgs::Pose
   RPY_f = AttitudeCtrl(current_state, des_state);
   Pose_f = PositionCtrl(current_state, des_state);
   T_f = AltitudeCtrl(current_state, des_state);
-  printf("ctrl out - ATT: r%f p%f y%f POS: r%f p:%f\n", RPY_f[0], RPY_f[1], RPY_f[2], Pose_f[0], Pose_f[1]);
+ // printf("ctrl out - ATT: r%f p%f y%f POS: r%f p:%f\n", RPY_f[0], RPY_f[1], RPY_f[2], Pose_f[0], Pose_f[1]);
   cRPY_f[0] = Pose_f[0] + RPY_f[0];
   cRPY_f[1] = Pose_f[1] + RPY_f[1];
   cRPY_f[2] = RPY_f[2];

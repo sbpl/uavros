@@ -18,7 +18,7 @@
 
   <!-- Bring up the State Publisher -->
   <!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
-  <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher">
+  <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher" output="screen">
     <remap from="pan_scan" to="panning_laser"/>
     <remap from="ekf_state" to="ekf_state"/>
     <!--TODO: Fill in the correct ekf_state remapping argument -->
