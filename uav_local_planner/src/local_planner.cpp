@@ -118,6 +118,7 @@ void UAVLocalPlanner::controllerThread(){
       case LANDED:
         printf("[controller] state: LANDED\n");
         hover_pose_ = pose;
+        u.thrust =0; u.roll=0; u.yaw=0; u.pitch=0;
         break;
       case LANDING:
     //    printf("[controller] state: LANDING\n");
@@ -144,12 +145,10 @@ void UAVLocalPlanner::controllerThread(){
     last_u_ = u;
     printf("###### pose   X:%f Y:%f Z:%f\n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
     // printf("$$$$$$ goal   X:%f Y:%f Z:%f \n", hover_pose_.pose.position.x, hover_pose_.pose.position.y, hover_pose_.pose.position.z);
-  //  printf("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
-   // printf("**************************    +=Right     +=Forward   +=CCW       +=Up\n");
+    //  printf("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
+    // printf("**************************    +=Right     +=Forward   +=CCW       +=Up\n");
 
-
-    if(!LANDED)
-      command_pub_.publish(u);  //TODO: empty message being published....
+    command_pub_.publish(u);  //TODO: empty message being published....
     r.sleep();
   }
 }
@@ -166,15 +165,15 @@ uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pos
     u.roll = 0;
     u.pitch = 0;
     u.yaw = 0;
-    if(u.thrust<=0)
+    if(u.thrust<=3.0)
       state = LANDED;
     else
-      u.thrust -= 0.02;
+      u.thrust -= 0.2;
   }
   else{
     geometry_msgs::PoseStamped target = hover_pose_;
     if(pose.pose.position.z <= landing_z_ + 0.2)
-      landing_z_ -= 0.0002;
+      landing_z_ -= 0.003;
     target.pose.position.z = landing_z_;
     visualizeTargetPose(target);
     u = controller.Controller(pose, vel, target);
@@ -187,7 +186,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::takeOff(geometry_msgs::PoseStamped 
   if(pose.pose.position.z >= nominal_height_)
     state = HOVER;
   else
-    target.pose.position.z = pose.pose.position.z + 0.4;
+    target.pose.position.z = pose.pose.position.z + 0.2;
   visualizeTargetPose(target);
   return controller.Controller(pose, vel, target);
 }

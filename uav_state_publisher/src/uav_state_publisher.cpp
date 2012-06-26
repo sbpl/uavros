@@ -65,26 +65,26 @@ state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pit
   }
   dz /= z_fifo_.size();
   state_.twist.twist.linear.z = dz;
-
+//ROS_ERROR("publishing frames");
   //publish the map to base_link transform
   geometry_msgs::TransformStamped trans;
   trans.header.stamp = p->header.stamp;
-  trans.header.frame_id = "map";
+  trans.header.frame_id = "/map";
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
   trans.transform.translation.z = state_.pose.pose.position.z;
   //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
 
-  trans.child_frame_id = "body_frame_map_aligned";
+  trans.child_frame_id = "/body_frame_map_aligned";
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(0);
   tf_broadcaster.sendTransform(trans);
 
-  trans.child_frame_id = "body_frame_stabilized";
+  trans.child_frame_id = "/body_frame_stabilized";
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(saved_yaw_);
   tf_broadcaster.sendTransform(trans);
 
   //ROS_WARN("height is %f\n", trans.transform.translation.z);
-  trans.child_frame_id = "body_frame";
+  trans.child_frame_id = "/body_frame";
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);
   //publish the state
@@ -103,10 +103,10 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   vector<geometry_msgs::Point> voxels;
 
   try {
-    tf_.lookupTransform( "body_frame","panning_laser_frame", ros::Time(0), Pan2BodyTransform_);
+    tf_.lookupTransform( "/body_frame","/panning_laser_frame", ros::Time(0), Pan2BodyTransform_);
   }
   catch (tf::TransformException ex){
-    ROS_ERROR("save of partial transform failed....\n %s\n", ex.what());
+    ROS_ERROR("[UAV_state_pub] Save of partial transform failed....\n %s\n", ex.what());
   }
 
   for(i=0; i<num_rays; i++){
@@ -135,7 +135,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
       tf_.transformPoint("/body_frame_map_aligned", p, pout);  // TODO: make all this hard coded crap into parameters
       }
     catch (tf::TransformException ex){
-      ROS_ERROR("[UAV_state_pub]  %s",ex.what());
+      ROS_ERROR("[UAV_state_pub] Failed transform  \n",ex.what());
     //}
     //printf("Using point %f %f %f", pout.point.x, pout.point.y, pout.point.z);
 
@@ -150,7 +150,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
         tf_.transformPoint("/body_frame_map_aligned", p, pout);
       }
       catch (tf::TransformException ex2){
-        ROS_ERROR("[UAV_state_pub] can't even get a partial transform! %s\n", ex2.what());
+        ROS_ERROR("[UAV_state_pub] can't even get a partial transform! \n", ex2.what());
       }
       // printf("alt point %f %f %f\n", pout.point.x, pout.point.y, pout.point.z);
     }
