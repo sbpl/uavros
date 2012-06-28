@@ -1,0 +1,18 @@
+<package>
+  <description brief="uav_goal_interpolate">
+
+     uav_goal_interpolate
+
+  </description>
+  <author>Butzke</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/uav_set_goal</url>
+  <depend package="nav_msgs" />
+  <depend package="geometry_msgs"/>
+  <depend package="uav_msgs"/>
+  <depend package="roscpp" />
+
+</package>
+
+

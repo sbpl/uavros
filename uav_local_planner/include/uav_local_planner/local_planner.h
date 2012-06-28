@@ -4,6 +4,7 @@
 
 #include <ros/ros.h>
 #include <uav_msgs/FlightModeRequest.h>
+#include <uav_msgs/FlightModeStatus.h>
 #include <uav_msgs/ControllerCommand.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -13,13 +14,13 @@
 #include <uav_collision_checking/uav_collision_space.h>
 #include <uav_local_planner/controller.h>
 
-enum UAVControllerState {
-  LANDED,
-  LANDING,
-  TAKE_OFF,
-  HOVER,
-  FOLLOWING
-};
+// enum UAVControllerState {
+//   LANDED,
+//   LANDING,
+//   TAKE_OFF,
+//   HOVER,
+//   FOLLOWING
+// };
 
 class UAVLocalPlanner{
   public:
@@ -28,16 +29,16 @@ class UAVLocalPlanner{
 
     void controllerThread();
 
-    uav_msgs::ControllerCommand land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, UAVControllerState& state);
-    uav_msgs::ControllerCommand takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, UAVControllerState& state);
+    uav_msgs::ControllerCommand land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus);
+    uav_msgs::ControllerCommand takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus);
     uav_msgs::ControllerCommand hover(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped);
-    uav_msgs::ControllerCommand followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, UAVControllerState& state, bool isNewPath);
+    uav_msgs::ControllerCommand followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus, bool isNewPath);
 
 
   private:
     bool updateCollisionMap();
-    bool updatePath(UAVControllerState& state);
-    void getFlightMode(UAVControllerState& state);
+    bool updatePath(uav_msgs::FlightModeStatus);
+    void getFlightMode(uav_msgs::FlightModeStatus);
     void getRobotPose(geometry_msgs::PoseStamped& pose, geometry_msgs::TwistStamped& velocity);
 
     void collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm);
@@ -54,6 +55,7 @@ class UAVLocalPlanner{
 
     ros::Publisher waypoint_vis_pub_;
     ros::Publisher command_pub_;
+    ros::Publisher status_pub_;
     ros::Publisher goal_pub_;
     ros::Subscriber collision_map_sub_;
     ros::Subscriber path_sub_;
@@ -87,7 +89,7 @@ class UAVLocalPlanner{
 
     uav_msgs::ControllerCommand last_u_;
     geometry_msgs::PoseStamped hover_pose_;
-    UAVControllerState last_state_;
+    uav_msgs::FlightModeStatus last_state_;
     unsigned int path_idx_;
 };
 
