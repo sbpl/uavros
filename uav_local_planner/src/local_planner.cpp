@@ -42,7 +42,7 @@ UAVLocalPlanner::UAVLocalPlanner()
   new_path_ = false;
 
   //spawn the controller thread
-   controller_thread_ = new boost::thread(boost::bind(&UAVLocalPlanner::controllerThread, this));
+  controller_thread_ = new boost::thread(boost::bind(&UAVLocalPlanner::controllerThread, this));
 
   //subscribe to the collision map, tf, path, goal, and flight mode
   collision_map_sub_ = nh.subscribe("local_collision_map", 1, &UAVLocalPlanner::collisionMapCallback,this);
@@ -51,9 +51,9 @@ UAVLocalPlanner::UAVLocalPlanner()
   state_sub_ = nh.subscribe("uav_state", 1, &UAVLocalPlanner::stateCallback,this);
   flight_mode_sub_ = nh.subscribe("flight_mode_request", 1, &UAVLocalPlanner::flightModeCallback,this);
 
-   dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
-   f = boost::bind(&HexaController::dynamic_reconfigure_callback, &controller, _1, _2);
-   dynamic_reconfigure_server_.setCallback(f);
+  dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
+  f = boost::bind(&HexaController::dynamic_reconfigure_callback, &controller, _1, _2);
+  dynamic_reconfigure_server_.setCallback(f);
 }
 
 UAVLocalPlanner::~UAVLocalPlanner(){
@@ -72,7 +72,7 @@ UAVLocalPlanner::~UAVLocalPlanner(){
 
 //only the controller thread can update the UAV's state. callbacks must set flags to request change in state.
 void UAVLocalPlanner::controllerThread(){
-  printf("[controller] Starting controller thread...\n\n");
+  ROS_INFO("[controller] Starting controller thread...\n\n");
   ros::NodeHandle n;
   ros::Rate r(controller_frequency_);
   double last_collision_map_update = ros::Time::now().toSec();
@@ -84,12 +84,14 @@ void UAVLocalPlanner::controllerThread(){
     //conversely, if we get a new goal but don't have a fresh path yet, go back to hover
     bool isNewPath = updatePath(state);
     //try to update the collision map. if the map we have is too old and we are following a path, switch to hover.
-    if(updateCollisionMap())
-      last_collision_map_update = ros::Time::now().toSec();
-    else if(ros::Time::now().toSec()-last_collision_map_update > collision_map_tolerance_ && state.mode==uav_msgs::FlightModeStatus::FOLLOWING){
-      printf("[controller] collision map is out of date. Will hover instead of following.\n");
-      state.mode = uav_msgs::FlightModeStatus::HOVER;
-    }
+
+//TODO: add collision map stuff back in
+//     if(updateCollisionMap())
+//       last_collision_map_update = ros::Time::now().toSec();
+//     else if(ros::Time::now().toSec()-last_collision_map_update > collision_map_tolerance_ && state.mode==uav_msgs::FlightModeStatus::FOLLOWING){
+//       ROS_ERROR("[controller] collision map is out of date. Will hover instead of following.\n");
+//       state.mode = uav_msgs::FlightModeStatus::HOVER;
+//     }
 
     //check if we should be landing or taking off...
     getFlightMode(state);
@@ -99,56 +101,56 @@ void UAVLocalPlanner::controllerThread(){
     geometry_msgs::TwistStamped velocity;
     getRobotPose(pose,velocity);
     if(ros::Time::now().toSec()-pose.header.stamp.toSec() > pose_tolerance_){
-      printf("[controller] UAV pose is old...hit the deck!\n");
+      ROS_ERROR("[controller] UAV pose is old...hit the deck! %f -%f= %1.4f\n", ros::Time::now().toSec(),pose.header.stamp.toSec(), ros::Time::now().toSec()-pose.header.stamp.toSec() ); //TODO: why is this always late?
     }
-   // printf("[controller] uav z: %f\n",pose.pose.position.z);
+    // ROS_INFO("[controller] uav z: %f\n",pose.pose.position.z);
 
-   if(state.mode==uav_msgs::FlightModeStatus::HOVER && last_state_.mode!=uav_msgs::FlightModeStatus::HOVER){
-      printf("[controller] transitioning to hover (setting the hover pose)\n");
-      hover_pose_.pose.position.x = 0;
-      hover_pose_.pose.position.y = 0;
-      hover_pose_.pose.position.z = 1.2;
-      hover_pose_.pose.orientation.x = 0;
-      hover_pose_.pose.orientation.y = 0;
-      hover_pose_.pose.orientation.z = 0;
-      hover_pose_.pose.orientation.w = 1;
+    if(state.mode==uav_msgs::FlightModeStatus::HOVER && last_state_.mode!=uav_msgs::FlightModeStatus::HOVER){
+      ROS_INFO("[controller] transitioning to hover (setting the hover pose)\n");
     }
 
     last_state_ = state;
     uav_msgs::ControllerCommand u;
     switch(state.mode){
       case uav_msgs::FlightModeStatus::LANDED:
-        printf("[controller] state: LANDED\n");
+        ROS_INFO("[controller] state: LANDED\n");
         hover_pose_ = pose;
         u.thrust =0; u.roll=0; u.yaw=0; u.pitch=0;
         break;
       case uav_msgs::FlightModeStatus::LANDING:
-    //    printf("[controller] state: LANDING\n");
+        //    ROS_INFO("[controller] state: LANDING\n");
         u = land(pose,velocity,state);
         break;
       case uav_msgs::FlightModeStatus::TAKE_OFF:
-        printf("[controller] state: TAKE_OFF\n");
+        ROS_INFO("[controller] state: TAKE_OFF\n");
         u = takeOff(pose,velocity,state);
+        hover_pose_.pose.position.x = 0;
+        hover_pose_.pose.position.y = 0;
+        hover_pose_.pose.position.z = 1.2;
+        hover_pose_.pose.orientation.x = 0;
+        hover_pose_.pose.orientation.y = 0;
+        hover_pose_.pose.orientation.z = 0;
+        hover_pose_.pose.orientation.w = 1;
         break;
       case uav_msgs::FlightModeStatus::HOVER:
-     //   printf("[controller] state: HOVER\n");
+          ROS_INFO("[controller] state: HOVER\n");
         u = hover(pose,velocity);
         break;
       case uav_msgs::FlightModeStatus::FOLLOWING:
-        printf("[controller] state: FOLLOWING\n");
+        ROS_INFO("[controller] state: FOLLOWING\n");
         u = followPath(pose,velocity,state,isNewPath);
         break;
       default:
-        printf("[controller] In an invalid state! Landing...\n");
+        ROS_INFO("[controller] In an invalid state! Landing...\n");
         state.mode = uav_msgs::FlightModeStatus::LANDING;
         landing_z_ = pose.pose.position.z;
         break;
     }
     last_u_ = u;
-    printf("###### pose   X:%f Y:%f Z:%f\n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
-    // printf("$$$$$$ goal   X:%f Y:%f Z:%f \n", hover_pose_.pose.position.x, hover_pose_.pose.position.y, hover_pose_.pose.position.z);
-    //  printf("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
-    // printf("**************************    +=Right     +=Forward   +=CCW       +=Up\n");
+    ROS_WARN("###### pose   X:%f Y:%f Z:%f\n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
+    // ROS_INFO("$$$$$$ goal   X:%f Y:%f Z:%f \n", hover_pose_.pose.position.x, hover_pose_.pose.position.y, hover_pose_.pose.position.z);
+    //  ROS_INFO("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
+    // ROS_INFO("**************************    +=Right     +=Forward   +=CCW       +=Up\n");
 
     command_pub_.publish(u);
     status_pub_.publish(state);
@@ -158,10 +160,10 @@ void UAVLocalPlanner::controllerThread(){
 
 /***************** STATE FUNCTIONS *****************/
 
-uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus state){
+uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus & state){
   uav_msgs::ControllerCommand u;
 
-//TODO: make land x-y equal to x-y position at start of landing
+  //TODO: make land x-y equal to x-y position at start of landing
   //TODO: change to do all calcs in forces then have HexaDriver do the conversion to commands
   if(pose.pose.position.z <= landing_height_){
     u = last_u_;
@@ -184,7 +186,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pos
   return u;
 }
 
-uav_msgs::ControllerCommand UAVLocalPlanner::takeOff(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus state){
+uav_msgs::ControllerCommand UAVLocalPlanner::takeOff(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus &state){
   geometry_msgs::PoseStamped target = hover_pose_;
   if(pose.pose.position.z >= nominal_height_)
     state.mode = uav_msgs::FlightModeStatus::HOVER;
@@ -199,7 +201,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::hover(geometry_msgs::PoseStamped po
   return controller.Controller(pose, vel, hover_pose_);
 }
 
-uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus state, bool isNewPath){
+uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus &state, bool isNewPath){
   if(isNewPath)
     path_idx_ = 0;
   double dx = pose.pose.position.x - controller_path_->poses[path_idx_].pose.position.x;
@@ -217,16 +219,20 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamp
     dist = temp;
   }
   path_idx_ = i-1;
-  if(i == controller_path_->poses.size())
+  if(i == controller_path_->poses.size()) {
     i--;
+    state.mode = uav_msgs::FlightModeStatus::HOVER;
+    hover_pose_=controller_path_->poses[i];
+  }
 
   //TODO: collision check the path from our pose to the target pose (just check the straight line)
-  //TODO: collision check the path from the target to the next few points (use a time horizon)
-  geometry_msgs::PoseStamped target = controller_path_->poses[i];
-  visualizeTargetPose(target);
-  uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
-  //TODO: collision check the controls for some very short period of time
-  return u;
+    //TODO: collision check the path from the target to the next few points (use a time horizon)
+    geometry_msgs::PoseStamped target = controller_path_->poses[i];
+    ROS_ERROR("next target is %f %f %f\n", target.pose.position.x, target.pose.position.y, target.pose.position.z);
+    visualizeTargetPose(target);
+    uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
+    //TODO: collision check the controls for some very short period of time
+    return u;
 }
 
 /***************** UPDATE FUNCTIONS *****************/
@@ -250,11 +256,12 @@ bool UAVLocalPlanner::updateCollisionMap(){
   return updated;
 }
 
-bool UAVLocalPlanner::updatePath(uav_msgs::FlightModeStatus state){
+bool UAVLocalPlanner::updatePath(uav_msgs::FlightModeStatus &state){
   //if there is a new path in latest then swap into the controller path
   bool ret = false;
   boost::unique_lock<boost::mutex> lock(path_mutex_);
   if(new_path_){
+    ROS_ERROR("[controller] received new path");
     nav_msgs::Path* temp = latest_path_;
     latest_path_ = controller_path_;
     controller_path_ = temp;
@@ -264,8 +271,10 @@ bool UAVLocalPlanner::updatePath(uav_msgs::FlightModeStatus state){
     boost::unique_lock<boost::mutex> goal_lock(goal_mutex_);
     if(controller_path_->poses.empty() || latest_goal_.header.stamp.toSec()>controller_path_->header.stamp.toSec()){
       //switch from following to hover if the new path is old (or empty)
-      if(state.mode==uav_msgs::FlightModeStatus::FOLLOWING)
+      if(state.mode==uav_msgs::FlightModeStatus::FOLLOWING) {
         state.mode = uav_msgs::FlightModeStatus::HOVER;
+        hover_pose_ = latest_goal_;
+      }
     }
     else{
       //switch from hover to following if the new path is up to date
@@ -279,7 +288,7 @@ bool UAVLocalPlanner::updatePath(uav_msgs::FlightModeStatus state){
   return ret;
 }
 
-void UAVLocalPlanner::getFlightMode(uav_msgs::FlightModeStatus state){
+void UAVLocalPlanner::getFlightMode(uav_msgs::FlightModeStatus &state){
   boost::unique_lock<boost::mutex> lock(flight_mode_mutex_);
   uav_msgs::FlightModeRequest flightMode = flight_mode_;
   flight_mode_.mode = uav_msgs::FlightModeRequest::NONE;
@@ -291,19 +300,19 @@ void UAVLocalPlanner::getFlightMode(uav_msgs::FlightModeStatus state){
       landing_z_ = latest_state_.pose.pose.position.z;
     }
     else
-      printf("[controller] Asked to land, but UAV is landed or already landing.\n");
+      ROS_WARN("[controller] Asked to land, but UAV is landed or already landing.\n");
   }
   else if(flightMode.mode==uav_msgs::FlightModeRequest::TAKE_OFF){
     if(state.mode==uav_msgs::FlightModeStatus::LANDED || state.mode==uav_msgs::FlightModeStatus::LANDING)
       state.mode = uav_msgs::FlightModeStatus::TAKE_OFF;
     else
-      printf("[controller] Asked to take off, but UAV is already in the air (or working on it).\n");
+      ROS_WARN("[controller] Asked to take off, but UAV is already in the air (or working on it).\n");
   }
   else if(flightMode.mode==uav_msgs::FlightModeRequest::HOVER){
     if(state.mode==uav_msgs::FlightModeStatus::FOLLOWING)
       state.mode = uav_msgs::FlightModeStatus::HOVER;
     else
-      printf("[controller] Asked to hover, but the UAV can only go to hover from path following.\n");
+      ROS_WARN("[controller] Asked to hover, but the UAV can only go to hover from path following.\n");
   }
 }
 

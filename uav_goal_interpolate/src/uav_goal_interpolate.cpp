@@ -42,7 +42,7 @@ void UAVGoalInterpolate::GoalCallback(geometry_msgs::PoseStampedConstPtr goal)
 
   std::vector<geometry_msgs::PoseStamped> pathpts;// = new geometry_msgs::PoseStamped[divnorm];
   geometry_msgs::PoseStamped pt;
-  pathpts.resize(divnorm);
+  pathpts.resize(divnorm-1);
 
   for (int idx=0; idx < divnorm - 1; idx++) {
     pathpts[idx].header.frame_id = "/map";  //TODO: make a parameters

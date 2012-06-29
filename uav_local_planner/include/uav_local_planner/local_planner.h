@@ -17,7 +17,7 @@
 // enum UAVControllerState {
 //   LANDED,
 //   LANDING,
-//   TAKE_OFF,
+//   TAKE_OFF,ss
 //   HOVER,
 //   FOLLOWING
 // };
@@ -29,16 +29,16 @@ class UAVLocalPlanner{
 
     void controllerThread();
 
-    uav_msgs::ControllerCommand land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus);
-    uav_msgs::ControllerCommand takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus);
+    uav_msgs::ControllerCommand land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus&);
+    uav_msgs::ControllerCommand takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus&);
     uav_msgs::ControllerCommand hover(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped);
-    uav_msgs::ControllerCommand followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus, bool isNewPath);
+    uav_msgs::ControllerCommand followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus&, bool isNewPath);
 
 
   private:
     bool updateCollisionMap();
-    bool updatePath(uav_msgs::FlightModeStatus);
-    void getFlightMode(uav_msgs::FlightModeStatus);
+    bool updatePath(uav_msgs::FlightModeStatus&);
+    void getFlightMode(uav_msgs::FlightModeStatus &state);
     void getRobotPose(geometry_msgs::PoseStamped& pose, geometry_msgs::TwistStamped& velocity);
 
     void collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm);

@@ -21,7 +21,6 @@ visualization_msgs::InteractiveMarkerControl box_control, control, menu_control;
 visualization_msgs::InteractiveMarker int_marker;
 visualization_msgs::Marker box_marker;
 
-
 interactive_markers::InteractiveMarkerServer server;
 
 ros::Publisher goal_pose_pub;
@@ -35,6 +34,8 @@ bool SquareTest;
 int SqTPt;
 
 private:
+ros::Time lastTime;
+
   void procFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
 
   void FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr status);

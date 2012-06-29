@@ -4,7 +4,9 @@ UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   ros::NodeHandle nh;
   goal_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/goal_pose",1);
   flight_request_pub = nh.advertise<uav_msgs::FlightModeRequest>("/flight_mode_request",1);
-  flight_status_sub_ = nh.subscribe("/flight_mode_status", 1, &UAV_SET_GOAL_C::FlightModeStatusCallback,this);
+  flight_status_sub = nh.subscribe("/flight_mode_status", 1, &UAV_SET_GOAL_C::FlightModeStatusCallback,this);
+
+lastTime = ros::Time::now();
 
   // create an interactive marker for our server
   int_marker.header.frame_id = "/map";
@@ -85,6 +87,9 @@ UAV_SET_GOAL_C::~UAV_SET_GOAL_C() {
 
 void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr status) {
   if (SquareTest) {
+    if (ros::Time::now().toSec() - lastTime.toSec() > 0.2) {
+      lastTime = ros::Time::now();
+    ROS_ERROR("Square test is at pt %d\n", SqTPt);
     switch (SqTPt) {
       case -2:    // wasn't at start, was landing, once landed, commence test
         if (status->mode == uav_msgs::FlightModeStatus::LANDED) {
@@ -95,7 +100,7 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
         if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
           uav_msgs::FlightModeRequest mode_msg;
           mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
-          flight_mode_pub.publish(mode_msg);
+          flight_request_pub.publish(mode_msg);
           SqTPt = -2;
         }
         break;
@@ -117,7 +122,7 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
         else {
           uav_msgs::FlightModeRequest mode_msg;
           mode_msg.mode = uav_msgs::FlightModeRequest::TAKE_OFF;
-          flight_mode_pub.publish(mode_msg);
+          flight_request_pub.publish(mode_msg);
           SqTPt = 1;
         }
         break;
@@ -189,7 +194,7 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
         if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
           uav_msgs::FlightModeRequest mode_msg;
           mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
-          flight_mode_pub.publish(mode_msg);
+          flight_request_pub.publish(mode_msg);
           SqTPt = 6;
         }
         break;
@@ -202,6 +207,7 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
       default:
          SquareTest = false;
         break;
+    }
     }
   }
 }
@@ -229,7 +235,7 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
       ROS_INFO_STREAM("Sending hover request");
       uav_msgs::FlightModeRequest mode_msg;
       mode_msg.mode = uav_msgs::FlightModeRequest::HOVER;
-      flight_mode_pub.publish(mode_msg);
+      flight_request_pub.publish(mode_msg);
       SquareTest = false;
     }
     else if(feedback->menu_entry_id == MENU_ENTRY_LAND)
@@ -237,7 +243,7 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
       ROS_INFO_STREAM("Sending land request");
       uav_msgs::FlightModeRequest mode_msg;
       mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
-      flight_mode_pub.publish(mode_msg);
+      flight_request_pub.publish(mode_msg);
       SquareTest = false;
     }
     else if(feedback->menu_entry_id == MENU_ENTRY_TAKE_OFF)
@@ -245,7 +251,7 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
       ROS_INFO_STREAM("Sending take off request");
       uav_msgs::FlightModeRequest mode_msg;
       mode_msg.mode = uav_msgs::FlightModeRequest::TAKE_OFF;
-      flight_mode_pub.publish(mode_msg);
+      flight_request_pub.publish(mode_msg);
       SquareTest = false;
     }
     else if(feedback->menu_entry_id == MENU_ENTRY_SQUARE_TEST)
