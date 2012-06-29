@@ -3,7 +3,8 @@
 UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   ros::NodeHandle nh;
   goal_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/goal_pose",1);
-  flight_mode_pub = nh.advertise<uav_msgs::FlightModeRequest>("/flight_mode",1);
+  flight_request_pub = nh.advertise<uav_msgs::FlightModeRequest>("/flight_mode_request",1);
+  flight_status_sub_ = nh.subscribe("/flight_mode_status", 1, &UAV_SET_GOAL_C::FlightModeStatusCallback,this);
 
   // create an interactive marker for our server
   int_marker.header.frame_id = "/map";
