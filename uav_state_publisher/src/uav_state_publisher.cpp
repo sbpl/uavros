@@ -26,17 +26,24 @@ UAVStatePublisher::UAVStatePublisher()
 }
 
 void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg) {
+  ros::Time start_ = ros::Time::now();
+
   saved_yaw_ = tf::getYaw(slam_msg->pose.orientation);
 
   state_.pose.pose.position.x = slam_msg->pose.position.x;
   state_.pose.pose.position.y = slam_msg->pose.position.y;
  // printf("############################################got the slam stuff....\n");
+  ros::Time stop_ = ros::Time::now();
+  ROS_WARN("[state_pub] slam callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+
 }
 
 
 
 //on the order of 50Hz
 void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
+  ros::Time start_ = ros::Time::now();
+
   //get angular velocities
   state_.twist.twist.angular = p->twist.twist.angular;
 
@@ -90,10 +97,15 @@ state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pit
   //publish the state
   state_.header.stamp = ros::Time::now();
   state_pub_.publish(state_);
+  ros::Time stop_ = ros::Time::now();
+  ROS_WARN("[state_pub] ekf callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+
 }
 
 //on the order of 40Hz
 void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
+  ros::Time start_ = ros::Time::now();
+
   //transform the scan into the map frame (according to tf)
   vector<double> zs;
   int num_rays = scan->ranges.size();
@@ -188,6 +200,10 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   medianpt.header.stamp = ros::Time::now();
 
   point_pub_.publish(medianpt);
+
+  ros::Time stop_ = ros::Time::now();
+      ROS_WARN("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+
 
 }
 
