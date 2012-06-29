@@ -93,7 +93,7 @@
     <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Che/hector_localization/system/gyro_stddevck this. -->
     <remap from="local_collision_map" to="local_collision_map"/>
     <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
-    <remap from="flight_mode_request" to="flight_mode"/>
+
   </node>
   <!-- Bring up the dynamic reconfigure GUI for controller gains-->
   <!-- <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>  -->

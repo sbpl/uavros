@@ -25,7 +25,7 @@ visualization_msgs::Marker box_marker;
 interactive_markers::InteractiveMarkerServer server;
 
 ros::Publisher goal_pose_pub;
-ros::Publisher flight_mode_pub;
+ros::Publisher flight_request_pub;
 ros::Subscriber flight_status_sub;
 
 UAV_SET_GOAL_C();

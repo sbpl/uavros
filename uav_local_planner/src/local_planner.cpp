@@ -26,7 +26,7 @@ UAVLocalPlanner::UAVLocalPlanner()
   command_pub_ = nh.advertise<uav_msgs::ControllerCommand>("/controller_cmd",1);
   goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/goal",1);
 
-  status_pub_ = nh.advertise<uav_msgs::FlightModeStatus>("/flight_status", 1); //TODO make a parameter
+  status_pub_ = nh.advertise<uav_msgs::FlightModeStatus>("/flight_mode_status", 1); //TODO make a parameter
 
   //set up a occupancy grid triple buffer
   controller_grid_ = new OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
