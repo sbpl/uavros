@@ -34,7 +34,7 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
   state_.pose.pose.position.y = slam_msg->pose.position.y;
  // printf("############################################got the slam stuff....\n");
   ros::Time stop_ = ros::Time::now();
-  ROS_WARN("[state_pub] slam callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+  ROS_DEBUG("[state_pub] slam callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 
@@ -98,7 +98,7 @@ state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pit
   state_.header.stamp = ros::Time::now();
   state_pub_.publish(state_);
   ros::Time stop_ = ros::Time::now();
-  ROS_WARN("[state_pub] ekf callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+  ROS_DEBUG("[state_pub] ekf callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 
@@ -202,7 +202,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   point_pub_.publish(medianpt);
 
   ros::Time stop_ = ros::Time::now();
-      ROS_WARN("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+      ROS_DEBUG("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 
 }

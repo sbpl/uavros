@@ -35,7 +35,7 @@ void UAVGoalInterpolate::GoalCallback(geometry_msgs::PoseStampedConstPtr goal)
   norm = (gx-x)*(gx-x)+(gy-y)*(gy-y)+(gz-z)*(gz-z);
 
   //TODO: make a parameters
-  int divnorm = norm/0.3 + 1;
+  int divnorm = norm/0.1 + 1;
 
   float dx, dy, dz;
   dx = x; dy = y; dz = z;

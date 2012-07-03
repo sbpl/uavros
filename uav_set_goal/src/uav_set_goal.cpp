@@ -89,7 +89,7 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
   if (SquareTest) {
     if (ros::Time::now().toSec() - lastTime.toSec() > 0.2) {
       lastTime = ros::Time::now();
-    ROS_ERROR("Square test is at pt %d\n", SqTPt);
+    ROS_WARN("Square test is at pt %d\n", SqTPt);
     switch (SqTPt) {
       case -2:    // wasn't at start, was landing, once landed, commence test
         if (status->mode == uav_msgs::FlightModeStatus::LANDED) {

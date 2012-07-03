@@ -149,7 +149,7 @@ void UAVLocalPlanner::controllerThread(){
         break;
     }
     last_u_ = u;
-    ROS_INFO("###### pose   X:%f Y:%f Z:%f\n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
+    ROS_DEBUG("###### pose   X:%f Y:%f Z:%f\n", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
     // ROS_INFO("$$$$$$ goal   X:%f Y:%f Z:%f \n", hover_pose_.pose.position.x, hover_pose_.pose.position.y, hover_pose_.pose.position.z);
     //  ROS_INFO("**************************    R: %f P: %f Y: %f T: %f\n", u.roll, u.pitch, u.yaw, u.thrust);
     // ROS_INFO("**************************    +=Right     +=Forward   +=CCW       +=Up\n");
@@ -157,7 +157,7 @@ void UAVLocalPlanner::controllerThread(){
     command_pub_.publish(u);
     status_pub_.publish(state);
     ros::Time stop_ = ros::Time::now();
-    ROS_WARN("[local_planner] main loop %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+    ROS_DEBUG("[local_planner] main loop %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
     r.sleep();
   }
@@ -233,7 +233,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamp
   //TODO: collision check the path from our pose to the target pose (just check the straight line)
     //TODO: collision check the path from the target to the next few points (use a time horizon)
     geometry_msgs::PoseStamped target = controller_path_->poses[i];
-    ROS_ERROR("next target is %f %f %f\n", target.pose.position.x, target.pose.position.y, target.pose.position.z);
+    ROS_INFO("next target is %f %f %f\n", target.pose.position.x, target.pose.position.y, target.pose.position.z);
     visualizeTargetPose(target);
     uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
     //TODO: collision check the controls for some very short period of time
@@ -347,7 +347,7 @@ void UAVLocalPlanner::collisionMapCallback(arm_navigation_msgs::CollisionMapCons
   new_grid_ = true;
   lock.unlock();
   ros::Time stop_ = ros::Time::now();
-  ROS_WARN("[local_planner] collision callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+  ROS_DEBUG("[local_planner] collision callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 
@@ -362,7 +362,7 @@ void UAVLocalPlanner::pathCallback(nav_msgs::PathConstPtr path){
   new_path_ = true;
   lock.unlock();
   ros::Time stop_ = ros::Time::now();
-  ROS_WARN("[local_planner] path callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+  ROS_DEBUG("[local_planner] path callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 
@@ -373,7 +373,7 @@ void UAVLocalPlanner::goalCallback(geometry_msgs::PoseStampedConstPtr goal){
   latest_goal_ = *goal;
   lock.unlock();
   ros::Time stop_ = ros::Time::now();
-  ROS_WARN("[local_planner] goal callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+  ROS_DEBUG("[local_planner] goal callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 
@@ -384,7 +384,7 @@ void UAVLocalPlanner::stateCallback(nav_msgs::OdometryConstPtr state){
   latest_state_ = *state;
   lock.unlock();
   ros::Time stop_ = ros::Time::now();
-  ROS_WARN("[local_planner] state callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+  ROS_DEBUG("[local_planner] state callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 
@@ -394,7 +394,7 @@ ros::Time start_ = ros::Time::now();
   flight_mode_ = *req;
   lock.unlock();
 ros::Time stop_ = ros::Time::now();
-ROS_WARN("[local_planner] flight mode request callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+ROS_DEBUG("[local_planner] flight mode request callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 
