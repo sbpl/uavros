@@ -2,9 +2,9 @@ size_x: 4.0
 size_y: 4.0
 size_z: 4.0
 resolution: 0.1
-controller_frequency: 50.0
+controller_frequency: 40.0
 collision_map_tolerance: 0.5
-pose_tolerance: 0.05
+pose_tolerance: 0.075
 landing_height: 0.3
 nominal_height: 1.0
 nominal_linear_velocity: 0.3

@@ -87,7 +87,7 @@
   <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
     <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
     <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
-    <remap from="goal" to="goal_pose"/>acceleration_stddev
+    <remap from="goal" to="goal_pose"/>
     <remap from="path" to="path" />
     <!-- Future use -->
     <remap from="twist" to="uav_state"/>
