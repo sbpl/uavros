@@ -8,13 +8,13 @@
 <!-- Bring up the driver -->
 <!--TODO: Driver node ! -->
 <!-- Subscribes to controller_cmd.  Publishes raw_imu -->
-<node name="ManHack" pkg="HexaDriver" type="HexaDriver" required="true" output="screen">
+<!-- <node name="ManHack" pkg="HexaDriver" type="HexaDriver" required="true" output="screen">
 <rosparam file="$(find uav_launch)/config/motor_coef.yaml" command="load"/>
-</node>
+</node> -->
 
 <!-- ....................................................................................... -->
 <!-- TODO: Load the urdf into the param server-->
-<param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
+<!--<param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />-->
 
   <!-- Robot State Publisher  -->
   <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" output="screen">
