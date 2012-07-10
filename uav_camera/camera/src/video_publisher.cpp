@@ -45,8 +45,6 @@ void video_publisher::main_loop()
 		/* Grab a new frame */
 		capture >> frame;
 
-		ROS_INFO("***** %d ***** %d *****", capture.get(CV_CAP_PROP_FRAME_WIDTH), capture.get(CV_CAP_PROP_FRAME_HEIGHT));
-
 		/* Get the undistort image with the camera parameters */
 		cv::Mat undistorted;
 		undistort(frame, undistorted, camera_matrix_, 
