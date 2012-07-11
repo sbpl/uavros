@@ -1,4 +1,4 @@
-#include <camera/video_publisher.h>
+#include <uav_camera/video_publisher.h>
 
 /* Create a node handle and a video_publisher */
 int main(int argc, char **argv)
@@ -114,7 +114,7 @@ void video_publisher::create_publishers()
 
 	image_pub_ = it_.advertise(cam_image, 1);
 	info_pub_ = n_.advertise<sensor_msgs::CameraInfo>(cam_info, 1);
-	res_ready_pub_ = n_.advertise<camera::camera_msg>("inc_res", 1);
+	res_ready_pub_ = n_.advertise<uav_msgs::camera_msg>("inc_res", 1);
 }
 
 /* Create the subscribers to the corresponding topcis */
@@ -152,7 +152,7 @@ void video_publisher::set_camera_calibration()
 }
 
 /* Decrease resolution of camera */
-void video_publisher::decrease_resolution_callback(camera::camera_msg msg)
+void video_publisher::decrease_resolution_callback(uav_msgs::camera_msg msg)
 {
     /* Check wether this node has the camera to decrease the resolution */
     if(msg.change_res == camera_number) {
@@ -168,14 +168,14 @@ void video_publisher::decrease_resolution_callback(camera::camera_msg msg)
 
         /* Publish the msg so that the other camera can increse	*
 		 * the resolution without causing problems 				*/
-        camera::camera_msg change_msg;
+        uav_msgs::camera_msg change_msg;
         change_msg.change_res = !camera_number;
         res_ready_pub_.publish(change_msg);
     }
 }
 
 /* Increase resolution of camera */
-void video_publisher::increase_resolution_callback(camera::camera_msg msg)
+void video_publisher::increase_resolution_callback(uav_msgs::camera_msg msg)
 {
     /* Check wether this node has the camera to increase the resolution */
     if(msg.change_res == camera_number) {
