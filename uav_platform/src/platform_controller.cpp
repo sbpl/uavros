@@ -41,7 +41,7 @@ void platform_controller::get_params()
 /* Create publishers to advertis in the corresponding topics */
 void platform_controller::create_publishers()
 {
-	change_res_pub_ = n_.advertise<camera::camera_msg>("dec_res", 1);
+	change_res_pub_ = n_.advertise<uav_msgs::camera_msg>("dec_res", 1);
 }
 
 /* Create the subscribers to the corresponding topics */
@@ -81,15 +81,15 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 }
 
 /* Callback when the track mode is changed */
-void platform_controller::mode_callback(platform::mode_msg msg)
+void platform_controller::mode_callback(uav_msgs::mode_msg msg)
 {
     track_mode_ = msg.mode;
 	if(track_mode_ == CHANGE_FRONT) {
-		camera::camera_msg change_msg;
+		uav_msgs::camera_msg change_msg;
 		change_msg.change_res = BOTTOM_CAMERA;
 		change_res_pub_.publish(change_msg);
 	} else if(track_mode_ == CHANGE_BOTTOM) {
-		camera::camera_msg change_msg;
+		uav_msgs::camera_msg change_msg;
 		change_msg.change_res = FRONT_CAMERA;
 		change_res_pub_.publish(change_msg);
 	}
