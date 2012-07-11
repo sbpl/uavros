@@ -1,9 +1,0 @@
-<stack>
-  <description brief="uav_camera">uav_camera</description>
-  <author>Maintained by eduardo</author>
-  <license>BSD</license>  
-  <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/uav_camera</url>
-  <depend stack="ros" />
-
-</stack>
