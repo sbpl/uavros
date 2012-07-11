@@ -1,0 +1,54 @@
+Changes to be made in ccny_vision/ar_pose/src/ar_multi.cpp
+
+declare a global variable:
+
+	#include "ar_pose/ar_multi.h"
+	#include "ar_pose/object.h"
+
+	char camera_image[20];
+
+	int main (int argc, char **argv)
+
+declare a pair of variable in the constructor:
+
+    std::string local_path;
+    std::string cameraImageTopic, cameraInfoTopic;
+    std::string package_path = ros::package::getPath (ROS_PACKAGE_NAME);
+
+get camera and info parameters:
+
+    if (!n_param.getParam ("threshold", threshold_))
+      threshold_ = 100;
+    ROS_INFO ("\tThreshold: %d", threshold_);
+
+    if (!n_param.getParam ("camera_image", cameraImageTopic))
+        cameraInfoTopic = "/usb_cam/image_raw";
+
+    if (!n_param.getParam ("camera_info", cameraInfoTopic))
+        cameraInfoTopic = "/usb_cam/camera_info";
+
+    sprintf(camera_image, "%s", cameraImageTopic.c_str());
+
+    char camera_info[20];
+    sprintf(camera_info, "%s", cameraInfoTopic.c_str());
+
+    //modifications to allow path list from outside the package
+    n_param.param ("marker_pattern_list", local_path, default_path);
+    if (local_path.compare(0,5,"data/") == 0){
+
+change both subscribtions to the correct topics:
+
+    // **** subscribe
+
+    ROS_INFO ("Subscribing to info topic");
+    sub_ = n_.subscribe (camera_info, 1, &ARSinglePublisher::camInfoCallback, this);
+    getCamInfo_ = false;
+
+      arInit ();
+
+      ROS_INFO ("Subscribing to image topic");
+      cam_sub_ = it_.subscribe (camera_image, 1, &ARSinglePublisher::getTransformationCallback, this);
+      getCamInfo_ = true;
+    }
+  }
+
