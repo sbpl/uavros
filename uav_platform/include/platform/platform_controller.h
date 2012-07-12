@@ -55,6 +55,7 @@ class platform_controller {
 
 		ros::NodeHandle n_;
 		ros::Publisher change_res_pub_;
+		ros::Publisher goal_pose_pub_;
 		ros::Subscriber tf_sub_;
 		ros::Subscriber track_sub_;
 

@@ -42,6 +42,7 @@ void platform_controller::get_params()
 void platform_controller::create_publishers()
 {
 	change_res_pub_ = n_.advertise<uav_msgs::camera_msg>("dec_res", 1);
+	goal_pose_pub_ = n_.advertise<geometry_msgs::PoseStamped>("/goal_pose",1);
 }
 
 /* Create the subscribers to the corresponding topics */
@@ -131,6 +132,29 @@ void platform_controller::align_front(tf::StampedTransform transform)
     double goal_y = pos[1] + DISTANCE_FROM_PLATFORM * sin(theta);
 
     ROS_INFO("Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
+    
+    get_transform("/map", "/usb_cam", transform);
+    get_pose(pos, quat, transform);
+    quat_to_euler(quat, euler_rad);
+    
+    goal_x += pos[0];
+    goal_y += pos[1];
+    goal_theta += euler_rad[1];
+    
+    ROS_INFO("Map Frame Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
+    
+    geometry_msgs::PoseStamped goal_pose;
+    goal_pose.header.stamp = ros::Time::now();
+    goal_pose.header.frame_id = "/map";
+    goal_pose.pose.position.x = goal_x;
+    goal_pose.pose.position.y = goal_y;
+    goal_pose.pose.position.z = 1.0;
+    goal_pose.pose.orientation.w = cos(goal_theta/2);
+    goal_pose.pose.orientation.x = 0;
+    goal_pose.pose.orientation.y = 0;
+    goal_pose.pose.orientation.z = 0;
+    goal_pose_pub_.publish(goal_pose);
+    
 }
 
 /* Align on top of the marker */
