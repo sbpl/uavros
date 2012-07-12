@@ -1,7 +1,7 @@
 ; Auto-generated. Do not edit!
 
 
-(cl:in-package platform-msg)
+(cl:in-package uav_msgs-msg)
 
 
 ;//! \htmlinclude mode_msg.msg.html
@@ -20,11 +20,11 @@
 (cl:defmethod cl:initialize-instance :after ((m <mode_msg>) cl:&rest args)
   (cl:declare (cl:ignorable args))
   (cl:unless (cl:typep m 'mode_msg)
-    (roslisp-msg-protocol:msg-deprecation-warning "using old message class name platform-msg:<mode_msg> is deprecated: use platform-msg:mode_msg instead.")))
+    (roslisp-msg-protocol:msg-deprecation-warning "using old message class name uav_msgs-msg:<mode_msg> is deprecated: use uav_msgs-msg:mode_msg instead.")))
 
 (cl:ensure-generic-function 'mode-val :lambda-list '(m))
 (cl:defmethod mode-val ((m <mode_msg>))
-  (roslisp-msg-protocol:msg-deprecation-warning "Using old-style slot reader platform-msg:mode-val is deprecated.  Use platform-msg:mode instead.")
+  (roslisp-msg-protocol:msg-deprecation-warning "Using old-style slot reader uav_msgs-msg:mode-val is deprecated.  Use uav_msgs-msg:mode instead.")
   (mode m))
 (cl:defmethod roslisp-msg-protocol:serialize ((msg <mode_msg>) ostream)
   "Serializes a message object of type '<mode_msg>"
@@ -47,10 +47,10 @@
 )
 (cl:defmethod roslisp-msg-protocol:ros-datatype ((msg (cl:eql '<mode_msg>)))
   "Returns string type for a message object of type '<mode_msg>"
-  "platform/mode_msg")
+  "uav_msgs/mode_msg")
 (cl:defmethod roslisp-msg-protocol:ros-datatype ((msg (cl:eql 'mode_msg)))
   "Returns string type for a message object of type 'mode_msg"
-  "platform/mode_msg")
+  "uav_msgs/mode_msg")
 (cl:defmethod roslisp-msg-protocol:md5sum ((type (cl:eql '<mode_msg>)))
   "Returns md5sum for a message object of type '<mode_msg>"
   "ff63f6ea3c3e9b7504b2cb3ee0a09d92")

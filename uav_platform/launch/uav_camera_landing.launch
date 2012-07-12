@@ -8,10 +8,10 @@
 	<!-- ************ Marker in atach to surface of platform ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="align_top_to_cam" 
 		args="0 0.3 -0.2 0 0 0 marker1 align_top 1" />
-
-	<!-- ************ Camera to the world ************ -->
-	<node pkg="tf" type="static_transform_publisher" name="world_to_cam" 
-		args="0 0 0.5 -1.57 0 -1.57 world usb_cam 1" /> 
+		
+	<!-- ************ Camera to hexa ************ -->
+	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera" 
+		args="0.6 0 0 0 0 0 body_frame usb_cam 1" /> 
 
     <node pkg="camera" type="video_publisher" name="camera0" output="screen">
 		<param name ="camera_number" type="int" value="0" />

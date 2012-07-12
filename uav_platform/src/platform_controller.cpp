@@ -41,7 +41,8 @@ void platform_controller::get_params()
 /* Create publishers to advertis in the corresponding topics */
 void platform_controller::create_publishers()
 {
-	change_res_pub_ = n_.advertise<camera::camera_msg>("dec_res", 1);
+	change_res_pub_ = n_.advertise<uav_msgs::camera_msg>("dec_res", 1);
+	goal_pose_pub_ = n_.advertise<geometry_msgs::PoseStamped>("/goal_pose",1);
 }
 
 /* Create the subscribers to the corresponding topics */
@@ -82,15 +83,15 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 }
 
 /* Callback when the track mode is changed */
-void platform_controller::mode_callback(platform::mode_msg msg)
+void platform_controller::mode_callback(uav_msgs::mode_msg msg)
 {
     track_mode_ = msg.mode;
 	if(track_mode_ == CHANGE_FRONT) {
-		camera::camera_msg change_msg;
+		uav_msgs::camera_msg change_msg;
 		change_msg.change_res = BOTTOM_CAMERA;
 		change_res_pub_.publish(change_msg);
 	} else if(track_mode_ == CHANGE_BOTTOM) {
-		camera::camera_msg change_msg;
+		uav_msgs::camera_msg change_msg;
 		change_msg.change_res = FRONT_CAMERA;
 		change_res_pub_.publish(change_msg);
 	}
@@ -134,6 +135,29 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     double goal_y = pos[1] + DISTANCE_FROM_PLATFORM * sin(theta);
 
     ROS_INFO("Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
+    
+    get_transform("/map", "/usb_cam", transform);
+    get_pose(pos, quat, transform);
+    quat_to_euler(quat, euler_rad);
+    
+    goal_x += pos[0];
+    goal_y += pos[1];
+    goal_theta += euler_rad[1];
+    
+    ROS_INFO("Map Frame Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
+    
+    geometry_msgs::PoseStamped goal_pose;
+    goal_pose.header.stamp = ros::Time::now();
+    goal_pose.header.frame_id = "/map";
+    goal_pose.pose.position.x = goal_x;
+    goal_pose.pose.position.y = goal_y;
+    goal_pose.pose.position.z = 1.0;
+    goal_pose.pose.orientation.w = cos(goal_theta/2);
+    goal_pose.pose.orientation.x = 0;
+    goal_pose.pose.orientation.y = 0;
+    goal_pose.pose.orientation.z = 0;
+    goal_pose_pub_.publish(goal_pose);
+    
 }
 
 /* Align on top of the marker */

@@ -36,17 +36,10 @@ CMAKE_COMMAND = /usr/bin/cmake
 RM = /usr/bin/cmake -E remove -f
 
 # The top-level source directory on which CMake was run.
-<<<<<<< HEAD
-CMAKE_SOURCE_DIR = /home/eduardo/uavros/uav_platform
+CMAKE_SOURCE_DIR = /home/jbutzke/HexaRosPackages/UAVstack/uav_msgs
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/eduardo/uavros/uav_platform/build
-=======
-CMAKE_SOURCE_DIR = /home/jbutzke/HexaRosPackages/UAVstack/uav_platform
-
-# The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jbutzke/HexaRosPackages/UAVstack/uav_platform/build
->>>>>>> fbf1baf70379b053dca4b7f2c4939b2a8f7ce0c4
+CMAKE_BINARY_DIR = /home/jbutzke/HexaRosPackages/UAVstack/uav_msgs/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -73,15 +66,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-<<<<<<< HEAD
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/eduardo/uavros/uav_platform/build/CMakeFiles /home/eduardo/uavros/uav_platform/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jbutzke/HexaRosPackages/UAVstack/uav_msgs/build/CMakeFiles /home/jbutzke/HexaRosPackages/UAVstack/uav_msgs/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/eduardo/uavros/uav_platform/build/CMakeFiles 0
-=======
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jbutzke/HexaRosPackages/UAVstack/uav_platform/build/CMakeFiles /home/jbutzke/HexaRosPackages/UAVstack/uav_platform/build/CMakeFiles/progress.marks
-	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jbutzke/HexaRosPackages/UAVstack/uav_platform/build/CMakeFiles 0
->>>>>>> fbf1baf70379b053dca4b7f2c4939b2a8f7ce0c4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jbutzke/HexaRosPackages/UAVstack/uav_msgs/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -135,6 +122,19 @@ ROSBUILD_genmsg_lisp/fast:
 .PHONY : ROSBUILD_genmsg_lisp/fast
 
 #=============================================================================
+# Target rules for targets named ROSBUILD_genmsg_py
+
+# Build rule for target.
+ROSBUILD_genmsg_py: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 ROSBUILD_genmsg_py
+.PHONY : ROSBUILD_genmsg_py
+
+# fast build rule for target.
+ROSBUILD_genmsg_py/fast:
+	$(MAKE) -f CMakeFiles/ROSBUILD_genmsg_py.dir/build.make CMakeFiles/ROSBUILD_genmsg_py.dir/build
+.PHONY : ROSBUILD_genmsg_py/fast
+
+#=============================================================================
 # Target rules for targets named ROSBUILD_gensrv_cpp
 
 # Build rule for target.
@@ -172,19 +172,6 @@ clean-test-results: cmake_check_build_system
 clean-test-results/fast:
 	$(MAKE) -f CMakeFiles/clean-test-results.dir/build.make CMakeFiles/clean-test-results.dir/build
 .PHONY : clean-test-results/fast
-
-#=============================================================================
-# Target rules for targets named platform_controller
-
-# Build rule for target.
-platform_controller: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 platform_controller
-.PHONY : platform_controller
-
-# fast build rule for target.
-platform_controller/fast:
-	$(MAKE) -f CMakeFiles/platform_controller.dir/build.make CMakeFiles/platform_controller.dir/build
-.PHONY : platform_controller/fast
 
 #=============================================================================
 # Target rules for targets named rosbuild_precompile
@@ -265,19 +252,6 @@ rospack_gensrv/fast:
 .PHONY : rospack_gensrv/fast
 
 #=============================================================================
-# Target rules for targets named set_track_mode
-
-# Build rule for target.
-set_track_mode: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 set_track_mode
-.PHONY : set_track_mode
-
-# fast build rule for target.
-set_track_mode/fast:
-	$(MAKE) -f CMakeFiles/set_track_mode.dir/build.make CMakeFiles/set_track_mode.dir/build
-.PHONY : set_track_mode/fast
-
-#=============================================================================
 # Target rules for targets named test
 
 # Build rule for target.
@@ -342,36 +316,6 @@ tests/fast:
 	$(MAKE) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/build
 .PHONY : tests/fast
 
-# target to build an object file
-src/platform_controller.o:
-	$(MAKE) -f CMakeFiles/platform_controller.dir/build.make CMakeFiles/platform_controller.dir/src/platform_controller.o
-.PHONY : src/platform_controller.o
-
-# target to preprocess a source file
-src/platform_controller.i:
-	$(MAKE) -f CMakeFiles/platform_controller.dir/build.make CMakeFiles/platform_controller.dir/src/platform_controller.i
-.PHONY : src/platform_controller.i
-
-# target to generate assembly for a file
-src/platform_controller.s:
-	$(MAKE) -f CMakeFiles/platform_controller.dir/build.make CMakeFiles/platform_controller.dir/src/platform_controller.s
-.PHONY : src/platform_controller.s
-
-# target to build an object file
-src/set_track_mode.o:
-	$(MAKE) -f CMakeFiles/set_track_mode.dir/build.make CMakeFiles/set_track_mode.dir/src/set_track_mode.o
-.PHONY : src/set_track_mode.o
-
-# target to preprocess a source file
-src/set_track_mode.i:
-	$(MAKE) -f CMakeFiles/set_track_mode.dir/build.make CMakeFiles/set_track_mode.dir/src/set_track_mode.i
-.PHONY : src/set_track_mode.i
-
-# target to generate assembly for a file
-src/set_track_mode.s:
-	$(MAKE) -f CMakeFiles/set_track_mode.dir/build.make CMakeFiles/set_track_mode.dir/src/set_track_mode.s
-.PHONY : src/set_track_mode.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -380,11 +324,11 @@ help:
 	@echo "... depend"
 	@echo "... ROSBUILD_genmsg_cpp"
 	@echo "... ROSBUILD_genmsg_lisp"
+	@echo "... ROSBUILD_genmsg_py"
 	@echo "... ROSBUILD_gensrv_cpp"
 	@echo "... ROSBUILD_gensrv_lisp"
 	@echo "... clean-test-results"
 	@echo "... edit_cache"
-	@echo "... platform_controller"
 	@echo "... rebuild_cache"
 	@echo "... rosbuild_precompile"
 	@echo "... rosbuild_premsgsrvgen"
@@ -392,18 +336,11 @@ help:
 	@echo "... rospack_genmsg_all"
 	@echo "... rospack_genmsg_libexe"
 	@echo "... rospack_gensrv"
-	@echo "... set_track_mode"
 	@echo "... test"
 	@echo "... test-future"
 	@echo "... test-results"
 	@echo "... test-results-run"
 	@echo "... tests"
-	@echo "... src/platform_controller.o"
-	@echo "... src/platform_controller.i"
-	@echo "... src/platform_controller.s"
-	@echo "... src/set_track_mode.o"
-	@echo "... src/set_track_mode.i"
-	@echo "... src/set_track_mode.s"
 .PHONY : help
 
 

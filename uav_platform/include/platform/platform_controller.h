@@ -4,8 +4,8 @@
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
-#include <platform/mode_msg.h>
-#include <camera/camera_msg.h>
+#include <uav_msgs/mode_msg.h>
+#include <uav_msgs/camera_msg.h>
 #include <string.h>
 #include <math.h>
 
@@ -40,7 +40,7 @@ class platform_controller {
 		void create_subscribers();
 		
 		void transform_callback(const tf::tfMessageConstPtr msg);
-		void mode_callback(const platform::mode_msg msg);
+		void mode_callback(const uav_msgs::mode_msg msg);
 
 		/*void align_front(tf::StampedTransform transform);*/
 		void align_front(tf::tfMessageConstPtr msg);
@@ -58,6 +58,7 @@ class platform_controller {
 
 		ros::NodeHandle n_;
 		ros::Publisher change_res_pub_;
+		ros::Publisher goal_pose_pub_;
 		ros::Subscriber tf_sub_;
 		ros::Subscriber track_sub_;
 

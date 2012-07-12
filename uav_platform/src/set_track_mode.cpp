@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <interactive_markers/menu_handler.h>
-#include <platform/mode_msg.h>
+#include <uav_msgs/mode_msg.h>
 
 #define ALIGN_FRONT     1
 #define ALIGN_TOP       2
@@ -18,32 +18,32 @@ void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr
     if(feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::MENU_SELECT) {
         if(feedback->menu_entry_id == ALIGN_FRONT) {
             ROS_INFO("Aligning in front of platform");
-            platform::mode_msg msg;
+            uav_msgs::mode_msg msg;
             msg.mode = ALIGN_FRONT;
             track_mode_pub.publish(msg);
         } else if(feedback->menu_entry_id == ALIGN_TOP) {
             ROS_INFO("Aligning on top of platform");
-            platform::mode_msg msg;
+            uav_msgs::mode_msg msg;
             msg.mode = ALIGN_TOP;
             track_mode_pub.publish(msg);
         } else if(feedback->menu_entry_id == ROTATE) {
             ROS_INFO("Rotate 180 over the platform");
-            platform::mode_msg msg;
+            uav_msgs::mode_msg msg;
             msg.mode = ROTATE;
             track_mode_pub.publish(msg);
         } else if(feedback->menu_entry_id == LAND) {
             ROS_INFO("Land on platform");
-            platform::mode_msg msg;
+            uav_msgs::mode_msg msg;
             msg.mode = LAND;
             track_mode_pub.publish(msg);
         } else if(feedback->menu_entry_id == CHANGE_FRONT) {
             ROS_INFO("Change to front camera");
-            platform::mode_msg msg;
+            uav_msgs::mode_msg msg;
             msg.mode = CHANGE_FRONT;
             track_mode_pub.publish(msg);
         } else if(feedback->menu_entry_id == CHANGE_BOTTOM) {
             ROS_INFO("Change to bottom camera");
-            platform::mode_msg msg;
+            uav_msgs::mode_msg msg;
             msg.mode = CHANGE_BOTTOM;
             track_mode_pub.publish(msg);
         }
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "set_track_mode");
     ros::NodeHandle nh;
 
-    track_mode_pub = nh.advertise<platform::mode_msg>("/track_mode",1);
+    track_mode_pub = nh.advertise<uav_msgs::mode_msg>("/track_mode",1);
 
     /* Create Interactive Marker Server */
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server;
