@@ -163,7 +163,7 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     goal_pose.header.frame_id = "/map";
     goal_pose.pose.position.x = goal_x;
     goal_pose.pose.position.y = goal_y;
-    goal_pose.pose.position.z = DISTANCE_FROM_PLATFORM;
+    goal_pose.pose.position.z = pos[3] + pose_.pos.z + HOVER_ABOVE_PLATFORM;
     goal_pose.pose.orientation.w = cos(goal_theta/2);
     goal_pose.pose.orientation.x = 0;
     goal_pose.pose.orientation.y = 0;
