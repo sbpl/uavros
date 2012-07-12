@@ -62,8 +62,9 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
      * depending on the last track mode send                */
     if(msg->transforms[0].child_frame_id == "/marker1") {
         if(track_mode_ == ALIGN_FRONT) {
-            get_transform("/usb_cam", align_front_, transform);
-            align_front(transform);
+				//get_transform("/usb_cam", align_front_, transform);
+				//align_front(transform);
+			align_front(msg);
         } else if(track_mode_ == ALIGN_TOP) {
             get_transform("/usb_cam", align_top_, transform);
             align_top(transform, FRONT_CAMERA);
@@ -99,10 +100,12 @@ void platform_controller::mode_callback(platform::mode_msg msg)
  * the goal is to move in front of the plataform but, not rotating      *
  * always looking to the marker, but a mid point specified in the       *
  * auxiliar front frame                                                 */
-void platform_controller::align_front(tf::StampedTransform transform)
+//void platform_controller::align_front(tf::StampedTransform transform)
+void platform_controller::align_front(tf::tfMessageConstPtr msg)
 {
     double pos[3], quat[4];
-    get_pose(pos, quat, transform);
+	//get_pose(pos, quat, transform);
+	get_pose2(pos, quat, msg);
 
     /* Get Euler angles with the quaternion */
     double euler_rad[3], theta;
@@ -193,6 +196,21 @@ void platform_controller::get_transform(std::string parent, std::string child,
         ROS_ERROR("%s",ex.what());
     }
 }
+
+
+void platform_controller::get_pose2(double pos[3], double quat[4], 
+								   tf::tfMessageConstPtr msg)
+{
+    pos[0] = msg->transforms[0].transform.translation.x;
+    pos[1] = msg->transforms[0].transform.translation.y;
+    pos[2] = msg->transforms[0].transform.translation.z;
+
+    quat[0] = msg->transforms[0].transform.rotation.x;
+    quat[1] = msg->transforms[0].transform.rotation.y;
+    quat[2] = msg->transforms[0].transform.rotation.z;
+    quat[3] = msg->transforms[0].transform.rotation.w;
+}
+	
 
 /* Get position translation and rotation of the transform */
 void platform_controller::get_pose(double pos[3], double quat[4], 
