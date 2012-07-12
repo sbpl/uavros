@@ -108,9 +108,11 @@ void video_publisher::get_params()
 void video_publisher::create_publishers()
 {
 	/* Get the string of the msg topics with the camera_num parameter */
-	char cam_info[40], cam_image[40];
+	char cam_info[40], cam_image[40], cam_id[30];
 	int n = sprintf(cam_image, "usb_cam%d/image_raw", camera_number);
 	n = sprintf(cam_info, "usb_cam%d/camera_info", camera_number);
+	n = sprintf(cam_id, "usb_cam%d", camera_number);
+	camera_id = cam_id;
 
 	image_pub_ = it_.advertise(cam_image, 1);
 	info_pub_ = n_.advertise<sensor_msgs::CameraInfo>(cam_info, 1);

@@ -7,7 +7,7 @@
 #include <opencv/highgui.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
-#include <camera/camera_msg.h>
+#include <uav_msgs/camera_msg.h>
 #include <stdio.h>
 #include <boost/thread.hpp>
 
@@ -39,8 +39,8 @@ class video_publisher {
 		void create_subscribers();
 		void set_camera_calibration();
 		
-		void decrease_resolution_callback(const camera::camera_msg msg);
-		void increase_resolution_callback(const camera::camera_msg msg);
+		void decrease_resolution_callback(const uav_msgs::camera_msg msg);
+		void increase_resolution_callback(const uav_msgs::camera_msg msg);
 
 		void main_loop();
 		boost::thread* main_loop_;
@@ -57,6 +57,7 @@ class video_publisher {
 
 		int camera_number;
 		bool camera_on_;
+		std::string camera_id;
 		resolution resolution_;
 		ar_params ar_params_;
 		cv::Mat camera_matrix_;

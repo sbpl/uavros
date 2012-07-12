@@ -1,12 +1,12 @@
 (cl:defpackage uav_msgs-msg
   (:use )
   (:export
-   "<CAMERA_MSG>"
-   "CAMERA_MSG"
    "<CONTROLLERCOMMAND>"
    "CONTROLLERCOMMAND"
    "<FLIGHTMODESTATUS>"
    "FLIGHTMODESTATUS"
+   "<CAMERA_MSG>"
+   "CAMERA_MSG"
    "<FLIGHTMODEREQUEST>"
    "FLIGHTMODEREQUEST"
    "<MODE_MSG>"

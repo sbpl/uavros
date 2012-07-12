@@ -136,6 +136,7 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 
     ROS_INFO("Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
     
+	tf::tfStampedTransform transform;
     get_transform("/map", "/usb_cam", transform);
     get_pose(pos, quat, transform);
     quat_to_euler(quat, euler_rad);
