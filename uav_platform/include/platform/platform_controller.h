@@ -28,6 +28,23 @@
 #define FRONT_CAMERA    0
 #define BOTTOM_CAMERA   1
 
+typedef struct {
+	double x;
+	double y;
+	double z;
+} position;
+
+typedef struct {
+	double x;
+	double y;
+	double z;
+} rotation;
+
+typedef struct {
+	position pos;
+	rotation rot;
+} pose;
+
 class platform_controller {
 	public:
 		platform_controller(ros::NodeHandle &n);
@@ -50,8 +67,7 @@ class platform_controller {
 
 		void get_transform(std::string parent, std::string child,
 						   tf::StampedTransform &transform);
-		void get_pose2(double pos[3], double quat[4], 
-					  tf::tfMessageConstPtr msg);
+		void get_pose2(tf::tfMessageConstPtr msg);
 		void get_pose(double pos[3], double quat[4], 
 					  tf::StampedTransform transform);
 		void quat_to_euler(double q[4], double r[3]);
@@ -65,6 +81,7 @@ class platform_controller {
 		int track_mode_;
 		std::string align_front_;
 		std::string align_top_;
+		pose pose_;
 };
 
 #endif

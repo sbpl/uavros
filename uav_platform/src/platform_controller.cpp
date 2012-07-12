@@ -106,12 +106,15 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 {
     double pos[3], quat[4];
 	//get_pose(pos, quat, transform);
-	get_pose2(pos, quat, msg);
+	get_pose2(msg);
+
+	ROS_INFO("Marker Pos: %f, %f, %f", pos[0], pos[1], pos[2]);
 
     /* Get Euler angles with the quaternion */
-    double euler_rad[3], theta;
-    quat_to_euler(quat, euler_rad);
-    theta = euler_rad[1];
+	//double euler_rad[3], theta;
+	//quat_to_euler(quat, euler_rad);
+	//theta = euler_rad[1];
+	double theta = pose_.rot.y;
 
     /* Assume theta is positive */
     double theta_sign = 1;
@@ -131,19 +134,27 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     double goal_theta = theta_sign * (current_zone) * interval_rad + marker_rad;
 
     /* Get goal position */
-    double goal_x = pos[0] + DISTANCE_FROM_PLATFORM * cos(theta);
-    double goal_y = pos[1] + DISTANCE_FROM_PLATFORM * sin(theta);
+	//double goal_x = pos[0] + DISTANCE_FROM_PLATFORM * cos(theta);
+	//double goal_y = pos[1] + DISTANCE_FROM_PLATFORM * sin(theta);
+    double goal_x = pose_.pos.x + DISTANCE_FROM_PLATFORM * cos(theta);
+    double goal_y = pose_.pos.y + DISTANCE_FROM_PLATFORM * sin(theta);
 
-    ROS_INFO("Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
+	ROS_INFO("Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
     
-	tf::tfStampedTransform transform;
-    get_transform("/map", "/usb_cam", transform);
+	tf::StampedTransform transform;
+    get_transform("/map", "/usb_cam0", transform);
     get_pose(pos, quat, transform);
+	double euler_rad[3];
     quat_to_euler(quat, euler_rad);
     
     goal_x += pos[0];
     goal_y += pos[1];
-    goal_theta += euler_rad[1];
+
+	/* With zones */
+	//goal_theta += euler_rad[1];
+
+	/* Without zones */
+	goal_theta = theta + euler_rad[1];
     
     ROS_INFO("Map Frame Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
     
@@ -152,7 +163,7 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     goal_pose.header.frame_id = "/map";
     goal_pose.pose.position.x = goal_x;
     goal_pose.pose.position.y = goal_y;
-    goal_pose.pose.position.z = 1.0;
+    goal_pose.pose.position.z = DISTANCE_FROM_PLATFORM;
     goal_pose.pose.orientation.w = cos(goal_theta/2);
     goal_pose.pose.orientation.x = 0;
     goal_pose.pose.orientation.y = 0;
@@ -223,17 +234,22 @@ void platform_controller::get_transform(std::string parent, std::string child,
 }
 
 
-void platform_controller::get_pose2(double pos[3], double quat[4], 
-								   tf::tfMessageConstPtr msg)
+void platform_controller::get_pose2(tf::tfMessageConstPtr msg)
 {
-    pos[0] = msg->transforms[0].transform.translation.x;
-    pos[1] = msg->transforms[0].transform.translation.y;
-    pos[2] = msg->transforms[0].transform.translation.z;
+    pose_.pos.x = msg->transforms[0].transform.translation.x;
+    pose_.pos.y = msg->transforms[0].transform.translation.y;
+    pose_.pos.z = msg->transforms[0].transform.translation.z;
 
+	double quat[4], euler_rad[3];
     quat[0] = msg->transforms[0].transform.rotation.x;
     quat[1] = msg->transforms[0].transform.rotation.y;
     quat[2] = msg->transforms[0].transform.rotation.z;
     quat[3] = msg->transforms[0].transform.rotation.w;
+	quat_to_euler(quat, euler_rad);
+
+	pose_.rot.x = euler_rad[0];
+	pose_.rot.y = euler_rad[1];
+	pose_.rot.z = euler_rad[2];
 }
 	
 

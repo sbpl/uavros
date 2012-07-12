@@ -6,3 +6,4 @@ CMakeFiles
 bin/**
 *-swp
 .svn/*
+Makefile
