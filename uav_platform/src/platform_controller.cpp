@@ -68,12 +68,13 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 			align_front(msg);
         } else if(track_mode_ == ALIGN_TOP) {
             get_transform("/usb_cam", align_top_, transform);
-            align_top(transform, FRONT_CAMERA);
+            //align_top(transform, FRONT_CAMERA);
+			align_top(msg, FRONT_CAMERA);
         }
     } else if(msg->transforms[0].child_frame_id == "/marker2") {
         if(track_mode_ == ALIGN_TOP) {
             get_transform("/usb_cam", "/align_top", transform);
-            align_top(transform, BOTTOM_CAMERA);
+            //align_top(transform, BOTTOM_CAMERA);
         } else if(track_mode_ == ROTATE) {
             rotate();
         } else if(track_mode_ == LAND) {
@@ -108,8 +109,6 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	//get_pose(pos, quat, transform);
 	get_pose2(msg);
 
-	ROS_INFO("Marker Pos: %f, %f, %f", pos[0], pos[1], pos[2]);
-
     /* Get Euler angles with the quaternion */
 	//double euler_rad[3], theta;
 	//quat_to_euler(quat, euler_rad);
@@ -136,8 +135,9 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     /* Get goal position */
 	//double goal_x = pos[0] + DISTANCE_FROM_PLATFORM * cos(theta);
 	//double goal_y = pos[1] + DISTANCE_FROM_PLATFORM * sin(theta);
-    double goal_x = pose_.pos.x + DISTANCE_FROM_PLATFORM * cos(theta);
-    double goal_y = pose_.pos.y + DISTANCE_FROM_PLATFORM * sin(theta);
+    double goal_x = pose_.pos.x;// + DISTANCE_FROM_PLATFORM * cos(theta);
+    double goal_y = pose_.pos.y;// + DISTANCE_FROM_PLATFORM * sin(theta);
+	double goal_z = pose_.pos.z;
 
 	ROS_INFO("Goal: %f, %f, %f", goal_x, goal_y, goal_theta * 180 / PI);
     
@@ -147,8 +147,9 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	double euler_rad[3];
     quat_to_euler(quat, euler_rad);
     
-    goal_x += pos[0];
-    goal_y += pos[1];
+    goal_x += pos[1];
+    goal_y += pos[2];
+	goal_z += pos[0];
 
 	/* With zones */
 	//goal_theta += euler_rad[1];
@@ -161,9 +162,9 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     geometry_msgs::PoseStamped goal_pose;
     goal_pose.header.stamp = ros::Time::now();
     goal_pose.header.frame_id = "/map";
-    goal_pose.pose.position.x = goal_x;
-    goal_pose.pose.position.y = goal_y;
-    goal_pose.pose.position.z = pos[3] + pose_.pos.z + HOVER_ABOVE_PLATFORM;
+    goal_pose.pose.position.x = goal_z - DISTANCE_FROM_PLATFORM;
+    goal_pose.pose.position.y = goal_x;
+    goal_pose.pose.position.z = HOVER_ABOVE_PLATFORM - goal_y;
     goal_pose.pose.orientation.w = cos(goal_theta/2);
     goal_pose.pose.orientation.x = 0;
     goal_pose.pose.orientation.y = 0;
@@ -173,19 +174,22 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 }
 
 /* Align on top of the marker */
-void platform_controller::align_top(tf::StampedTransform transform, 
-									bool bottom_camera)
+//void platform_controller::align_top(tf::StampedTransform transform, 
+//									bool bottom_camera)
+void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera)
 {
     double pos[3], quat[4];
-    get_pose(pos, quat, transform);
+    get_pose2(msg);
 
-    double goal_x = pos[0];
-
-    double goal_y;
-    if(bottom_camera) {
-        goal_y = pos[1];
+    double goal_x_w, goal_y_w, goal_z_w;
+    if(camera == FRONT_CAMERA) {
+		goal_x_w = pose_.pos.z + WIDTH_PLATFORM;
+        goal_y_w = pose_.pos.x;
+		goal_z_w = pose_.pos.y;
     } else {
-        goal_y = pos[2]; //Since camera is looking forward, the z is hexa's y
+        goal_x_w = pose_.pos.x;
+        goal_y_w = pose_.pos.y;
+        goal_z_w = pose_.pos.z;
     }
 
     /* Get Euler angles with the quaternion */
@@ -193,7 +197,25 @@ void platform_controller::align_top(tf::StampedTransform transform,
     quat_to_euler(quat, euler_rad);
     theta = euler_rad[2];
 
-    ROS_INFO("Goal: %f, %f, %f", goal_x, goal_y, theta);
+	tf::StampedTransform transform;
+    get_transform("/map", "/usb_cam0", transform);
+    get_pose(pos, quat, transform);
+
+	goal_x_w += pos[0];
+	goal_y_w += pos[1];
+	goal_z_w = pos[2] - goal_z_w;
+
+    geometry_msgs::PoseStamped goal_pose;
+    goal_pose.header.stamp = ros::Time::now();
+    goal_pose.header.frame_id = "/map";
+    goal_pose.pose.position.x = goal_x_w;
+    goal_pose.pose.position.y = goal_y_w;
+    goal_pose.pose.position.z = HOVER_ABOVE_PLATFORM + goal_z_w;
+    goal_pose.pose.orientation.w = 0;//cos(goal_theta/2);
+    goal_pose.pose.orientation.x = 0;
+    goal_pose.pose.orientation.y = 0;
+    goal_pose.pose.orientation.z = 0;
+    goal_pose_pub_.publish(goal_pose);
 }
 
 /* Rotate the angle desired above marker */

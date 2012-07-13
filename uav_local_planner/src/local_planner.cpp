@@ -103,7 +103,7 @@ void UAVLocalPlanner::controllerThread(){
     geometry_msgs::TwistStamped velocity;
     getRobotPose(pose,velocity);
     if(ros::Time::now().toSec()-pose.header.stamp.toSec() > pose_tolerance_){
-      ROS_ERROR("[controller] UAV pose is old...hit the deck! %f -%f= %1.4f\n", ros::Time::now().toSec(),pose.header.stamp.toSec(), ros::Time::now().toSec()-pose.header.stamp.toSec() ); //TODO: why is this always late?
+//      ROS_ERROR("[controller] UAV pose is old...hit the deck! %f -%f= %1.4f\n", ros::Time::now().toSec(),pose.header.stamp.toSec(), ros::Time::now().toSec()-pose.header.stamp.toSec() ); //TODO: why is this always late?
     }
     // ROS_INFO("[controller] uav z: %f\n",pose.pose.position.z);
 
@@ -115,7 +115,7 @@ void UAVLocalPlanner::controllerThread(){
     uav_msgs::ControllerCommand u;
     switch(state.mode){
       case uav_msgs::FlightModeStatus::LANDED:
-        ROS_INFO("[controller] state: LANDED\n");
+//        ROS_INFO("[controller] state: LANDED\n");
         hover_pose_ = pose;
         u.thrust =0; u.roll=0; u.yaw=0; u.pitch=0;
         break;

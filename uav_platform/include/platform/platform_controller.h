@@ -12,9 +12,10 @@
 #define PI  3.14159265
 
 #define DISTANCE_FROM_PLATFORM  2       //in meters
+#define WIDTH_PLATFORM			0.3
 #define MARKER_ANGLE            0       //angle of the marker on respect to the plataform
 #define INTERVALS_ANGLE         15      //angle to mark for each zone
-#define HOVER_ABOVE_PLATFORM    0.5     //in meters
+#define HOVER_ABOVE_PLATFORM    1.0     //in meters
 #define PLATFORM_ANGLE          180     //In angles
 
 /* Track modes */
@@ -61,7 +62,8 @@ class platform_controller {
 
 		/*void align_front(tf::StampedTransform transform);*/
 		void align_front(tf::tfMessageConstPtr msg);
-		void align_top(tf::StampedTransform transform, bool bottom_camera);
+		void align_top(tf::tfMessageConstPtr msg, int camera);
+		//void align_top(tf::StampedTransform transform, bool bottom_camera);
 		void rotate();
 		void land();
 

@@ -4,7 +4,7 @@
 <include file="$(find uav_platform)/launch/uav_camera_landing.launch" />
 
 <!-- start recording this stuff -->
-<node pkg="rosbag" type="rosbag" name="rosbag_record" args="record -a -O /home/jbutzke/Bag/HexaData"/>
+<node pkg="rosbag" type="rosbag" name="rosbag_record" args="record -a -x /usb_cam(.*) -O /home/jbutzke/Bag/HexaData"/>
 
 <!-- ......................................................................................... -->
 <!-- Bring up the driver -->

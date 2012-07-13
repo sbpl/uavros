@@ -3,7 +3,7 @@
 <launch>
 	<!-- ************ Marker in atach to front of platform ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="align_front_to_cam" 
-		args="0 0.3 0.5 0 0 0 marker1 align_front 1" />
+		args="0 0.3 0.5 0 1.57 0 marker1 align_front 1" />
 
 	<!-- ************ Marker in atach to surface of platform ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="align_top_to_cam" 
@@ -11,14 +11,14 @@
 		
 	<!-- ************ Camera to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera" 
-		args="0.6 0 0 -1.57 0 -1.57 body_frame usb_cam0 1" /> 
+		args="0.6 0.0 0.0 1.57 0 1.57 body_frame usb_cam0 1" /> 
 
     <node pkg="uav_camera" type="video_publisher" name="camera0" output="screen">
 		<param name ="camera_number" type="int" value="0" />
 		<param name ="width_high" type="double" value="640" />
 		<param name ="height_high" type="double" value="480" />
-		<param name ="width_low" type="double" value="320" />
-		<param name ="height_low" type="double" value="240" />
+		<param name ="width_low" type="double" value="640" />
+		<param name ="height_low" type="double" value="480" />
 	</node> 
 
 <!--    <node pkg="uav_camera" type="video_publisher" name="camera1" output="screen">
