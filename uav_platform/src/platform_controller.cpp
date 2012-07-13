@@ -67,14 +67,15 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 				//align_front(transform);
 			align_front(msg);
         } else if(track_mode_ == ALIGN_TOP) {
-            get_transform("/usb_cam", align_top_, transform);
+            //get_transform("/usb_cam", align_top_, transform);
             //align_top(transform, FRONT_CAMERA);
 			align_top(msg, FRONT_CAMERA);
         }
     } else if(msg->transforms[0].child_frame_id == "/marker2") {
         if(track_mode_ == ALIGN_TOP) {
-            get_transform("/usb_cam", "/align_top", transform);
+            //get_transform("/usb_cam", "/align_top", transform);
             //align_top(transform, BOTTOM_CAMERA);
+			align_top(msg, BOTTOM_CAMERA);
         } else if(track_mode_ == ROTATE) {
             rotate();
         } else if(track_mode_ == LAND) {
@@ -180,16 +181,19 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera)
 {
     double pos[3], quat[4];
     get_pose2(msg);
+	tf::StampedTransform transform;
 
     double goal_x_w, goal_y_w, goal_z_w;
     if(camera == FRONT_CAMERA) {
 		goal_x_w = pose_.pos.z + WIDTH_PLATFORM;
         goal_y_w = pose_.pos.x;
 		goal_z_w = pose_.pos.y;
+    	get_transform("/map", "/usb_cam0", transform);
     } else {
         goal_x_w = pose_.pos.x;
         goal_y_w = pose_.pos.y;
         goal_z_w = pose_.pos.z;
+    	get_transform("/map", "/usb_cam1", transform);
     }
 
     /* Get Euler angles with the quaternion */
@@ -197,8 +201,6 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera)
     quat_to_euler(quat, euler_rad);
     theta = euler_rad[2];
 
-	tf::StampedTransform transform;
-    get_transform("/map", "/usb_cam0", transform);
     get_pose(pos, quat, transform);
 
 	goal_x_w += pos[0];
