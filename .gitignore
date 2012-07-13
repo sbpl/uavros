@@ -1,9 +1,9 @@
 *~
 *.*~
 CMakeFiles
+*/Makefile
 *.swp
 */build/**/*
 bin/**
 *-swp
 .svn/*
-Makefile

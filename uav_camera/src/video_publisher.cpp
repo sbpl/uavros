@@ -52,7 +52,7 @@ void video_publisher::main_loop()
 		/* Create message to send the image */
 		cv_bridge::CvImage cvi;
 		cvi.header.stamp = ros::Time::now();
-		cvi.header.frame_id = "usb_cam";
+		cvi.header.frame_id = camera_id;
 		cvi.encoding = "bgr8";
 		cvi.image = undistorted;
 
@@ -64,7 +64,7 @@ void video_publisher::main_loop()
 		/* Create the CameraInfo message */
 		sensor_msgs::CameraInfo info_msg;
 		info_msg.header.stamp = ros::Time::now();
-		info_msg.header.frame_id = "usb_cam";
+		info_msg.header.frame_id = camera_id;
 		info_msg.width = resolution_.current_width;
 		info_msg.height = resolution_.current_height;
 		info_msg.distortion_model = "";

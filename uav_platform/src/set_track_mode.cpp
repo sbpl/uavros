@@ -71,7 +71,7 @@ int main(int argc, char** argv)
 
     /* Create Interactive Marker */
     visualization_msgs::InteractiveMarker int_marker;
-    int_marker.header.frame_id = "/usb_cam";
+    int_marker.header.frame_id = "/usb_cam0";
     int_marker.pose.position.y = -1;
     int_marker.scale = 1;
     int_marker.name = "track_mode_marker";
