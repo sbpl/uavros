@@ -29,6 +29,9 @@
 #define FRONT_CAMERA    0
 #define BOTTOM_CAMERA   1
 
+const ros::Duration IN_RANGE_TIME(5.0);	// in seconds
+const double	IN_RANGE_DIST =	0.20;	// in meters
+
 typedef struct {
 	double x;
 	double y;
@@ -59,10 +62,14 @@ class platform_controller {
 		
 		void transform_callback(const tf::tfMessageConstPtr msg);
 		void mode_callback(const uav_msgs::mode_msg msg);
+		void align_done_callback(const ros::TimerEvent&);
 
 		void align_front(tf::tfMessageConstPtr msg);
 		void align_top(tf::tfMessageConstPtr msg, int camera, bool rotate);
 		void land(tf::tfMessageConstPtr msg);
+
+		void check_time(tf::tfMessageConstPtr msg);
+		bool check_in_range(tf::tfMessageConstPtr msg);
 
 		void publish_goal(double x, double y, double z, double theta);
 		void get_transform(std::string parent, std::string child,
@@ -73,10 +80,11 @@ class platform_controller {
 		void quat_to_euler(double q[4], double r[3]);
 
 		ros::NodeHandle n_;
-		ros::Publisher change_res_pub_;
 		ros::Publisher goal_pose_pub_;
 		ros::Subscriber tf_sub_;
 		ros::Subscriber track_sub_;
+
+		ros::Timer timer_;
 
 		int track_mode_;
 		std::string align_front_;

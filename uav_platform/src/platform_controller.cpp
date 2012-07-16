@@ -41,7 +41,6 @@ void platform_controller::get_params()
 /* Create publishers to advertis in the corresponding topics */
 void platform_controller::create_publishers()
 {
-	change_res_pub_ = n_.advertise<uav_msgs::camera_msg>("dec_res", 1);
 	goal_pose_pub_ = n_.advertise<geometry_msgs::PoseStamped>("/goal_pose",1);
 }
 
@@ -52,6 +51,18 @@ void platform_controller::create_subscribers()
 						  &platform_controller::transform_callback, this);
 	track_sub_ = n_.subscribe("/track_mode", 1000, 
 							 &platform_controller::mode_callback, this);
+}
+
+/* Callback when the track mode is changed */
+void platform_controller::mode_callback(uav_msgs::mode_msg msg)
+{
+	track_mode_ = msg.mode;
+}
+
+/* Callback called when aligned in front was in range for the stablished time */
+void platform_controller::align_done_callback(const ros::TimerEvent&)
+{
+	track_mode_ = ALIGN_TOP;
 }
 
 /* Function call every time tf send a message */
@@ -76,21 +87,6 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
             land(msg);
         }
     }
-}
-
-/* Callback when the track mode is changed */
-void platform_controller::mode_callback(uav_msgs::mode_msg msg)
-{
-    track_mode_ = msg.mode;
-	if(track_mode_ == CHANGE_FRONT) {
-		uav_msgs::camera_msg change_msg;
-		change_msg.change_res = BOTTOM_CAMERA;
-		change_res_pub_.publish(change_msg);
-	} else if(track_mode_ == CHANGE_BOTTOM) {
-		uav_msgs::camera_msg change_msg;
-		change_msg.change_res = FRONT_CAMERA;
-		change_res_pub_.publish(change_msg);
-	}
 }
 
 /* Function to analize the transform from the camera to the align goal, *
@@ -211,6 +207,35 @@ void platform_controller::publish_goal(double x, double y, double z,
     goal_pose.pose.orientation.z = theta;
     goal_pose.pose.orientation.w = 1.0;
     goal_pose_pub_.publish(goal_pose);
+}
+
+/* Check wether it has been near the goal for the stablished time */
+void platform_controller::check_time(tf::tfMessageConstPtr msg)
+{
+	if(timer_.isValid()) {
+		if(!check_in_range(msg)) {
+
+			/* If not in range reset timer */
+			timer_.stop();
+			timer_.start();
+		}
+	} else {
+		if(check_in_range(msg)) {
+			timer_ = n_.createTimer(IN_RANGE_TIME, 
+							&platform_controller::align_done_callback, this);
+		}
+	}
+}
+
+/* Check wether the transform in the message is in certain range */
+bool platform_controller::check_in_range(tf::tfMessageConstPtr msg)
+{
+	if(abs(msg->transforms[0].transform.translation.x) < IN_RANGE_DIST) {
+		if(abs(msg->transforms[0].transform.translation.y) < IN_RANGE_DIST) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /* Get transform between the two given frames */
