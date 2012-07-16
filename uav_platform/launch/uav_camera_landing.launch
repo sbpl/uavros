@@ -19,18 +19,14 @@
 
     <node pkg="uav_camera" type="video_publisher" name="camera0" output="screen">
 		<param name ="camera_number" type="int" value="0" />
-		<param name ="width_high" type="double" value="640" />
-		<param name ="height_high" type="double" value="480" />
-		<param name ="width_low" type="double" value="320" />
-		<param name ="height_low" type="double" value="240" />
+		<param name ="width" type="double" value="640" />
+		<param name ="height" type="double" value="480" />
 	</node> 
 
     <node pkg="uav_camera" type="video_publisher" name="camera1" output="screen">
 		<param name ="camera_number" type="int" value="1" />
-		<param name ="width_high" type="double" value="640" />
-		<param name ="height_high" type="double" value="480" />
-		<param name ="width_low" type="double" value="640" />
-		<param name ="height_low" type="double" value="480" />
+		<param name ="width" type="double" value="320" />
+		<param name ="height" type="double" value="240" />
 	</node> 
 	
     <node pkg="uav_platform" type="platform_controller" name="platform_controller" output="screen"/>

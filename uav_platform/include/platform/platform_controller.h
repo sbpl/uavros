@@ -60,18 +60,16 @@ class platform_controller {
 		void transform_callback(const tf::tfMessageConstPtr msg);
 		void mode_callback(const uav_msgs::mode_msg msg);
 
-		/*void align_front(tf::StampedTransform transform);*/
 		void align_front(tf::tfMessageConstPtr msg);
-		void align_top(tf::tfMessageConstPtr msg, int camera);
-		//void align_top(tf::StampedTransform transform, bool bottom_camera);
-		void rotate();
-		void land();
+		void align_top(tf::tfMessageConstPtr msg, int camera, bool rotate);
+		void land(tf::tfMessageConstPtr msg);
 
+		void publish_goal(double x, double y, double z, double theta);
 		void get_transform(std::string parent, std::string child,
 						   tf::StampedTransform &transform);
-		void get_pose2(tf::tfMessageConstPtr msg);
-		void get_pose(double pos[3], double quat[4], 
-					  tf::StampedTransform transform);
+		void get_pose_from_msg(tf::tfMessageConstPtr msg);
+		void get_pose_from_tf(double pos[3], double quat[4], 
+					 		  tf::StampedTransform transform);
 		void quat_to_euler(double q[4], double r[3]);
 
 		ros::NodeHandle n_;

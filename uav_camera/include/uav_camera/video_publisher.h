@@ -12,12 +12,8 @@
 #include <boost/thread.hpp>
 
 typedef struct {
-	int width_high;
-	int height_high;
-	int width_low;
-	int height_low;
-	int current_width;
-	int current_height;
+	int width;
+	int height;
 } resolution;
 
 typedef struct{
