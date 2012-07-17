@@ -49,6 +49,13 @@ typedef struct {
 	rotation rot;
 } pose;
 
+typedef struct {
+	double x;
+	double y;
+	double z;
+	double theta;
+} goal;
+
 class platform_controller {
 	public:
 		platform_controller(ros::NodeHandle &n);
@@ -71,6 +78,7 @@ class platform_controller {
 		void check_time(tf::tfMessageConstPtr msg);
 		bool check_in_range(tf::tfMessageConstPtr msg);
 
+		void update_goal(double x, double y, double z, double theta);
 		void publish_goal(double x, double y, double z, double theta);
 		void get_transform(std::string parent, std::string child,
 						   tf::StampedTransform &transform);
@@ -87,9 +95,8 @@ class platform_controller {
 		ros::Timer timer_;
 
 		int track_mode_;
-		std::string align_front_;
-		std::string align_top_;
 		pose pose_;
+		goal goal_;
 };
 
 #endif

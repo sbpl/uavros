@@ -16,6 +16,10 @@ platform_controller::platform_controller(ros::NodeHandle &n): n_ (n)
 	get_params();
 	create_publishers();
 	create_subscribers();
+	goal_.x = 0;
+	goal_.y = 0;
+	goal_.z = 0;
+	goal_.theta = 0;
 	ros::spin();
 }
 
@@ -29,13 +33,6 @@ platform_controller::~platform_controller()
 void platform_controller::get_params()
 {
 	ros::NodeHandle n_param("~");
-
-	if(!n_param.getParam("align_front", align_front_)) {
-		align_front_ = "/align_front";
-	}
-	if(!n_param.getParam("align_top", align_top_)) {
-		align_top_ = "/align_top";
-	}
 }
 
 /* Create publishers to advertis in the corresponding topics */
@@ -138,8 +135,9 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	goal_x += pos[0] - DISTANCE_FROM_PLATFORM;
     goal_y += pos[1];
 	goal_z = pos[2] - goal_z + HOVER_ABOVE_PLATFORM;
-    
-	publish_goal(goal_x, goal_y, goal_z, goal_theta);
+
+	/* Update goal */
+	update_goal(goal_x, goal_y, goal_z, goal_theta);
 }
 
 /* Align on top of the marker */
@@ -179,17 +177,32 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
     get_pose_from_tf(pos, quat, transform);
 
 	/* Taking in count where is the camera, update the goal */
-	goal_x+= pos[0];
-	goal_y+= pos[1];
-	goal_z= pos[2] - goal_z + HOVER_ABOVE_PLATFORM;
+	goal_x += pos[0];
+	goal_y += pos[1];
+	goal_z = pos[2] - goal_z + HOVER_ABOVE_PLATFORM;
 
-	publish_goal(goal_x, goal_y, goal_z, theta);
+	/* Update Goal */
+	update_goal(goal_x, goal_y, goal_z, theta);
 }
 
 /* Land on marker */
 void platform_controller::land(tf::tfMessageConstPtr msg) 
 {
     ROS_INFO("Need to land");
+}
+
+
+/* Update the goal in the class */
+void platform_controller::update_goal(double x, double y, double z, 
+									  double theta)
+{
+	goal_.x = (goal_.x + x) / 2;
+	goal_.y = (goal_.y + y) / 2;
+	goal_.z = (goal_.z + z) / 2;
+	goal_.theta = (goal_.theta + theta) / 2;
+
+	/* Publish the goal */
+	publish_goal(goal_.x, goal_.y, goal_.z, goal_.theta);
 }
 
 /* Publish the goal */
