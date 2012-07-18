@@ -23,12 +23,12 @@
 		<param name ="height" type="double" value="480" />
 	</node> 
 
-    <node pkg="uav_camera" type="video_publisher" name="camera1" output="screen">
+<!--    <node pkg="uav_camera" type="video_publisher" name="camera1" output="screen">
 		<param name ="camera_number" type="int" value="1" />
 		<param name ="width" type="double" value="320" />
 		<param name ="height" type="double" value="240" />
 	</node> 
-	
+-->	
     <node pkg="uav_platform" type="platform_controller" name="platform_controller" output="screen"/>
 
     <node pkg="uav_platform" type="set_track_mode" name="set_track_mode" output="screen"/> 

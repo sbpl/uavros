@@ -12,7 +12,7 @@
 #define PI  3.14159265
 
 #define DISTANCE_FROM_PLATFORM  2       //in meters
-#define WIDTH_PLATFORM			0.3
+#define WIDTH_PLATFORM			0.6
 #define MARKER_ANGLE            0       //angle of the marker on respect to the plataform
 #define INTERVALS_ANGLE         15      //angle to mark for each zone
 #define HOVER_ABOVE_PLATFORM    1.0     //in meters
