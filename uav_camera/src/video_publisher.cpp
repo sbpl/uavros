@@ -19,11 +19,8 @@ video_publisher::video_publisher(ros::NodeHandle &n): n_ (n), it_ (n_)
 	set_camera_calibration();
 	capture.open(camera_number);
 
-	/* Start always with lowest resolution */
-	capture.set(CV_CAP_PROP_FRAME_WIDTH, resolution_.width);
-	capture.set(CV_CAP_PROP_FRAME_HEIGHT, resolution_.height);
-
-	main_loop_ = new boost::thread(boost::bind(&video_publisher::main_loop, this));
+	main_loop_ = new boost::thread(boost::bind(&video_publisher::main_loop, 
+												this));
 }
 
 /* Destructor */
@@ -87,10 +84,10 @@ void video_publisher::get_params()
 		camera_number = 0;
 	}
 	if(!n_param.getParam("width", resolution_.width)) {
-		resolution_.width = 640;
+		resolution_.width= 320;
 	}
 	if(!n_param.getParam("height", resolution_.height)) {
-		resolution_.height = 480;
+		resolution_.height= 240;
 	}
 }
 
@@ -111,24 +108,21 @@ void video_publisher::create_publishers()
 /* Create the subscribers to the corresponding topcis */
 void video_publisher::create_subscribers()
 {
+
 }
 
 /* Set camera calibration values and ar_pose values */
 void video_publisher::set_camera_calibration()
 {
-	if(resolution_.width == 640) {
-   		camera_matrix_ = (cv::Mat_<double>(3,3) << 1408.8319, 0.0000, 294.6681,
-        		                                   0.0000, 1389.8016, 237.9596,
-                		                           0.0000, 0.0000, 1.0000);
-	    distorted_coefficients_ = (cv::Mat_<double>(1,5) << 
-								-3.3458, 10.73656, 0.0775, 0.0037, 0.0);
-	} else {
-		camera_matrix_ = (cv::Mat_<double>(3,3) << 210.9809, 0.0000, 164.0612,
-												   0.000, 208.9717, 128.6563,
-												   0.0000, 0.0000, 1.0000);
-		distorted_coefficients_ = (cv::Mat_<double>(1,5) <<
-								-0.3686, 0.1074, -0.0092, 0.0008, 0.0);
-	}	
+	capture.set(CV_CAP_PROP_FRAME_WIDTH, resolution_.width);
+	capture.set(CV_CAP_PROP_FRAME_HEIGHT, resolution_.height);
+
+    /* Parameters for camera with fish-eye lens */
+    camera_matrix_ = (cv::Mat_<double>(3,3) << 1408.831918, 0.000000, 294.668141,
+                                           0.000000, 1389.801615, 237.959610,
+                                           0.000000, 0.000000, 1.000000);
+    distorted_coefficients_ = (cv::Mat_<double>(1,5) << 
+								-3.3458, 10.736563, 0.077535, 0.003666, 0.0);
 
     /* Parameters so ARToolkit think we have a normal	*
 	 * camera, and see a rectify image 					*/

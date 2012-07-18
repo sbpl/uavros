@@ -35,9 +35,6 @@ class video_publisher {
 		void create_subscribers();
 		void set_camera_calibration();
 		
-		void decrease_resolution_callback(const uav_msgs::camera_msg msg);
-		void increase_resolution_callback(const uav_msgs::camera_msg msg);
-
 		void main_loop();
 		boost::thread* main_loop_;
 
@@ -47,9 +44,6 @@ class video_publisher {
 		cv::VideoCapture capture;
 		image_transport::Publisher image_pub_;	
 		ros::Publisher info_pub_;	
-		ros::Publisher res_ready_pub_;
-		ros::Subscriber dec_res_sub_;
-		ros::Subscriber inc_res_sub_;
 
 		int camera_number;
 		bool camera_on_;
