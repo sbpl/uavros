@@ -96,6 +96,7 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 void platform_controller::align_front(tf::tfMessageConstPtr msg)
 {
     double pos[3], quat[4];
+	double r, p, y;
 	double theta, theta_sign;
 	double interval_rad, marker_rad, goal_theta;
 	double goal_x, goal_y, goal_z;
@@ -106,29 +107,32 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	get_pose_from_msg(msg);
 
 	/* Get the angle in map's z axis */
-	theta = pose_.rot.y;
+	tf::Quaternion q2;
+	tf::quaternionMsgToTF( msg->transforms[0].transform.rotation, q2);
+	btMatrix3x3(q2).getRPY(r,p,y);
+	theta = p;
 
 	ROS_INFO("Theta: %f", theta);
 
-    /* Assume theta is positive */
-    theta_sign = 1;
-
-    /* If theta is negative, adjust */
-    if(theta < 0) {
+    /* Check the sign of theta */
+    if(theta > 0) {
+        theta_sign = 1;
+    } else {
         theta_sign = -1;
-    }
+	}
+
 
     /* Get the current zone depending on the angle range of each zone */
-    interval_rad = INTERVALS_ANGLE * PI / 180;
-    current_zone = floor(fabs(theta) / interval_rad);
+//    interval_rad = INTERVALS_ANGLE * PI / 180;
+//    current_zone = floor(fabs(theta) / interval_rad);
 
     /* Get goal angle */
-    marker_rad = MARKER_ANGLE * PI / 180;
-    goal_theta = theta_sign * (current_zone) * interval_rad + marker_rad;
+//    marker_rad = MARKER_ANGLE * PI / 180;
+//    goal_theta = theta_sign * (current_zone) * interval_rad + marker_rad;
 
     /* Get goal position */
 	goal_x = pose_.pos.z - DISTANCE_FROM_PLATFORM * cos(theta);
-	goal_y = pose_.pos.x - DISTANCE_FROM_PLATFORM * sin(theta);
+	goal_y = pose_.pos.x + DISTANCE_FROM_PLATFORM * sin(theta);
 	goal_z = pose_.pos.y;
 
 	/* Get transform from the camera to the map */
@@ -140,8 +144,16 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     goal_y += pos[1];
 	goal_z = pos[2] - goal_z + HOVER_ABOVE_PLATFORM;
 
+	/* Get transform from the marker to the map */
+    get_transform("/map", "/marker1", transform);
+    
+	tf::Quaternion q = transform.getRotation();
+	btMatrix3x3(q).getRPY(r,p,y);
+
+	ROS_INFO("R: %fP: %fY: %f", r,p,y);
+
 	/* Update goal */
-	update_goal(goal_x, goal_y, goal_z, theta);
+	update_goal(goal_x, goal_y, goal_z, y + PI/2);
 }
 
 /* Align on top of the marker */
@@ -159,8 +171,8 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
 	/* Update goal depending if the front or bottom camera	*
 	 * detected the marker 									*/
     if(camera == FRONT_CAMERA) {
-		goal_x= (pose_.pos.z + WIDTH_PLATFORM) * cos(pose_.rot.y);
-        goal_y= pose_.pos.x - pose_.pos.x * sin(pose_.rot.y);
+		goal_x= pose_.pos.z + WIDTH_PLATFORM * cos(pose_.rot.y);
+        goal_y= pose_.pos.x + WIDTH_PLATFORM * sin(pose_.rot.y);
 		goal_z= pose_.pos.y;
     	get_transform("/map", "/usb_cam0", transform);
     } else {
@@ -224,6 +236,7 @@ void platform_controller::publish_goal(double x, double y, double z,
     goal_pose.pose.orientation.z = sin(theta/2);
     goal_pose.pose.orientation.w = cos(theta/2);
     goal_pose_pub_.publish(goal_pose);
+	ROS_INFO("Quat 2: %f", sin(theta/2));
 }
 
 /* Check wether it has been near the goal for the stablished time */
@@ -269,7 +282,7 @@ void platform_controller::get_transform(std::string parent, std::string child,
     }
 }
 
-
+/* Get the pose from the msg and put it pose_ variable */
 void platform_controller::get_pose_from_msg(tf::tfMessageConstPtr msg)
 {
     pose_.pos.x = msg->transforms[0].transform.translation.x;
