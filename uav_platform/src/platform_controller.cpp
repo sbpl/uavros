@@ -20,6 +20,8 @@ platform_controller::platform_controller(ros::NodeHandle &n): n_ (n)
 	goal_.y = 0;
 	goal_.z = 0;
 	goal_.theta = 0;
+	old_goal_ts_ = ros::Time::now();
+	goal_freq_ = ros::Duration(10.0);
 	ros::spin();
 }
 
@@ -112,8 +114,6 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	btMatrix3x3(q2).getRPY(r,p,y);
 	theta = p;
 
-	ROS_INFO("Theta: %f", theta);
-
     /* Check the sign of theta */
     if(theta > 0) {
         theta_sign = 1;
@@ -133,7 +133,6 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     /* Get goal position */
 	goal_x = pose_.pos.z - DISTANCE_FROM_PLATFORM * cos(theta);
 	goal_y = pose_.pos.x + DISTANCE_FROM_PLATFORM * sin(theta);
-	goal_z = pose_.pos.y;
 
 	/* Get transform from the camera to the map */
     get_transform("/map", "/usb_cam0", transform);
@@ -142,18 +141,20 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	/* Update the goal considering the position of the camera */
 	goal_x += pos[0];// - DISTANCE_FROM_PLATFORM;
     goal_y += pos[1];
-	goal_z = pos[2] - goal_z + HOVER_ABOVE_PLATFORM;
 
 	/* Get transform from the marker to the map */
-    get_transform("/map", "/marker1", transform);
+    if(!get_transform("/map", "/marker1", transform)) {
+		return;
+	}
+
+    get_pose_from_tf(pos, quat, transform);
+	goal_z = pos[2] + HOVER_ABOVE_PLATFORM;
     
 	tf::Quaternion q = transform.getRotation();
 	btMatrix3x3(q).getRPY(r,p,y);
 
-	ROS_INFO("R: %fP: %fY: %f", r,p,y);
-
 	/* Update goal */
-	update_goal(goal_x, goal_y, goal_z, y + PI/2);
+	update_goal(goal_x, goal_y, goal_z, y + PI/2, ros::Time::now());
 }
 
 /* Align on top of the marker */
@@ -198,7 +199,7 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
 	goal_z = pos[2] - goal_z + HOVER_ABOVE_PLATFORM;
 
 	/* Update Goal */
-	update_goal(goal_x, goal_y, goal_z, goal_theta);
+	update_goal(goal_x, goal_y, goal_z, goal_theta, ros::Time::now());
 }
 
 /* Land on marker */
@@ -210,15 +211,21 @@ void platform_controller::land(tf::tfMessageConstPtr msg)
 
 /* Update the goal in the class */
 void platform_controller::update_goal(double x, double y, double z, 
-									  double theta)
+									  double theta, ros::Time ts)
 {
 	goal_.x = (goal_.x + x) / 2;
 	goal_.y = (goal_.y + y) / 2;
 	goal_.z = (goal_.z + z) / 2;
 	goal_.theta = (goal_.theta + theta) / 2;
 
-	/* Publish the goal */
-	publish_goal(goal_.x, goal_.y, goal_.z, goal_.theta);
+
+	if(ts - old_goal_ts_ > goal_freq_) {
+	
+		/* Publish the goal */
+		publish_goal(goal_.x, goal_.y, goal_.z, goal_.theta);
+
+		old_goal_ts_ = ts;
+	}
 }
 
 /* Publish the goal */
@@ -236,7 +243,6 @@ void platform_controller::publish_goal(double x, double y, double z,
     goal_pose.pose.orientation.z = sin(theta/2);
     goal_pose.pose.orientation.w = cos(theta/2);
     goal_pose_pub_.publish(goal_pose);
-	ROS_INFO("Quat 2: %f", sin(theta/2));
 }
 
 /* Check wether it has been near the goal for the stablished time */
@@ -269,17 +275,19 @@ bool platform_controller::check_in_range(tf::tfMessageConstPtr msg)
 }
 
 /* Get transform between the two given frames */
-void platform_controller::get_transform(std::string parent, std::string child,
+bool platform_controller::get_transform(std::string parent, std::string child,
 					                    tf::StampedTransform &transform)
 {
     tf::TransformListener listener;
     try {
         listener.waitForTransform(parent, child, ros::Time(), 
-								  ros::Duration(3.0));
+								  ros::Duration(0.5));
         listener.lookupTransform(parent, child, ros::Time(), transform);
     } catch (tf::TransformException ex) {
+		return false;
         ROS_ERROR("%s",ex.what());
     }
+	return true;
 }
 
 /* Get the pose from the msg and put it pose_ variable */
