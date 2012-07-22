@@ -12,10 +12,11 @@
 #define PI  3.14159265
 
 #define DISTANCE_FROM_PLATFORM  2       //in meters
-#define WIDTH_PLATFORM			0.3
+#define DISTANCE_FROM_PLATFORM_2 .5       //in meters
+#define WIDTH_PLATFORM			0.6
 #define MARKER_ANGLE            0       //angle of the marker on respect to the plataform
 #define INTERVALS_ANGLE         15      //angle to mark for each zone
-#define HOVER_ABOVE_PLATFORM    1.0     //in meters
+#define HOVER_ABOVE_PLATFORM    0.0     //in meters
 #define PLATFORM_ANGLE          180     //In angles
 
 /* Track modes */
@@ -78,9 +79,9 @@ class platform_controller {
 		void check_time(tf::tfMessageConstPtr msg);
 		bool check_in_range(tf::tfMessageConstPtr msg);
 
-		void update_goal(double x, double y, double z, double theta);
+		void update_goal(double x, double y, double z, double theta, ros::Time ts);
 		void publish_goal(double x, double y, double z, double theta);
-		void get_transform(std::string parent, std::string child,
+		bool get_transform(std::string parent, std::string child,
 						   tf::StampedTransform &transform);
 		void get_pose_from_msg(tf::tfMessageConstPtr msg);
 		void get_pose_from_tf(double pos[3], double quat[4], 
@@ -92,8 +93,11 @@ class platform_controller {
 		ros::Subscriber tf_sub_;
 		ros::Subscriber track_sub_;
 
+		ros::Time old_goal_ts_;
+		ros::Duration goal_freq_;
 		ros::Timer timer_;
 
+		geometry_msgs::PoseStamped goal_pose_;
 		int track_mode_;
 		pose pose_;
 		goal goal_;

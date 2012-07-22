@@ -16,11 +16,12 @@ video_publisher::video_publisher(ros::NodeHandle &n): n_ (n), it_ (n_)
 	get_params();
 	create_publishers();
 	create_subscribers();
-	set_camera_calibration();
 	capture.open(camera_number);
+	set_camera_calibration();
+	main_loop();
 
-	main_loop_ = new boost::thread(boost::bind(&video_publisher::main_loop, 
-												this));
+//	main_loop_ = new boost::thread(boost::bind(&video_publisher::main_loop, 
+//												this));
 }
 
 /* Destructor */
@@ -41,13 +42,14 @@ void video_publisher::main_loop()
 		/* Get the undistort image with the camera parameters */
 		cv::Mat undistorted;
 		undistort(frame, undistorted, camera_matrix_, 
-						distorted_coefficients_, camera_matrix_);
+						distorted_coefficients_);
 		/* Create message to send the image */
 		cv_bridge::CvImage cvi;
 		cvi.header.stamp = ros::Time::now();
 		cvi.header.frame_id = camera_id;
 		cvi.encoding = "bgr8";
 		cvi.image = undistorted;
+//		cvi.image = frame;
 
 		/* Publish the message of the image */
 		sensor_msgs::Image image_msg;
@@ -114,6 +116,10 @@ void video_publisher::create_subscribers()
 /* Set camera calibration values and ar_pose values */
 void video_publisher::set_camera_calibration()
 {
+	capture.set(CV_CAP_PROP_BRIGHTNESS, 0.5);
+	capture.set(CV_CAP_PROP_CONTRAST, 0.2);
+	capture.set(CV_CAP_PROP_SATURATION, 0.2);
+
 	capture.set(CV_CAP_PROP_FRAME_WIDTH, resolution_.width);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, resolution_.height);
 
