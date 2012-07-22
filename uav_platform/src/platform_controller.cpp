@@ -63,6 +63,7 @@ void platform_controller::align_done_callback(const ros::TimerEvent&)
 {
 	ROS_INFO("Finish aligning front, changing to top");
 	track_mode_ = ALIGN_TOP;
+	timer_.stop();
 }
 
 /* Function call every time tf send a message */
@@ -75,7 +76,7 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
     if(msg->transforms[0].child_frame_id == "/marker1") {
         if(track_mode_ == ALIGN_FRONT) {
 			align_front(msg);
-			check_in_range(msg);
+			check_time(msg);
         } else if(track_mode_ == ALIGN_TOP) {
 			align_top(msg, FRONT_CAMERA, false);
         } else if(track_mode_ == ROTATE) {
@@ -284,14 +285,25 @@ void platform_controller::check_time(tf::tfMessageConstPtr msg)
 /* Check wether the transform in the message is in certain range */
 bool platform_controller::check_in_range(tf::tfMessageConstPtr msg)
 {
-	if(abs(msg->transforms[0].transform.translation.x) - goal_pose_.pose.position.x < IN_RANGE_DIST) {
-		if(abs(msg->transforms[0].transform.translation.y) - goal_pose_.pose.position.y < IN_RANGE_DIST) {
-			if(abs(msg->transforms[0].transform.translation.z) - goal_pose_.pose.position.z < IN_RANGE_DIST) {
+	tf::StampedTransform current_pose;
+	get_transform("/map", "/body_frame", current_pose);
+	if(fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x) < IN_RANGE_DIST) {
+		if(fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y) < IN_RANGE_DIST) {
+			if(fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z) < IN_RANGE_DIST) {
 				ROS_INFO("In range distance from goal");
 				return true;
 			}
 		}
 	}
+	ROS_INFO("-------------------------------------------------------");
+	ROS_INFO("GOAL:\t%f\t%f\t%f", goal_pose_.pose.position.x, goal_pose_.pose.position.y, goal_pose_.pose.position.z);
+//	ROS_INFO("POS:\t%f\t%f\t%f", msg->transforms[0].transform.translation.x,  msg->transforms[0].transform.translation.y,  msg->transforms[0].transform.translation.z);  
+	ROS_INFO("POS:\t%f\t%f\t%f", current_pose.getOrigin().x(), current_pose.getOrigin().y(), current_pose.getOrigin().z()); 
+	ROS_INFO("DIFF:\t%f\t%f\t%f",
+									fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x),
+									fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y),
+									fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z));
+
 	return false;
 }
 
