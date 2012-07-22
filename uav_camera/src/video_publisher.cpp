@@ -117,25 +117,48 @@ void video_publisher::set_camera_calibration()
 	capture.set(CV_CAP_PROP_FRAME_WIDTH, resolution_.width);
 	capture.set(CV_CAP_PROP_FRAME_HEIGHT, resolution_.height);
 
-    /* Parameters for camera with fish-eye lens */
-    camera_matrix_ = (cv::Mat_<double>(3,3) << 1408.831918, 0.000000, 294.668141,
-                                           0.000000, 1389.801615, 237.959610,
-                                           0.000000, 0.000000, 1.000000);
-    distorted_coefficients_ = (cv::Mat_<double>(1,5) << 
+	if(resolution_.width == 640) {
+	    /* Parameters for camera with fish-eye lens */
+   	 	camera_matrix_ = (cv::Mat_<double>(3,3) << 1408.831918, 0.0, 294.668141,
+	   	                                           0.0, 1389.801615, 237.959610,
+                                           		   0.0, 0.0, 1.0);
+	    distorted_coefficients_ = (cv::Mat_<double>(1,5) << 
 								-3.3458, 10.736563, 0.077535, 0.003666, 0.0);
 
-    /* Parameters so ARToolkit think we have a normal	*
-	 * camera, and see a rectify image 					*/
-    double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000};
-	*ar_params_.d = *temp_d;
-    ar_params_.k = { {450.724360, 0.000000, 317.891495,
-                      0.000000, 444.956819, 233.815601,
-                      0.0, 0.0, 1.0} };
-    ar_params_.r = { {1.0, 0.0, 0.0,
-                      0.0, 1.0, 0.0,
-                      0.0, 0.0, 1.0} };
-    ar_params_.p = { {450.72436, 0.000000, 317.891495, 0.0,
-                      0.000000, 444.956819, 233.815601, 0.0,
-                      0.0, 0.0, 1.0, 0.0} };
+    	/* Parameters so ARToolkit think we have a normal	*
+		 * camera, and see a rectify image 					*/
+   		double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000};
+		*ar_params_.d = *temp_d;
+	    ar_params_.k = { {450.724360, 0.000000, 317.891495,
+    	                  0.000000, 444.956819, 233.815601,
+        	              0.0, 0.0, 1.0} };
+	    ar_params_.r = { {1.0, 0.0, 0.0,
+    	                  0.0, 1.0, 0.0,
+	                      0.0, 0.0, 1.0} };
+	   	ar_params_.p = { {450.72436, 0.000000, 317.891495, 0.0,
+    	                  0.000000, 444.956819, 233.815601, 0.0,
+        	              0.0, 0.0, 1.0, 0.0} };
+	} else {
+
+		/* For bottom camera */
+    	camera_matrix_ = (cv::Mat_<double>(3,3) << 214.651930, 0.0, 158.156551,
+												   0.0, 214.041442, 112.968173,
+												   0.0, 0.0, 1.0);
+
+	    distorted_coefficients_ = (cv::Mat_<double>(1,5) << 
+							-0.361626, 0.096834, -0.002050, -0.001804, 0.0000);	
+
+    	double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000};
+		*ar_params_.d = *temp_d;
+	    ar_params_.k = { {214.651930, 0.0000, 158.156551,
+						  0.0000, 214.041442, 112.968173,
+					 	  0.0000, 0.0000 1.0000} };
+	    ar_params_.r = { {1.0, 0.0, 0.0,
+	                      0.0, 1.0, 0.0,
+	                      0.0, 0.0, 1.0} };
+	    ar_params_.p = { {214.651930, 0.0000, 158.156551, 0.0,
+						  0.0000, 214.041442, 112.968173, 0.0,
+					 	  0.0000, 0.0000 1.0000, 0.0} };
+	}
 }
 
