@@ -12,10 +12,11 @@
 #define PI  3.14159265
 
 #define DISTANCE_FROM_PLATFORM  2       //in meters
+#define DISTANCE_FROM_PLATFORM_2 .5       //in meters
 #define WIDTH_PLATFORM			0.6
 #define MARKER_ANGLE            0       //angle of the marker on respect to the plataform
 #define INTERVALS_ANGLE         15      //angle to mark for each zone
-#define HOVER_ABOVE_PLATFORM    0.8     //in meters
+#define HOVER_ABOVE_PLATFORM    0.0     //in meters
 #define PLATFORM_ANGLE          180     //In angles
 
 /* Track modes */
@@ -96,6 +97,7 @@ class platform_controller {
 		ros::Duration goal_freq_;
 		ros::Timer timer_;
 
+		geometry_msgs::PoseStamped goal_pose_;
 		int track_mode_;
 		pose pose_;
 		goal goal_;
