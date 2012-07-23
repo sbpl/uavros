@@ -46,4 +46,5 @@
 		<param name="marker_pattern_list" type="string" value="$(find uav_camera)/data/multi_pattern"/>
 		<param name="threshold" type="int" value="100"/>
 	</node> 
+
 </launch>

@@ -17,7 +17,7 @@ typedef struct {
 } resolution;
 
 typedef struct{
-	double d[5];
+	double d[6];
 	boost::array<double, 9ul> k;
 	boost::array<double, 9ul> r;
 	boost::array<double, 12ul> p;

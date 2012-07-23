@@ -128,8 +128,8 @@ void video_publisher::set_camera_calibration()
    	 	camera_matrix_ = (cv::Mat_<double>(3,3) << 1408.831918, 0.0, 294.668141,
 	   	                                           0.0, 1389.801615, 237.959610,
                                            		   0.0, 0.0, 1.0);
-	    distorted_coefficients_ = (cv::Mat_<double>(1,5) << 
-								-3.3458, 10.736563, 0.077535, 0.003666, 0.0);
+	    distorted_coefficients_ = (cv::Mat_<double>(1,6) << 
+								-3.3458, 10.736563, 0.077535, 0.003666, 0.0, 0.0);
 
     	/* Parameters so ARToolkit think we have a normal	*
 		 * camera, and see a rectify image 					*/
@@ -162,7 +162,7 @@ void video_publisher::set_camera_calibration()
 	    ar_params_.r = { {1.0, 0.0, 0.0,
 	                      0.0, 1.0, 0.0,
 	                      0.0, 0.0, 1.0} };
-	    ar_params_.k = { {215.904518, 0.000000, 162.810658, 0.0,
+	    ar_params_.p = { {215.904518, 0.000000, 162.810658, 0.0,
 						  0.000000, 214.999713, 114.332141, 0.0,
 						  0.000000, 0.000000, 1.000000, 0.0} };
 	}

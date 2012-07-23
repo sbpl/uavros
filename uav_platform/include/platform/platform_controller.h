@@ -32,6 +32,7 @@
 
 const ros::Duration IN_RANGE_TIME(5.0);	// in seconds
 const double	IN_RANGE_DIST =	0.20;	// in meters
+const ros::Duration GOAL_FREQUENCY(0.5);// in seconds
 
 typedef struct {
 	double x;
@@ -79,7 +80,7 @@ class platform_controller {
 		void check_time(tf::tfMessageConstPtr msg);
 		bool check_in_range(tf::tfMessageConstPtr msg);
 
-		void update_goal(double x, double y, double z, double theta, ros::Time ts);
+		void update_goal(double x, double y, double z, double theta);
 		void publish_goal(double x, double y, double z, double theta);
 		bool get_transform(std::string parent, std::string child,
 						   tf::StampedTransform &transform);
@@ -94,7 +95,6 @@ class platform_controller {
 		ros::Subscriber track_sub_;
 
 		ros::Time old_goal_ts_;
-		ros::Duration goal_freq_;
 		ros::Timer timer_;
 
 		geometry_msgs::PoseStamped goal_pose_;

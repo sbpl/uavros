@@ -21,7 +21,6 @@ platform_controller::platform_controller(ros::NodeHandle &n): n_ (n)
 	goal_.z = 0;
 	goal_.theta = 0;
 	old_goal_ts_ = ros::Time::now();
-	goal_freq_ = ros::Duration(10.0);
 	ros::spin();
 }
 
@@ -157,7 +156,7 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	btMatrix3x3(q).getRPY(r,p,y);
 
 	/* Update goal */
-	update_goal(goal_x, goal_y, goal_z, y + PI/2, ros::Time::now());
+	update_goal(goal_x, goal_y, goal_z, y + PI/2);
 }
 
 /* Align on top of the marker */
@@ -219,7 +218,7 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
 	btMatrix3x3(q).getRPY(r,p,y);
 
 	/* Update Goal */
-	update_goal(goal_x, goal_y, goal_z, y + PI/2, ros::Time::now());
+	update_goal(goal_x, goal_y, goal_z, y + PI/2);
 }
 
 /* Land on marker */
@@ -231,21 +230,20 @@ void platform_controller::land(tf::tfMessageConstPtr msg)
 
 /* Update the goal in the class */
 void platform_controller::update_goal(double x, double y, double z, 
-									  double theta, ros::Time ts)
+									  double theta)
 {
 	goal_.x = (goal_.x + x) / 2;
 	goal_.y = (goal_.y + y) / 2;
 	goal_.z = (goal_.z + z) / 2;
 	goal_.theta = (goal_.theta + theta) / 2;
 
-
-	if(ts - old_goal_ts_ > goal_freq_) {
+	if(ros::Time::now() - old_goal_ts_ > GOAL_FREQUENCY) {
 	
 		/* Publish the goal */
 		publish_goal(goal_.x, goal_.y, goal_.z, goal_.theta);
 
-		old_goal_ts_ = ts;
-	}
+		old_goal_ts_ = ros::Time::now();
+	} 
 }
 
 /* Publish the goal */
