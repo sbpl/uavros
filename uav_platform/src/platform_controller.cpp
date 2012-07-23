@@ -20,6 +20,7 @@ platform_controller::platform_controller(ros::NodeHandle &n): n_ (n)
 	goal_.y = 0;
 	goal_.z = 0;
 	goal_.theta = 0;
+	bottom_camera_ = false;
 	old_goal_ts_ = ros::Time::now();
 	ros::spin();
 }
@@ -60,32 +61,68 @@ void platform_controller::mode_callback(uav_msgs::mode_msg msg)
 /* Callback called when aligned in front was in range for the stablished time */
 void platform_controller::align_done_callback(const ros::TimerEvent&)
 {
-	ROS_INFO("Finish aligning front, changing to top");
-	track_mode_ = ALIGN_TOP;
+	ROS_INFO("Entering callback");
+	tf::StampedTransform transform;
+	/* Make sure the marker being tracked is still in view */
+	if(!bottom_camera_) {
+   		if(!get_transform("/map", "/marker1", transform)) { 
+			timer_.stop();
+			return;
+		}
+	} else {
+		if (!get_transform("/map", "/marker2", transform)) { 
+			timer_.stop();
+			return;
+		}
+	}
+
+	switch(track_mode_) {
+		case ALIGN_FRONT:
+			ROS_INFO("Finish aligning front, changing to top");
+			track_mode_ = ALIGN_TOP;
+			break;
+		case ALIGN_TOP:
+			if(!bottom_camera_) {
+				ROS_INFO("Changing to bottom camera");	
+				bottom_camera_ = true;
+			} else {
+				ROS_INFO("Finish aligning on top, changing to rotate");
+				track_mode_ = ROTATE;
+			}
+			break;
+		case ROTATE:
+			ROS_INFO("Finish rotation, changing to landing");
+			track_mode_ = LAND;
+			break;
+		default:
+			ROS_INFO("Error entering timer to change modes");
+			break;
+	}
 	timer_.stop();
 }
 
 /* Function call every time tf send a message */
 void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 {
-    tf::StampedTransform transform;
 
     /* Check wether we are seeing a marker and take action  *
      * depending on the last track mode send                */
-    if(msg->transforms[0].child_frame_id == "/marker1") {
+    if(msg->transforms[0].child_frame_id == "/marker1" && !bottom_camera_) {
         if(track_mode_ == ALIGN_FRONT) {
 			align_front(msg);
-			check_time(msg);
+			check_time();
         } else if(track_mode_ == ALIGN_TOP) {
-			align_top(msg, FRONT_CAMERA, false);
-        } else if(track_mode_ == ROTATE) {
-			align_top(msg, FRONT_CAMERA, true);
+			align_top(msg, false);
+			check_time();
         }
-    } else if(msg->transforms[0].child_frame_id == "/marker2") {
+    } else if(msg->transforms[0].child_frame_id == "/marker2" 
+				&& bottom_camera_) {
         if(track_mode_ == ALIGN_TOP) {
-		//	align_top(msg, BOTTOM_CAMERA, false);
+			align_top(msg, false);
+			check_time();
         } else if(track_mode_ == ROTATE) {
-	//		align_top(msg, FRONT_CAMERA, true);
+			align_top(msg, true);
+			check_time();
         } else if(track_mode_ == LAND) {
             land(msg);
         }
@@ -160,9 +197,9 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 }
 
 /* Align on top of the marker */
-void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
-									bool rotate)
+void platform_controller::align_top(tf::tfMessageConstPtr msg, bool rotate)
 {
+
     double pos[3], quat[4];
 	double r, p, y, theta;
     double goal_theta;
@@ -180,7 +217,7 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
 
 	/* Update goal depending if the front or bottom camera	*
 	 * detected the marker 									*/
-    if(camera == FRONT_CAMERA) {
+    if(!bottom_camera_) {
 		goal_x= pose_.pos.z - DISTANCE_FROM_PLATFORM_2 * cos(theta);
         goal_y= pose_.pos.x + DISTANCE_FROM_PLATFORM_2 * sin(theta);
 		goal_z= pose_.pos.y;
@@ -192,13 +229,6 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
     	get_transform("/map", "/usb_cam1", transform);
     }
 
-	/* Get the theta desired depending the state stablished */
-	if(rotate) {
-		goal_theta = pose_.rot.z + PI; 
-	} else {
-		goal_theta = pose_.rot.z;
-	}
-
 	/* Get transform from map to the camera */
     get_pose_from_tf(pos, quat, transform);
 
@@ -207,8 +237,14 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
 	goal_y += pos[1];
 
 	/* Get transform from the marker to the map */
-    if(!get_transform("/map", "/marker1", transform)) {
-		return;
+	if(!bottom_camera_) {
+   		if(!get_transform("/map", "/marker1", transform)) { 
+			return;
+		}
+	} else {
+		if (!get_transform("/map", "/marker2", transform)) { 
+			return;
+		}
 	}
 
     get_pose_from_tf(pos, quat, transform);
@@ -217,8 +253,12 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, int camera,
 	tf::Quaternion q = transform.getRotation();
 	btMatrix3x3(q).getRPY(r,p,y);
 
-	/* Update Goal */
-	update_goal(goal_x, goal_y, goal_z, y + PI/2);
+	/* Update Goal depending on the mode the orientation changes*/
+	if(rotate) {
+		update_goal(goal_x, goal_y, goal_z, y + PI);
+	} else {
+		update_goal(goal_x, goal_y, goal_z, y + PI/2);
+	}
 }
 
 /* Land on marker */
@@ -263,45 +303,38 @@ void platform_controller::publish_goal(double x, double y, double z,
 }
 
 /* Check wether it has been near the goal for the stablished time */
-void platform_controller::check_time(tf::tfMessageConstPtr msg)
+void platform_controller::check_time()
 {
-	if(timer_.isValid()) {
-		if(!check_in_range(msg)) {
-
-			/* If not in range reset timer */
-			timer_.stop();
-			timer_.start();
-		}
-	} else {
-		if(check_in_range(msg)) {
+	if(check_in_range()) {
+		if(!timer_.isValid()) {
 			timer_ = n_.createTimer(IN_RANGE_TIME, 
 							&platform_controller::align_done_callback, this);
 		}
+	} else {
+		timer_.stop();
 	}
 }
 
 /* Check wether the transform in the message is in certain range */
-bool platform_controller::check_in_range(tf::tfMessageConstPtr msg)
+bool platform_controller::check_in_range()
 {
 	tf::StampedTransform current_pose;
 	get_transform("/map", "/body_frame", current_pose);
-	if(fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x) < IN_RANGE_DIST) {
-		if(fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y) < IN_RANGE_DIST) {
-			if(fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z) < IN_RANGE_DIST) {
-				ROS_INFO("In range distance from goal");
-				return true;
+	if(fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x) 
+			< IN_RANGE_DIST) {
+		if(fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y) 
+				< IN_RANGE_DIST) {
+			if(fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z) 
+					< IN_RANGE_DIST) {
+				if(fabs(current_pose.getRotation().z() - 
+					goal_pose_.pose.orientation.z) < IN_RANGE_RAD) {
+					ROS_ERROR("In range");
+					return true;
+				}
 			}
 		}
 	}
-	ROS_INFO("-------------------------------------------------------");
-	ROS_INFO("GOAL:\t%f\t%f\t%f", goal_pose_.pose.position.x, goal_pose_.pose.position.y, goal_pose_.pose.position.z);
-//	ROS_INFO("POS:\t%f\t%f\t%f", msg->transforms[0].transform.translation.x,  msg->transforms[0].transform.translation.y,  msg->transforms[0].transform.translation.z);  
-	ROS_INFO("POS:\t%f\t%f\t%f", current_pose.getOrigin().x(), current_pose.getOrigin().y(), current_pose.getOrigin().z()); 
-	ROS_INFO("DIFF:\t%f\t%f\t%f",
-									fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x),
-									fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y),
-									fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z));
-
+	ROS_ERROR("Not in range from goal");
 	return false;
 }
 

@@ -32,6 +32,7 @@
 
 const ros::Duration IN_RANGE_TIME(5.0);	// in seconds
 const double	IN_RANGE_DIST =	0.20;	// in meters
+const double	IN_RANGE_RAD =	PI/6;	// in radians
 const ros::Duration GOAL_FREQUENCY(0.5);// in seconds
 
 typedef struct {
@@ -74,11 +75,11 @@ class platform_controller {
 		void align_done_callback(const ros::TimerEvent&);
 
 		void align_front(tf::tfMessageConstPtr msg);
-		void align_top(tf::tfMessageConstPtr msg, int camera, bool rotate);
+		void align_top(tf::tfMessageConstPtr msg, bool rotate);
 		void land(tf::tfMessageConstPtr msg);
 
-		void check_time(tf::tfMessageConstPtr msg);
-		bool check_in_range(tf::tfMessageConstPtr msg);
+		void check_time();
+		bool check_in_range();
 
 		void update_goal(double x, double y, double z, double theta);
 		void publish_goal(double x, double y, double z, double theta);
@@ -99,6 +100,7 @@ class platform_controller {
 
 		geometry_msgs::PoseStamped goal_pose_;
 		int track_mode_;
+		bool bottom_camera_;
 		pose pose_;
 		goal goal_;
 };
