@@ -33,7 +33,8 @@
 const ros::Duration IN_RANGE_TIME(5.0);	// in seconds
 const double	IN_RANGE_DIST =	0.20;	// in meters
 const double	IN_RANGE_RAD =	PI/6;	// in radians
-const ros::Duration GOAL_FREQUENCY(0.5);// in seconds
+const ros::Duration GOAL_FREQUENCY(0.1);// in seconds
+const ros::Duration MARKER_FREQUENCY(0.5);	//in seconds
 
 typedef struct {
 	double x;
@@ -96,6 +97,7 @@ class platform_controller {
 		ros::Subscriber track_sub_;
 
 		ros::Time old_goal_ts_;
+		ros::Time last_marker_ts_;
 		ros::Timer timer_;
 
 		geometry_msgs::PoseStamped goal_pose_;

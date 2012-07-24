@@ -131,7 +131,7 @@ void video_publisher::set_camera_calibration()
 	    distorted_coefficients_ = (cv::Mat_<double>(1,5) << 
 								-3.3458, 10.736563, 0.077535, 0.003666, 0.0);
 
-// * distortion factor
+// 8 distortion factor
 /*        camera_matrix_ = (cv::Mat_<double>(3,3) <<
 438.579386, 0.000000, 327.925578,
 0.000000, 437.194986, 234.398347,
@@ -141,10 +141,6 @@ void video_publisher::set_camera_calibration()
                         //-3.3458, 10.736563, 0.077535, 0.003666, 0.0);
                 0.028721, 0.113968, 0.001450, -0.000785,
                 -0.230102, 0.398666, 0.178484, -0.328546);
-*/
-
-        /* Parameters so ARToolkit think we have a normal   *
-         * camera, and see a rectify image                  */
 
         double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000};
         *ar_params_.d = *temp_d;
@@ -157,7 +153,9 @@ void video_publisher::set_camera_calibration()
         ar_params_.p = { {450.72436, 0.000000, 317.891495, 0.0,
                           0.000000, 444.956819, 233.815601, 0.0,
                           0.0, 0.0, 1.0, 0.0} };
-/*
+*/
+        /* Parameters so ARToolkit think we have a normal   *
+         * camera, and see a rectify image                  */
         double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000, 0.0, 0.0, 0.0};
         *ar_params_.d = *temp_d;
         ar_params_.k = { {422.790866, 0.000000, 328.485568,
@@ -171,7 +169,7 @@ void video_publisher::set_camera_calibration()
 0.000000, 418.945605, 227.661115, 0.0,
 0.000000, 0.000000, 1.000000, 0.0
 } };
-*/
+
 } else {
 
 		/* For bottom camera */

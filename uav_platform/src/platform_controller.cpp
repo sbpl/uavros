@@ -61,21 +61,6 @@ void platform_controller::mode_callback(uav_msgs::mode_msg msg)
 /* Callback called when aligned in front was in range for the stablished time */
 void platform_controller::align_done_callback(const ros::TimerEvent&)
 {
-	ROS_INFO("Entering callback");
-	tf::StampedTransform transform;
-	/* Make sure the marker being tracked is still in view */
-	if(!bottom_camera_) {
-   		if(!get_transform("/map", "/marker1", transform)) { 
-			timer_.stop();
-			return;
-		}
-	} else {
-		if (!get_transform("/map", "/marker2", transform)) { 
-			timer_.stop();
-			return;
-		}
-	}
-
 	switch(track_mode_) {
 		case ALIGN_FRONT:
 			ROS_INFO("Finish aligning front, changing to top");
@@ -272,10 +257,10 @@ void platform_controller::land(tf::tfMessageConstPtr msg)
 void platform_controller::update_goal(double x, double y, double z, 
 									  double theta)
 {
-	goal_.x = (goal_.x + x) / 2;
-	goal_.y = (goal_.y + y) / 2;
-	goal_.z = (goal_.z + z) / 2;
-	goal_.theta = (goal_.theta + theta) / 2;
+	goal_.x = goal_.x * 0.9 + x * 0.1;
+	goal_.y = goal_.y * 0.9 + y * 0.1;
+	goal_.z = goal_.z * 0.9 + z * 0.1;
+	goal_.theta = goal_.theta * 0.9 + theta * 0.1;
 
 	if(ros::Time::now() - old_goal_ts_ > GOAL_FREQUENCY) {
 	
@@ -309,7 +294,12 @@ void platform_controller::check_time()
 		if(!timer_.isValid()) {
 			timer_ = n_.createTimer(IN_RANGE_TIME, 
 							&platform_controller::align_done_callback, this);
+		} else {
+			if(ros::Time::now() - last_marker_ts_ > MARKER_FREQUENCY) {
+				timer_.stop();
+			}
 		}
+		last_marker_ts_ = ros::Time::now();		
 	} else {
 		timer_.stop();
 	}
