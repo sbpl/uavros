@@ -100,7 +100,7 @@ void video_publisher::create_publishers()
 	char cam_info[40], cam_image[40], cam_id[30];
 	int n = sprintf(cam_image, "usb_cam%d/image_raw", camera_number);
 	n = sprintf(cam_info, "usb_cam%d/camera_info", camera_number);
-	n = sprintf(cam_id, "usb_cam%d", camera_number);
+	n = sprintf(cam_id, "/usb_cam%d", camera_number);
 	camera_id = cam_id;
 
 	image_pub_ = it_.advertise(cam_image, 1);
@@ -116,7 +116,7 @@ void video_publisher::create_subscribers()
 /* Set camera calibration values and ar_pose values */
 void video_publisher::set_camera_calibration()
 {
-	capture.set(CV_CAP_PROP_BRIGHTNESS, 0.5);
+	capture.set(CV_CAP_PROP_BRIGHTNESS, 0.6);
 	capture.set(CV_CAP_PROP_CONTRAST, 0.2);
 	capture.set(CV_CAP_PROP_SATURATION, 0.2);
 
@@ -141,7 +141,7 @@ void video_publisher::set_camera_calibration()
                         //-3.3458, 10.736563, 0.077535, 0.003666, 0.0);
                 0.028721, 0.113968, 0.001450, -0.000785,
                 -0.230102, 0.398666, 0.178484, -0.328546);
-
+*/
         double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000};
         *ar_params_.d = *temp_d;
         ar_params_.k = { {450.724360, 0.000000, 317.891495,
@@ -153,10 +153,10 @@ void video_publisher::set_camera_calibration()
         ar_params_.p = { {450.72436, 0.000000, 317.891495, 0.0,
                           0.000000, 444.956819, 233.815601, 0.0,
                           0.0, 0.0, 1.0, 0.0} };
-*/
+
         /* Parameters so ARToolkit think we have a normal   *
          * camera, and see a rectify image                  */
-        double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000, 0.0, 0.0, 0.0};
+/*        double temp_d[] = {-0.363638, 0.095521, 0.002198, 0.002716, 0.000000, 0.0, 0.0, 0.0};
         *ar_params_.d = *temp_d;
         ar_params_.k = { {422.790866, 0.000000, 328.485568,
 0.000000, 418.945605, 227.661115,
@@ -169,7 +169,7 @@ void video_publisher::set_camera_calibration()
 0.000000, 418.945605, 227.661115, 0.0,
 0.000000, 0.000000, 1.000000, 0.0
 } };
-
+*/
 } else {
 
 		/* For bottom camera */

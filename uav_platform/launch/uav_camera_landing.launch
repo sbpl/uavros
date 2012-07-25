@@ -44,7 +44,7 @@
 		<param name="camera_image" type="string" value="/usb_cam1/image_raw"/>
 		<param name="camera_info" type="string" value="/usb_cam1/camera_info"/>
 		<param name="marker_pattern_list" type="string" value="$(find uav_camera)/data/multi_pattern"/>
-		<param name="threshold" type="int" value="80"/>
+		<param name="threshold" type="int" value="100"/>
 	</node> 
 
 </launch>

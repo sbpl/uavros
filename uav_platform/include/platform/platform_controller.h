@@ -19,6 +19,9 @@
 #define HOVER_ABOVE_PLATFORM    0.0     //in meters
 #define PLATFORM_ANGLE          180     //In angles
 
+#define NEW_GOAL_RATIO			0.1
+#define OLD_GOAL_RATIO			0.9
+
 /* Track modes */
 #define ALIGN_FRONT 	1
 #define ALIGN_TOP   	2
@@ -33,7 +36,7 @@
 const ros::Duration IN_RANGE_TIME(5.0);	// in seconds
 const double	IN_RANGE_DIST =	0.20;	// in meters
 const double	IN_RANGE_RAD =	PI/6;	// in radians
-const ros::Duration GOAL_FREQUENCY(0.1);// in seconds
+const ros::Duration GOAL_FREQUENCY(1.0);// in seconds
 const ros::Duration MARKER_FREQUENCY(0.5);	//in seconds
 
 typedef struct {

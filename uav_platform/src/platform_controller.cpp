@@ -61,6 +61,7 @@ void platform_controller::mode_callback(uav_msgs::mode_msg msg)
 /* Callback called when aligned in front was in range for the stablished time */
 void platform_controller::align_done_callback(const ros::TimerEvent&)
 {
+	ROS_INFO("Entering align callback");
 	switch(track_mode_) {
 		case ALIGN_FRONT:
 			ROS_INFO("Finish aligning front, changing to top");
@@ -139,11 +140,11 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	theta = p;
 
     /* Check the sign of theta */
-    if(theta > 0) {
-        theta_sign = 1;
-    } else {
-        theta_sign = -1;
-	}
+//	if(theta > 0) {
+//		theta_sign = 1;
+//	} else {
+//		theta_sign = -1;
+//	}
 
 
     /* Get the current zone depending on the angle range of each zone */
@@ -257,10 +258,10 @@ void platform_controller::land(tf::tfMessageConstPtr msg)
 void platform_controller::update_goal(double x, double y, double z, 
 									  double theta)
 {
-	goal_.x = goal_.x * 0.9 + x * 0.1;
-	goal_.y = goal_.y * 0.9 + y * 0.1;
-	goal_.z = goal_.z * 0.9 + z * 0.1;
-	goal_.theta = goal_.theta * 0.9 + theta * 0.1;
+	goal_.x = goal_.x * OLD_GOAL_RATIO + x * NEW_GOAL_RATIO;
+	goal_.y = goal_.y * OLD_GOAL_RATIO + y * NEW_GOAL_RATIO;
+	goal_.z = goal_.z * OLD_GOAL_RATIO + z * NEW_GOAL_RATIO;
+	goal_.theta = goal_.theta * OLD_GOAL_RATIO + theta * NEW_GOAL_RATIO;
 
 	if(ros::Time::now() - old_goal_ts_ > GOAL_FREQUENCY) {
 	
@@ -294,14 +295,20 @@ void platform_controller::check_time()
 		if(!timer_.isValid()) {
 			timer_ = n_.createTimer(IN_RANGE_TIME, 
 							&platform_controller::align_done_callback, this);
+			timer_.start();
+				ROS_INFO("Start timer");
 		} else {
 			if(ros::Time::now() - last_marker_ts_ > MARKER_FREQUENCY) {
+				ROS_INFO("Delay between marker frames is high");
 				timer_.stop();
+			} else {
+				timer_.start();
 			}
 		}
 		last_marker_ts_ = ros::Time::now();		
 	} else {
 		timer_.stop();
+		ROS_INFO("Stoping timer");
 	}
 }
 
@@ -318,13 +325,13 @@ bool platform_controller::check_in_range()
 					< IN_RANGE_DIST) {
 				if(fabs(current_pose.getRotation().z() - 
 					goal_pose_.pose.orientation.z) < IN_RANGE_RAD) {
-					ROS_ERROR("In range");
+					ROS_WARN("In range");
 					return true;
 				}
 			}
 		}
 	}
-	ROS_ERROR("Not in range from goal");
+	ROS_WARN("Not in range from goal");
 	return false;
 }
 
