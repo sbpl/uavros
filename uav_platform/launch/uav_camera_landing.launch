@@ -1,14 +1,6 @@
 <?xml version="1.0"?>
 
 <launch>
-	<!-- ************ Marker in atach to front of platform ************ -->
-<!--	<node pkg="tf" type="static_transform_publisher" name="align_front_to_cam" 
-		args="0 0.3 0.5 0 1.57 0 marker1 align_front 1" />
--->
-	<!-- ************ Marker in atach to surface of platform ************ -->
-<!--	<node pkg="tf" type="static_transform_publisher" name="align_top_to_cam" 
-		args="0 0.3 -0.2 0 0 0 marker1 align_top 1" />
--->	
 	<!-- ************ Camera0 to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera0" 
 		args="0.27 0.0 -0.2 1.57 0 1.57 body_frame usb_cam0 1" /> 
@@ -17,34 +9,48 @@
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera1" 
 		args="-0.1 0.0 -0.07 0.0 3.14 -1.57 body_frame usb_cam1 1" /> 
 
-    <node pkg="uav_camera" type="video_publisher" name="camera0" output="screen">
+	<!-- ************** Front Camera ************ -->
+    <node pkg="uav_camera" type="video_publisher" name="camera0" 
+		output="screen">
 		<param name ="camera_number" type="int" value="0" />
 		<param name ="width" type="double" value="640" />
 		<param name ="height" type="double" value="480" />
 	</node> 
 
-    <node pkg="uav_camera" type="video_publisher" name="camera1" output="screen">
+	<!-- ************* Bottom Camera *********** -->
+    <node pkg="uav_camera" type="video_publisher" name="camera1" 
+		output="screen">
 		<param name ="camera_number" type="int" value="1" />
 		<param name ="width" type="double" value="320" />
 		<param name ="height" type="double" value="240" />
 	</node> 
 	
-    <node pkg="uav_platform" type="platform_controller" name="platform_controller" output="screen"/>
+	<!-- ************ Platform Controller *********** -->
+    <node pkg="uav_platform" type="platform_controller" 
+		name="platform_controller" output="screen"/>
 
-    <node pkg="uav_platform" type="set_track_mode" name="set_track_mode" output="screen"/> 
+	<!-- *********** Interactive Marker for changing mode *********** -->
+    <node pkg="uav_platform" type="set_track_mode" name="set_track_mode" 
+		output="screen"/> 
 
-	<node name="ar_pose0" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+	<!-- *********** ARToolkit for camera 0 ********** -->
+	<node name="ar_pose0" pkg="ar_pose" type="ar_multi" respawn="false" 
+		output="screen">
 		<param name="camera_image" type="string" value="/usb_cam0/image_raw"/>
 		<param name="camera_info" type="string" value="/usb_cam0/camera_info"/>
-		<param name="marker_pattern_list" type="string" value="$(find uav_camera)/data/multi_pattern"/>
+		<param name="marker_pattern_list" type="string" 
+				value="$(find uav_camera)/data/multi_pattern"/>
 		<param name="threshold" type="int" value="80"/>
 	</node>
 
-	<node name="ar_pose1" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+	<!-- *********** ARToolkit for camera 1 ********** -->
+	<node name="ar_pose1" pkg="ar_pose" type="ar_multi" respawn="false" 
+		output="screen">
 		<param name="camera_image" type="string" value="/usb_cam1/image_raw"/>
 		<param name="camera_info" type="string" value="/usb_cam1/camera_info"/>
-		<param name="marker_pattern_list" type="string" value="$(find uav_camera)/data/multi_pattern"/>
-		<param name="threshold" type="int" value="100"/>
+		<param name="marker_pattern_list" type="string" 
+				value="$(find uav_camera)/data/multi_pattern"/>
+		<param name="threshold" type="int" value="80"/>
 	</node> 
 
 </launch>
