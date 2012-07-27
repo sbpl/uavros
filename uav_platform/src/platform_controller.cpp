@@ -1,4 +1,4 @@
-#include <platform/platform_controller.h>
+#include <uav_platform/platform_controller.h>
 
 /* Creates a node handle and a platform controller */
 int main(int argc, char **argv)
@@ -93,7 +93,8 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 
     /* Check wether we are seeing a marker and take action  *
      * depending on the last track mode send                */
-    if(msg->transforms[0].child_frame_id == "/marker1" && !bottom_camera_) {
+    if(msg->transforms[0].child_frame_id == "/marker1_filtered" 
+				&& !bottom_camera_) {
         if(track_mode_ == ALIGN_FRONT) {
 			align_front(msg);
 			check_time();
@@ -101,7 +102,7 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 			align_top(msg, false);
 			check_time();
         }
-    } else if(msg->transforms[0].child_frame_id == "/marker2" 
+    } else if(msg->transforms[0].child_frame_id == "/marker2_filtered" 
 				&& bottom_camera_) {
         if(track_mode_ == ALIGN_TOP) {
 			align_top(msg, false);
@@ -168,7 +169,7 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
     goal_y += pos[1];
 
 	/* Get transform from the marker to the map */
-    if(!get_transform("/map", "/marker1", transform)) {
+    if(!get_transform("/map", "/marker1_filtered", transform)) {
 		return;
 	}
 
@@ -224,11 +225,11 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, bool rotate)
 
 	/* Get transform from the marker to the map */
 	if(!bottom_camera_) {
-   		if(!get_transform("/map", "/marker1", transform)) { 
+   		if(!get_transform("/map", "/marker1_filtered", transform)) { 
 			return;
 		}
 	} else {
-		if (!get_transform("/map", "/marker2", transform)) { 
+		if (!get_transform("/map", "/marker2_filtered", transform)) { 
 			return;
 		}
 	}

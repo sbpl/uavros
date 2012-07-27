@@ -174,6 +174,19 @@ platform_controller/fast:
 .PHONY : platform_controller/fast
 
 #=============================================================================
+# Target rules for targets named pose_filter
+
+# Build rule for target.
+pose_filter: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 pose_filter
+.PHONY : pose_filter
+
+# fast build rule for target.
+pose_filter/fast:
+	$(MAKE) -f CMakeFiles/pose_filter.dir/build.make CMakeFiles/pose_filter.dir/build
+.PHONY : pose_filter/fast
+
+#=============================================================================
 # Target rules for targets named rosbuild_precompile
 
 # Build rule for target.
@@ -332,6 +345,21 @@ src/platform_controller.s:
 .PHONY : src/platform_controller.s
 
 # target to build an object file
+src/pose_filter.o:
+	$(MAKE) -f CMakeFiles/pose_filter.dir/build.make CMakeFiles/pose_filter.dir/src/pose_filter.o
+.PHONY : src/pose_filter.o
+
+# target to preprocess a source file
+src/pose_filter.i:
+	$(MAKE) -f CMakeFiles/pose_filter.dir/build.make CMakeFiles/pose_filter.dir/src/pose_filter.i
+.PHONY : src/pose_filter.i
+
+# target to generate assembly for a file
+src/pose_filter.s:
+	$(MAKE) -f CMakeFiles/pose_filter.dir/build.make CMakeFiles/pose_filter.dir/src/pose_filter.s
+.PHONY : src/pose_filter.s
+
+# target to build an object file
 src/set_track_mode.o:
 	$(MAKE) -f CMakeFiles/set_track_mode.dir/build.make CMakeFiles/set_track_mode.dir/src/set_track_mode.o
 .PHONY : src/set_track_mode.o
@@ -359,6 +387,7 @@ help:
 	@echo "... clean-test-results"
 	@echo "... edit_cache"
 	@echo "... platform_controller"
+	@echo "... pose_filter"
 	@echo "... rebuild_cache"
 	@echo "... rosbuild_precompile"
 	@echo "... rosbuild_premsgsrvgen"
@@ -374,6 +403,9 @@ help:
 	@echo "... src/platform_controller.o"
 	@echo "... src/platform_controller.i"
 	@echo "... src/platform_controller.s"
+	@echo "... src/pose_filter.o"
+	@echo "... src/pose_filter.i"
+	@echo "... src/pose_filter.s"
 	@echo "... src/set_track_mode.o"
 	@echo "... src/set_track_mode.i"
 	@echo "... src/set_track_mode.s"
