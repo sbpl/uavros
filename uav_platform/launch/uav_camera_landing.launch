@@ -3,11 +3,11 @@
 <launch>
 	<!-- ************ Camera0 to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera0" 
-		args="0.27 0.0 -0.2 1.57 0 1.57 body_frame usb_cam0 1" /> 
+		args="0.27 0.0 -0.2 1.57 0 1.57 body_frame usb_cam0 100" /> 
 
 	<!-- ************ Camera1 to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera1" 
-		args="-0.1 0.0 -0.07 0.0 3.14 -1.57 body_frame usb_cam1 1" /> 
+		args="-0.1 0.0 -0.07 0.0 3.14 -1.57 body_frame usb_cam1 100" /> 
 
 	<!-- ************** Front Camera ************ -->
     <node pkg="uav_camera" type="video_publisher" name="camera0" 
@@ -32,6 +32,15 @@
 	<!-- *********** Interactive Marker for changing mode *********** -->
     <node pkg="uav_platform" type="set_track_mode" name="set_track_mode" 
 		output="screen"/> 
+
+	<!-- *************** Marker1 Filter ************** -->
+	<node pkg="uav_platform" type="pose_filter" name="filter_marker1" 
+		output="screen">
+		<param name="filter_ratio" type="double" value="0.1" />
+		<param name="frame_id" type="string" value="/map" />
+		<param name="child_frame_id" type="string" value="/marker1" />
+		<param name="filtered_child_frame_" type="string" value="/m1" />
+	</node>
 
 	<!-- *********** ARToolkit for camera 0 ********** -->
 	<node name="ar_pose0" pkg="ar_pose" type="ar_multi" respawn="false" 
