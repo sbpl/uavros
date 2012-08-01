@@ -7,3 +7,6 @@ CMakeFiles
 bin/**
 *-swp
 .svn/*
+bin
+build
+CMakeCache.txt

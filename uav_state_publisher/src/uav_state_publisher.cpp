@@ -72,9 +72,6 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   state_.twist.twist.linear.x = p->twist.twist.linear.x;
   state_.twist.twist.linear.y = p->twist.twist.linear.y;
 
-  //TODO: do a smarter computation of linear velocities using slam and the ekf
-  //      5 x from slam, 4 dx, avg, assign the velocity to the 3rd x
-  //      store dx from ekf, take difference between the corresponding time above and most recent
   //compute dx, dy, and dz
   double dz = 0;
   for(int i=1; i<z_fifo_.size(); i++){
