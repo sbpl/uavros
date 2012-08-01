@@ -9,18 +9,30 @@ UAVStatePublisher::UAVStatePublisher()
   ros::NodeHandle nh;
   ros::NodeHandle ph;
 
+  ph.param<std::string>("state_pub_topic",state_pub_topic_,"uav_state");
+  ph.param<std::string>("Z_laser_topic",z_laser_topic_,"HeightLaser");
+  ph.param<std::string>("Z_laser_median_topic", z_laser_median_topic_,"HeightLaserMedian");
+  ph.param<std::string>("position_sub_topic",position_sub_topic_,"ekf_state");
+  ph.param<std::string>("vertical_laser_data_topic",vertical_laser_data_topic_,"panning_laser");
+  ph.param<std::string>("vertical_laser_frame_topic",vertical_laser_frame_topic_,"/panning_laser_frame");
+  ph.param<std::string>("slam_topic",slam_topic_,"slam_out_pose");
+  ph.param<std::string>("map_topic",map_topic_,"/map");
+  ph.param<std::string>("body_topic",body_topic_,"/body_frame");
+  ph.param<std::string>("body_map_aligned_topic",body_map_aligned_topic_,"/body_frame_map_aligned");
+  ph.param<std::string>("body_stabilized_topic",body_stabilized_topic_,"/body_frame_stabilized");
+
   ph.param("min_lidar_angle",min_lidar_angle_,80.0*M_PI/180.0);
   ph.param("max_lidar_angle",max_lidar_angle_,100.0*M_PI/180.0);
 
   //publish an odometry message (it's the only message with all the state variables we want)
-  state_pub_ = nh.advertise<nav_msgs::Odometry>("uav_state", 1);
-  pointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("HeightLaser", 1);
-  point_pub_ = nh.advertise<sensor_msgs::PointCloud2>("HeightLaserMedian", 1);
+  state_pub_ = nh.advertise<nav_msgs::Odometry>(state_pub_topic_, 1);
+  pointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_topic_, 1);
+  point_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_median_topic_, 1);
 
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
-  ekf_sub_ = nh.subscribe("ekf_state", 3, &UAVStatePublisher::ekfCallback,this);
-  lidar_sub_ = nh.subscribe("pan_scan", 1, &UAVStatePublisher::lidarCallback,this);
-  slam_sub_ = nh.subscribe("slam_out_pose", 3, &UAVStatePublisher::slamCallback,this);
+  ekf_sub_ = nh.subscribe(position_sub_topic_, 3, &UAVStatePublisher::ekfCallback,this);
+  lidar_sub_ = nh.subscribe(vertical_laser_data_topic_, 1, &UAVStatePublisher::lidarCallback,this);
+  slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVStatePublisher::slamCallback,this);
 
 
 }
@@ -32,13 +44,11 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
 
   state_.pose.pose.position.x = slam_msg->pose.position.x;
   state_.pose.pose.position.y = slam_msg->pose.position.y;
- // printf("############################################got the slam stuff....\n");
+  // printf("############################################got the slam stuff....\n");
   ros::Time stop_ = ros::Time::now();
   ROS_DEBUG("[state_pub] slam callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
-
-
 
 //on the order of 50Hz
 void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
@@ -48,15 +58,15 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   state_.twist.twist.angular = p->twist.twist.angular;
 
   //get the orientation
-double roll, pitch, yaw;
-btQuaternion q;
-tf::quaternionMsgToTF(p->pose.pose.orientation, q);
-btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
-state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
+  double roll, pitch, yaw;
+  btQuaternion q;
+  tf::quaternionMsgToTF(p->pose.pose.orientation, q);
+  btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
+  state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
 
   //get the x and y
- // state_.pose.pose.position.x = p->pose.pose.position.x;
- // state_.pose.pose.position.y = p->pose.pose.position.y;
+  // state_.pose.pose.position.x = p->pose.pose.position.x;
+  // state_.pose.pose.position.y = p->pose.pose.position.y;
 
   //get the x and y velocities
   state_.twist.twist.linear.x = p->twist.twist.linear.x;
@@ -72,26 +82,26 @@ state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pit
   }
   dz /= z_fifo_.size();
   state_.twist.twist.linear.z = dz;
-//ROS_ERROR("publishing frames");
+  //ROS_ERROR("publishing frames");
   //publish the map to base_link transform
   geometry_msgs::TransformStamped trans;
   trans.header.stamp = p->header.stamp;
-  trans.header.frame_id = "/map";
+  trans.header.frame_id = map_topic_;
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
   trans.transform.translation.z = state_.pose.pose.position.z;
   //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
 
-  trans.child_frame_id = "/body_frame_map_aligned";
+  trans.child_frame_id = body_map_aligned_topic_;
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(0);
   tf_broadcaster.sendTransform(trans);
 
-  trans.child_frame_id = "/body_frame_stabilized";
+  trans.child_frame_id = body_stabilized_topic_;
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(saved_yaw_);
   tf_broadcaster.sendTransform(trans);
 
   //ROS_WARN("height is %f\n", trans.transform.translation.z);
-  trans.child_frame_id = "/body_frame";
+  trans.child_frame_id = body_topic_;
   trans.transform.rotation = state_.pose.pose.orientation;
   tf_broadcaster.sendTransform(trans);
   //publish the state
@@ -115,7 +125,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   vector<geometry_msgs::Point> voxels;
 
   try {
-    tf_.lookupTransform( "/body_frame","/panning_laser_frame", ros::Time(0), Pan2BodyTransform_);
+    tf_.lookupTransform( body_topic_,vertical_laser_frame_topic_, ros::Time(0), Pan2BodyTransform_);
   }
   catch (tf::TransformException ex){
     ROS_ERROR("[UAV_state_pub] Save of partial transform failed....\n %s\n", ex.what());
@@ -144,25 +154,25 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
 
     //if unable to get a panning to body frame map aligned transform, then use the stored panning to body and get a body to body frame map aligned transform
     try{
-      tf_.transformPoint("/body_frame_map_aligned", p, pout);  // TODO: make all this hard coded crap into parameters
-      }
+      tf_.transformPoint(body_map_aligned_topic_, p, pout);
+    }
     catch (tf::TransformException ex){
-      ROS_ERROR("[UAV_state_pub] Failed transform  \n",ex.what());
-    //}
-    //printf("Using point %f %f %f", pout.point.x, pout.point.y, pout.point.z);
+      ROS_ERROR("[UAV_state_pub] Failed transform %s \n",ex.what());
+      //}
+      //printf("Using point %f %f %f", pout.point.x, pout.point.y, pout.point.z);
 
       tf::Point ptfout, ptf(p.point.x, p.point.y, p.point.z);
       ptfout = Pan2BodyTransform_ * ptf;
       p.point.x = ptfout.getX();
       p.point.y = ptfout.getY();
       p.point.z = ptfout.getZ();
-      p.header.frame_id = "/body_frame";
+      p.header.frame_id = body_topic_;
 
       try{
-        tf_.transformPoint("/body_frame_map_aligned", p, pout);
+        tf_.transformPoint(body_map_aligned_topic_, p, pout);
       }
       catch (tf::TransformException ex2){
-        ROS_ERROR("[UAV_state_pub] can't even get a partial transform! \n", ex2.what());
+        ROS_ERROR("[UAV_state_pub] can't even get a partial transform! %s \n", ex2.what());
       }
       // printf("alt point %f %f %f\n", pout.point.x, pout.point.y, pout.point.z);
     }
@@ -181,7 +191,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     pclCloud.push_back(pcl::PointXYZ(voxels[i].x, voxels[i].y, voxels[i].z));
   sensor_msgs::PointCloud2 cloud;
   pcl::toROSMsg (pclCloud, cloud);
-  cloud.header.frame_id = "/body_frame_map_aligned";
+  cloud.header.frame_id = body_map_aligned_topic_;
   cloud.header.stamp = ros::Time::now();
   pointCloud_pub_.publish(cloud);
 
@@ -196,15 +206,13 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   sensor_msgs::PointCloud2 medianpt;
   pcl::toROSMsg(pclmedianpt, medianpt);
 
-  medianpt.header.frame_id = "/map";
+  medianpt.header.frame_id = map_topic_;
   medianpt.header.stamp = ros::Time::now();
 
   point_pub_.publish(medianpt);
 
   ros::Time stop_ = ros::Time::now();
-      ROS_DEBUG("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
-
-
+  ROS_DEBUG("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 }
 
 int main(int argc, char **argv){

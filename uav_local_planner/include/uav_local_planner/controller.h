@@ -2,65 +2,70 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <uav_msgs/ControllerCommand.h>
-#include <uav_local_planner/hexa_dynamics.h>
 #include <uav_local_planner/UAVControllerConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <tf/transform_listener.h>
+#include <tf/tf.h>
+#include <cmath>
+#include <Eigen/Core>
+#include <Eigen/LU>
 
 //TODO: combine this with the local planner in a more coherent fashion
 
-//Controller Gains and Variables (Copied over from Jon's MATLAB version)
-
 typedef struct{
 
-  float DefaultThrust_;
+  double defaultThrust;
 
   // Roll and Pitch Gains
-  float RPkp;
-  float RPkd;
-  float RPki;
+  double RPkp;
+  double RPkd;
+  double RPki;
 
   // Yaw Gains
-  float Ykp;
-  float Ykd;
-  float Yki;
+  double Ykp;
+  double Ykd;
+  double Yki;
 
   // Thrust Gains
-
-  float Tkp;
-  float Tkd;
-  float Tki;
+  double Tkp;
+  double Tkd;
+  double Tki;
 
   //Roll and Pitch Gains for Position
-
-  float Posekp;
-  float Posekd;
-  float Poseki;
+  double Posekp;
+  double Posekd;
+  double Poseki;
 
   // Initialize the integral terms
-
-  float RI;
-  float YI;
-  float PI;
-  float TI;
-  float RposeI;
-  float PposeI;
+  double RI;
+  double YI;
+  double PI;
+  double TI;
+  double RposeI;
+  double PposeI;
 
   // Windup limits
+  double windupRP;
+  double windupY;
+  double windupPose;
 
-  float windupRP;
-  float windupY;
-  float windupPose;
+  //other variables
+  double mass;
+  int numProps;
+  double maxF;
+  double minF;
+  double maxError;
+  Eigen::Vector3f g;
+ // Eigen::VectorXf F;
 }CONT_t;
 
-class HexaController {
+class UAVController {
 
   /**
    * Controller gains and dynamics parameters
    */
 
   CONT_t CONT;
-  HEXA_t HEXA;
 
   public:
 
@@ -69,17 +74,12 @@ class HexaController {
    * Constructor - Initializes controller gains and dynamics params
    */
 
-  HexaController();
+  UAVController();
   /**
    * Destructor
    */
 
-  ~HexaController();
-  /**
-   * @brief Initialize gains for the controller
-   * @param nh The local node handle
-   */
-  void InitializeDynamics(ros::NodeHandle nh);
+  ~UAVController();
 
   /**
    * @brief Initialize hexarotor dynamics parameters
@@ -131,12 +131,6 @@ class HexaController {
   Eigen::VectorXf SetCurrState(const geometry_msgs::PoseStamped current_pose, const geometry_msgs::TwistStamped current_velocities);
 
   /**
-   * @brief Updates the transforms between the world and body frames based on current observation
-   * @param X The current observed state
-   */
-//   void UpdateTransforms(Eigen::VectorXf X);
-
-  /**
    * @brief Callback for the dynamic reconfigure GUI
    * @param config Callback message from GUI
    * @param level Callback level from GUI (Not used)
@@ -146,7 +140,4 @@ class HexaController {
 private:
   tf::TransformListener tf_;
   ros::Publisher PID_pub_;
-
-
-
 };

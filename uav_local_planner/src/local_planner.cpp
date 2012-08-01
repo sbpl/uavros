@@ -19,14 +19,24 @@ UAVLocalPlanner::UAVLocalPlanner()
   ph.param("nominal_linear_velocity",nominal_linear_velocity_,0.3);
   ph.param("nominal_angular_velocity",nominal_angular_velocity_,M_PI/2);
 
+  ph.param<std::string>("flt_mode_req_topic",flt_mode_req_topic_,"flight_mode_request");
+  ph.param<std::string>("flt_mode_stat_topic",flt_mode_stat_topic_,"/flight_mode_status");
+  ph.param<std::string>("ctrl_cmd_topic",ctrl_cmd_topic_,"/controller_cmd");
+  ph.param<std::string>("goal_pub_topic",goal_pub_topic_,"/goal");
+  ph.param<std::string>("goal_sub_topic",goal_sub_topic_,"goal");
+  ph.param<std::string>("next_waypoint_topic",next_waypoint_topic_,"/controller/next_waypoint");
+  ph.param<std::string>("local_collision_topic",local_collision_topic_,"local_collision_map");
+  ph.param<std::string>("uav_state_topic",uav_state_topic_,"uav_state");
+  ph.param<std::string>("path_topic",path_topic_,"/path");
+
   path_idx_ = 0;
 
   //publish UAV commands and goals (in case we detect a collision up ahead we publish the same goal state to engage the planner)
-  waypoint_vis_pub_ = nh.advertise<visualization_msgs::Marker>("/controller/next_waypoint",1);
-  command_pub_ = nh.advertise<uav_msgs::ControllerCommand>("/controller_cmd",1);
-  goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/goal",1);
+  waypoint_vis_pub_ = nh.advertise<visualization_msgs::Marker>(next_waypoint_topic_,1);
+  command_pub_ = nh.advertise<uav_msgs::ControllerCommand>(ctrl_cmd_topic_,1);
+  goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>(goal_pub_topic_,1);
 
-  status_pub_ = nh.advertise<uav_msgs::FlightModeStatus>("/flight_mode_status", 1); //TODO make a parameter
+  status_pub_ = nh.advertise<uav_msgs::FlightModeStatus>(flt_mode_stat_topic_, 1);
 
   //set up a occupancy grid triple buffer
   controller_grid_ = new OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
@@ -45,14 +55,14 @@ UAVLocalPlanner::UAVLocalPlanner()
   controller_thread_ = new boost::thread(boost::bind(&UAVLocalPlanner::controllerThread, this));
 
   //subscribe to the collision map, tf, path, goal, and flight mode
-  collision_map_sub_ = nh.subscribe("local_collision_map", 1, &UAVLocalPlanner::collisionMapCallback,this);
-  path_sub_ = nh.subscribe("/path", 1, &UAVLocalPlanner::pathCallback,this);
-  goal_sub_ = nh.subscribe("goal", 1, &UAVLocalPlanner::goalCallback,this);
-  state_sub_ = nh.subscribe("uav_state", 1, &UAVLocalPlanner::stateCallback,this);
-  flight_mode_sub_ = nh.subscribe("flight_mode_request", 1, &UAVLocalPlanner::flightModeCallback,this);
+  collision_map_sub_ = nh.subscribe(local_collision_topic_, 1, &UAVLocalPlanner::collisionMapCallback,this);
+  path_sub_ = nh.subscribe(path_topic_, 1, &UAVLocalPlanner::pathCallback,this);
+  goal_sub_ = nh.subscribe(goal_sub_topic_, 1, &UAVLocalPlanner::goalCallback,this);
+  state_sub_ = nh.subscribe(uav_state_topic_, 1, &UAVLocalPlanner::stateCallback,this);
+  flight_mode_sub_ = nh.subscribe(flt_mode_req_topic_, 1, &UAVLocalPlanner::flightModeCallback,this);
 
   dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
-  f = boost::bind(&HexaController::dynamic_reconfigure_callback, &controller, _1, _2);
+  f = boost::bind(&UAVController::dynamic_reconfigure_callback, &controller, _1, _2);
   dynamic_reconfigure_server_.setCallback(f);
 }
 
@@ -168,8 +178,6 @@ void UAVLocalPlanner::controllerThread(){
 uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus & state){
   uav_msgs::ControllerCommand u;
 
-  //TODO: make land x-y equal to x-y position at start of landing
-  //TODO: change to do all calcs in forces then have HexaDriver do the conversion to commands
   if(pose.pose.position.z <= landing_height_){
     u = last_u_;
     u.roll = 0;

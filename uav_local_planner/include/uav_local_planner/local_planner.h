@@ -13,6 +13,7 @@
 #include <tf/transform_listener.h>
 #include <uav_collision_checking/uav_collision_space.h>
 #include <uav_local_planner/controller.h>
+#include <string>
 
 // enum UAVControllerState {
 //   LANDED,
@@ -48,10 +49,11 @@ class UAVLocalPlanner{
     void flightModeCallback(uav_msgs::FlightModeRequestConstPtr req);
     void visualizeTargetPose(geometry_msgs::PoseStamped p);
 
-    HexaController controller;
+    UAVController controller;
     dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> dynamic_reconfigure_server_;
 
     double sizex_, sizey_, sizez_, resolution_;
+    string flt_mode_req_topic_, flt_mode_stat_topic_, ctrl_cmd_topic_, goal_pub_topic_, goal_sub_topic_, next_waypoint_topic_, local_collision_topic_, uav_state_topic_, path_topic_;
 
     ros::Publisher waypoint_vis_pub_;
     ros::Publisher command_pub_;

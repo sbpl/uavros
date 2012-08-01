@@ -2,12 +2,16 @@
 
 UAVGoalInterpolate::UAVGoalInterpolate() {
   ros::NodeHandle nh;
+  nh.param<std::string>("goal_sub_topic",goal_sub_topic_,"/goal_pose");
+  nh.param<std::string>("pose_sub_topic",pose_sub_topic_,"uav_state");
+  nh.param<std::string>("path_pub_topic",path_pub_topic_,"/path");
+  nh.param<std::string>("map_frame_topic",map_frame_topic_,"/map");
+  nh.param("Size_of_divisions",DivSize_,0.1);
 
-  //   TODO:  make topics parameters
-  path_pub_ = nh.advertise<nav_msgs::Path>("/path", 1);
+  path_pub_ = nh.advertise<nav_msgs::Path>(path_pub_topic_, 1);
 
-  goal_sub_ = nh.subscribe("/goal_pose",1,&UAVGoalInterpolate::GoalCallback, this);
-  pose_sub_ = nh.subscribe("uav_state", 1,&UAVGoalInterpolate::PoseCallback,this);
+  goal_sub_ = nh.subscribe(goal_sub_topic_,1,&UAVGoalInterpolate::GoalCallback, this);
+  pose_sub_ = nh.subscribe(pose_sub_topic_, 1,&UAVGoalInterpolate::PoseCallback,this);
 }
 
 void UAVGoalInterpolate::PoseCallback(nav_msgs::OdometryConstPtr state) {
@@ -34,18 +38,17 @@ void UAVGoalInterpolate::GoalCallback(geometry_msgs::PoseStampedConstPtr goal)
   float norm;
   norm = (gx-x)*(gx-x)+(gy-y)*(gy-y)+(gz-z)*(gz-z);
 
-  //TODO: make a parameters
-  int divnorm = norm/0.1 + 1;
+  int divnorm = norm/DivSize_ + 1;
 
   float dx, dy, dz;
   dx = x; dy = y; dz = z;
 
-  std::vector<geometry_msgs::PoseStamped> pathpts;// = new geometry_msgs::PoseStamped[divnorm];
+  std::vector<geometry_msgs::PoseStamped> pathpts;
   geometry_msgs::PoseStamped pt;
   pathpts.resize(divnorm-1);
 
   for (int idx=0; idx < divnorm - 1; idx++) {
-    pathpts[idx].header.frame_id = "/map";  //TODO: make a parameters
+    pathpts[idx].header.frame_id = map_frame_topic_;
     pathpts[idx].pose.position.x = dx + (gx-x)/divnorm;
     pathpts[idx].pose.position.y = dy + (gy-y)/divnorm;
     pathpts[idx].pose.position.z = dz + (gz-z)/divnorm;
@@ -60,7 +63,7 @@ void UAVGoalInterpolate::GoalCallback(geometry_msgs::PoseStampedConstPtr goal)
 
   nav_msgs::Path path;
   path.poses = pathpts;
-  path.header.frame_id = "/map";
+  path.header.frame_id = map_frame_topic_;
   path.header.stamp = ros::Time::now();
 
   path_pub_.publish(path);

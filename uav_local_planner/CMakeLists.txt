@@ -27,7 +27,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 rosbuild_add_executable(uav_local_planner src/local_planner.cpp src/controller.cpp)
-rosbuild_add_executable(test_controller src/controller.cpp src/test_controller.cpp)
+#rosbuild_add_executable(test_controller src/controller.cpp src/test_controller.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
 #add dynamic reconfigure api

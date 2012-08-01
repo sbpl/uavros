@@ -2,15 +2,22 @@
 
 UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   ros::NodeHandle nh;
-  goal_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/goal_pose",1);
-  flight_request_pub = nh.advertise<uav_msgs::FlightModeRequest>("/flight_mode_request",1);
-  flight_status_sub = nh.subscribe("/flight_mode_status", 1, &UAV_SET_GOAL_C::FlightModeStatusCallback,this);
 
-lastTime = ros::Time::now();
+  nh.param<std::string>("goal_pub_topic",goal_pub_topic_,"/goal_pose");
+  nh.param<std::string>("flt_mode_req_topic",flt_mode_req_topic_,"flight_mode_request");
+  nh.param<std::string>("flt_mode_stat_topic",flt_mode_stat_topic_,"flight_mode_status");
+  nh.param<std::string>("map_topic",map_topic_,"/map");
+  nh.param<std::string>("goal_marker_name",goal_marker_name_,"UAV Goal Marker");
+
+  goal_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(goal_pub_topic_,1);
+  flight_request_pub = nh.advertise<uav_msgs::FlightModeRequest>(flt_mode_req_topic_,1);
+  flight_status_sub = nh.subscribe(flt_mode_stat_topic_, 1, &UAV_SET_GOAL_C::FlightModeStatusCallback,this);
+
+  lastTime = ros::Time::now();
 
   // create an interactive marker for our server
-  int_marker.header.frame_id = "/map";
-  int_marker.name = "UAV Goal Marker";
+  int_marker.header.frame_id = map_topic_;
+  int_marker.name = goal_marker_name_;
   int_marker.description = "";
 
   // create a grey box marker
@@ -89,14 +96,14 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
   if (SquareTest) {
     if (ros::Time::now().toSec() - lastTime.toSec() > 0.2) {
       lastTime = ros::Time::now();
-    ROS_WARN("Square test is at pt %d\n", SqTPt);
-    switch (SqTPt) {
-      case -2:    // wasn't at start, was landing, once landed, commence test
+      ROS_WARN("Square test is at pt %d\n", SqTPt);
+      switch (SqTPt) {
+        case -2:    // wasn't at start, was landing, once landed, commence test
         if (status->mode == uav_msgs::FlightModeStatus::LANDED) {
           SqTPt = 0;
         }
         break;
-      case -1:  // wasn't at the start, was moving, if hovering, then land
+        case -1:  // wasn't at the start, was moving, if hovering, then land
         if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
           uav_msgs::FlightModeRequest mode_msg;
           mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
@@ -104,93 +111,93 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
           SqTPt = -2;
         }
         break;
-      case 0:
-        if (status->mode != uav_msgs::FlightModeStatus::LANDED) {
-          // send to (0,0,0)
-          geometry_msgs::PoseStamped goal_pose;
-          goal_pose.header.stamp = ros::Time::now();
-          goal_pose.header.frame_id = "/map";
-          goal_pose.pose.position.x = 0;
-          goal_pose.pose.position.y = 0;
-          goal_pose.pose.position.z = 1.0;
-          goal_pose.pose.orientation.w = 1;
-          goal_pose.pose.orientation.x = 0;
-          goal_pose.pose.orientation.y = 0;
-          goal_pose.pose.orientation.z = 0;
-          goal_pose_pub.publish(goal_pose);
-        }
-        else {
-          uav_msgs::FlightModeRequest mode_msg;
-          mode_msg.mode = uav_msgs::FlightModeRequest::TAKE_OFF;
-          flight_request_pub.publish(mode_msg);
-          SqTPt = 1;
-        }
-        break;
-      case 1:
-        if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
-          geometry_msgs::PoseStamped goal_pose;
-          goal_pose.header.stamp = ros::Time::now();
-          goal_pose.header.frame_id = "/map";
-          goal_pose.pose.position.x = 1;
-          goal_pose.pose.position.y = 0;
-          goal_pose.pose.position.z = 1.0;
-          goal_pose.pose.orientation.w = sqrt(0.5);
-          goal_pose.pose.orientation.x = 0;
-          goal_pose.pose.orientation.y = 0;
-          goal_pose.pose.orientation.z = sqrt(0.5);
-          goal_pose_pub.publish(goal_pose);
-          SqTPt = 2;
-        }
-        break;
-      case 2:
-        if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
-          geometry_msgs::PoseStamped goal_pose;
-          goal_pose.header.stamp = ros::Time::now();
-          goal_pose.header.frame_id = "/map";
-          goal_pose.pose.position.x = 1;
-          goal_pose.pose.position.y = 1;
-          goal_pose.pose.position.z = 1.4;
-          goal_pose.pose.orientation.w = 0;
-          goal_pose.pose.orientation.x = 0;
-          goal_pose.pose.orientation.y = 0;
-          goal_pose.pose.orientation.z = 1;
-          goal_pose_pub.publish(goal_pose);
-          SqTPt = 3;
-        }
-        break;
-      case 3:
-        if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
-          geometry_msgs::PoseStamped goal_pose;
-          goal_pose.header.stamp = ros::Time::now();
-          goal_pose.header.frame_id = "/map";
-          goal_pose.pose.position.x = 0;
-          goal_pose.pose.position.y = 1;
-          goal_pose.pose.position.z = 0.8;
-          goal_pose.pose.orientation.w = sqrt(0.5);
-          goal_pose.pose.orientation.x = 0;
-          goal_pose.pose.orientation.y = 0;
-          goal_pose.pose.orientation.z = -sqrt(0.5);
-          goal_pose_pub.publish(goal_pose);
-          SqTPt = 4;
-        }
-        break;
-      case 4:
-        if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
-          geometry_msgs::PoseStamped goal_pose;
-          goal_pose.header.stamp = ros::Time::now();
-          goal_pose.header.frame_id = "/map";
-          goal_pose.pose.position.x = 0;
-          goal_pose.pose.position.y = 0;
-          goal_pose.pose.position.z = 1.0;
-          goal_pose.pose.orientation.w = 1;
-          goal_pose.pose.orientation.x = 0;
-          goal_pose.pose.orientation.y = 0;
-          goal_pose.pose.orientation.z = 0;
-          goal_pose_pub.publish(goal_pose);
-          SqTPt = 5;
-        }
-        break;
-      case 5:  // back at the start now land
+        case 0:
+          if (status->mode != uav_msgs::FlightModeStatus::LANDED) {
+            // send to (0,0,0)
+            geometry_msgs::PoseStamped goal_pose;
+            goal_pose.header.stamp = ros::Time::now();
+            goal_pose.header.frame_id = map_topic_;
+            goal_pose.pose.position.x = 0;
+            goal_pose.pose.position.y = 0;
+            goal_pose.pose.position.z = 1.0;
+            goal_pose.pose.orientation.w = 1;
+            goal_pose.pose.orientation.x = 0;
+            goal_pose.pose.orientation.y = 0;
+            goal_pose.pose.orientation.z = 0;
+            goal_pose_pub.publish(goal_pose);
+          }
+          else {
+            uav_msgs::FlightModeRequest mode_msg;
+            mode_msg.mode = uav_msgs::FlightModeRequest::TAKE_OFF;
+            flight_request_pub.publish(mode_msg);
+            SqTPt = 1;
+          }
+          break;
+        case 1:
+          if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
+            geometry_msgs::PoseStamped goal_pose;
+            goal_pose.header.stamp = ros::Time::now();
+            goal_pose.header.frame_id = map_topic_;
+            goal_pose.pose.position.x = 1;
+            goal_pose.pose.position.y = 0;
+            goal_pose.pose.position.z = 1.0;
+            goal_pose.pose.orientation.w = sqrt(0.5);
+            goal_pose.pose.orientation.x = 0;
+            goal_pose.pose.orientation.y = 0;
+            goal_pose.pose.orientation.z = sqrt(0.5);
+            goal_pose_pub.publish(goal_pose);
+            SqTPt = 2;
+          }
+          break;
+        case 2:
+          if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
+            geometry_msgs::PoseStamped goal_pose;
+            goal_pose.header.stamp = ros::Time::now();
+            goal_pose.header.frame_id = map_topic_;
+            goal_pose.pose.position.x = 1;
+            goal_pose.pose.position.y = 1;
+            goal_pose.pose.position.z = 1.4;
+            goal_pose.pose.orientation.w = 0;
+            goal_pose.pose.orientation.x = 0;
+            goal_pose.pose.orientation.y = 0;
+            goal_pose.pose.orientation.z = 1;
+            goal_pose_pub.publish(goal_pose);
+            SqTPt = 3;
+          }
+          break;
+        case 3:
+          if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
+            geometry_msgs::PoseStamped goal_pose;
+            goal_pose.header.stamp = ros::Time::now();
+            goal_pose.header.frame_id = map_topic_;
+            goal_pose.pose.position.x = 0;
+            goal_pose.pose.position.y = 1;
+            goal_pose.pose.position.z = 0.8;
+            goal_pose.pose.orientation.w = sqrt(0.5);
+            goal_pose.pose.orientation.x = 0;
+            goal_pose.pose.orientation.y = 0;
+            goal_pose.pose.orientation.z = -sqrt(0.5);
+            goal_pose_pub.publish(goal_pose);
+            SqTPt = 4;
+          }
+          break;
+        case 4:
+          if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
+            geometry_msgs::PoseStamped goal_pose;
+            goal_pose.header.stamp = ros::Time::now();
+            goal_pose.header.frame_id = map_topic_;
+            goal_pose.pose.position.x = 0;
+            goal_pose.pose.position.y = 0;
+            goal_pose.pose.position.z = 1.0;
+            goal_pose.pose.orientation.w = 1;
+            goal_pose.pose.orientation.x = 0;
+            goal_pose.pose.orientation.y = 0;
+            goal_pose.pose.orientation.z = 0;
+            goal_pose_pub.publish(goal_pose);
+            SqTPt = 5;
+          }
+          break;
+        case 5:  // back at the start now land
         if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
           uav_msgs::FlightModeRequest mode_msg;
           mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
@@ -198,16 +205,16 @@ void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr
           SqTPt = 6;
         }
         break;
-      case 6:  //landing order given
+        case 6:  //landing order given
         if (status->mode == uav_msgs::FlightModeStatus::LANDED) {
           SqTPt =0;
           SquareTest = false;
         }
         break;
-      default:
-         SquareTest = false;
-        break;
-    }
+        default:
+          SquareTest = false;
+          break;
+      }
     }
   }
 }
@@ -225,7 +232,7 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
       ROS_INFO_STREAM("Sending new goal !" );
       geometry_msgs::PoseStamped goal_pose;
       goal_pose.header.stamp = ros::Time::now();
-      goal_pose.header.frame_id = "/map";
+      goal_pose.header.frame_id = map_topic_;
       goal_pose.pose = feedback->pose;
       goal_pose_pub.publish(goal_pose);
       SquareTest = false;
@@ -267,6 +274,7 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "uav_set_goal");
+
 
   UAV_SET_GOAL_C uav_set_goal;
 

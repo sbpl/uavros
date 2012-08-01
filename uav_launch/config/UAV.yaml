@@ -4,8 +4,13 @@ NumProps: 6
 ArmLength: 0.35
 MaxForce: 20
 MinForce: 0.2
+MaxError: 0.5
+DefaultThrust: 9.5
 Moment2Force: 0.025
 BladeLength: 0.13
+ArmLength: 0.35
+
+UseExp: true
 Fex: [0.5, 1.0]
 Vex: [0.5, 1.0, 2.0]
 Uex: [1, 2]
@@ -13,3 +18,25 @@ FV2U_coef: [38.2573, 5.8758, 28.9802, -3.5566, 0.0074]
 UV2F_coef: [0.0288, 0.0002, -0.8023, 0.0914, -0.0002]
 
 
+RPkp: 2
+RPki: 0
+RPkd: 0
+
+Ykp: 1
+Yki: 0
+Ykd: 0
+
+Tkp: 2
+Tki: 0.1
+Tkd: 6
+
+Posekp: 0.8
+Poseki: 0
+PoseKd: 0
+
+RposeI: 0
+PposeI: 0
+
+windupRP: 5
+windupY: 5
+windupPose: 5
