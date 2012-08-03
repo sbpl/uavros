@@ -2,9 +2,9 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b uav_launch is ... 
+\b uav_launch is the generic launch package for the UAV.  You should make a directory in this folder that is linked to the specific UAV config directory (i.e. HexaLaunch/config or QuadLaunch/config)
 
-<!-- 
+<!--
 Provide an overview of your package.
 -->
 

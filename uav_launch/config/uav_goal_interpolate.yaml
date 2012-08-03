@@ -1,5 +1,0 @@
-goal_sub_topic: '/goal_pose'
-pose_sub_topic: 'uav_state'
-path_pub_topic: '/path'
-map_frame_topic: '/map'
-Size_of_divisions: 0.1
