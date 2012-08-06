@@ -4,7 +4,7 @@ UAVLocalPlanner::UAVLocalPlanner()
 {
   ros::NodeHandle nh;
   ros::NodeHandle ph("~");
-
+  ROS_ERROR("[local_planner] Getting params");
   ph.param("size_x",sizex_,4.0);
   ph.param("size_y",sizey_,4.0);
   ph.param("size_z",sizez_,4.0);
@@ -28,7 +28,7 @@ UAVLocalPlanner::UAVLocalPlanner()
   ph.param<std::string>("local_collision_topic",local_collision_topic_,"local_collision_map");
   ph.param<std::string>("uav_state_topic",uav_state_topic_,"uav_state");
   ph.param<std::string>("path_topic",path_topic_,"/path");
-
+ROS_ERROR("[local_planner] done getting params");
   path_idx_ = 0;
 
   //publish UAV commands and goals (in case we detect a collision up ahead we publish the same goal state to engage the planner)
