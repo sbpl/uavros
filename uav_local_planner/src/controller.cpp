@@ -10,6 +10,8 @@ UAVController::UAVController() : tf_(ros::NodeHandle(), ros::Duration(10), true)
   ros::NodeHandle nh("~");
   UAVController::InitializeGains();
   PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_out", 1);
+  ROS_WARN("[controller] did I get here end?");
+
 }
 
 // Destructor
@@ -24,7 +26,6 @@ void UAVController::InitializeGains()
   //robot parameters
   while(!ros::param::has("/UAV/Mass")) {ros::Duration(0.1).sleep();}
   if (!ros::param::get("/UAV/Mass", CONT.mass)) {  ROS_ERROR("Missing Mass parameter, setting to 5kg\n"); CONT.mass = 5.0;}
-
   //number of props
   while(!ros::param::has("/UAV/NumProps")) {ros::Duration(0.1).sleep();}
   if (!ros::param::get("/UAV/NumProps", CONT.numProps)) {  ROS_ERROR("Missing props parameter, setting to 6\n"); CONT.numProps = 6;}
@@ -79,9 +80,11 @@ void UAVController::InitializeGains()
 
   while(!ros::param::has("/UAV/Posekp")) {ros::Duration(0.1).sleep();}
   if (!ros::param::get("/UAV/Posekp", CONT.Posekp)) {  ROS_ERROR("Missing Posekp parameter, setting to 0.8\n"); CONT.Posekp = 0.8;}
+
   while(!ros::param::has("/UAV/Poseki")) {ros::Duration(0.1).sleep();}
   if (!ros::param::get("/UAV/Poseki", CONT.Poseki)) {  ROS_ERROR("Missing Poseki parameter, setting to 0\n"); CONT.Poseki = 0;}
-  while(!ros::param::has("/UAV/Posekd")) {ros::Duration(0.1).sleep();}
+
+  while(!ros::param::has("/UAV/Posekd")) {ros::Duration(0.1).sleep(); }
   if (!ros::param::get("/UAV/Posekd", CONT.Posekd)) {  ROS_ERROR("Missing Posekd parameter, setting to 0\n"); CONT.Posekd = 0;}
 
   // Initialize the integral terms
