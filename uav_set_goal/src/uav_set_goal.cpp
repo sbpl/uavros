@@ -86,6 +86,12 @@ UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   menu_handler.apply(server, int_marker.name );
   // 'commit' changes and send to all clients
   server.applyChanges();
+
+  //force landing as initial flight mode
+  uav_msgs::FlightModeRequest mode_msg;
+  mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
+  flight_request_pub.publish(mode_msg);
+  SquareTest = false;
 }
 
 UAV_SET_GOAL_C::~UAV_SET_GOAL_C() {
