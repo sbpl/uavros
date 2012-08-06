@@ -29,5 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 rosbuild_add_executable(platform_controller src/platform_controller.cpp)
-rosbuild_add_executable(set_track_mode src/set_track_mode.cpp)
+#rosbuild_add_executable(set_track_mode src/set_track_mode.cpp)
 rosbuild_add_executable(pose_filter src/pose_filter.cpp)
+rosbuild_add_executable(align_mode src/align_mode.cpp)
+

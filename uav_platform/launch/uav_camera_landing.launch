@@ -3,7 +3,7 @@
 <launch>
 	<!-- ************ Camera0 to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera0" 
-		args="0.27 0.0 -0.2 1.57 0 1.57 body_frame usb_cam0 100" /> 
+		args="0.23 0.05 -0.1 -1.57 0 -1.57 body_frame usb_cam0 100" /> 
 
 	<!-- ************ Camera1 to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera1" 
@@ -13,34 +13,68 @@
     <node pkg="uav_camera" type="video_publisher" name="camera0" 
 		output="screen">
 		<param name ="camera_number" type="int" value="0" />
-		<param name ="width" type="double" value="640" />
-		<param name ="height" type="double" value="480" />
+		<param name ="width" type="double" value="1280" />
+		<param name ="height" type="double" value="960" />
 	</node> 
 
 	<!-- ************* Bottom Camera *********** -->
-    <node pkg="uav_camera" type="video_publisher" name="camera1" 
+<!--    <node pkg="uav_camera" type="video_publisher" name="camera1" 
 		output="screen">
 		<param name ="camera_number" type="int" value="1" />
 		<param name ="width" type="double" value="320" />
 		<param name ="height" type="double" value="240" />
 	</node> 
-	
+-->	
 	<!-- ************ Platform Controller *********** -->
     <node pkg="uav_platform" type="platform_controller" 
-		name="platform_controller" output="screen"/>
+		name="platform_controller" output="screen">
+		<rosparam file="$(find uav_platform)/config/marker_goals.yaml"	command="load" />
+	</node>
 
 	<!-- *********** Interactive Marker for changing mode *********** -->
-    <node pkg="uav_platform" type="set_track_mode" name="set_track_mode" 
+<!--    <node pkg="uav_platform" type="set_track_mode" name="set_track_mode" 
 		output="screen"/> 
+-->
 
-	<!-- *************** Marker1 Filter ************** -->
-	<node pkg="uav_platform" type="pose_filter" name="filter_marker1" 
-		output="screen">
-		<param name="filter_ratio" type="double" value="0.1" />
-		<param name="frame_id" type="string" value="/map" />
-		<param name="child_frame_id" type="string" value="/marker1" />
-		<param name="filtered_child_frame_" type="string" value="/m1" />
-	</node>
+	<!-- **** Interactive Marker to choose marker and mode **** -->
+		<node pkg="uav_platform" type="align_mode" name="align_node"
+		otuput="screen"/>
+
+    <!-- *************** Marker1 Filter ************** -->
+    <node pkg="uav_platform" type="pose_filter" name="filter_marker1" 
+        output="screen">
+        <param name="filter_ratio" type="double" value="0.1" />
+        <param name="frame_id" type="string" value="/map" />
+        <param name="child_frame_id" type="string" value="/marker1" />
+        <param name="filtered_child_frame" type="string" value="/m1" />
+    </node>
+
+    <!-- *************** Marker2 Filter ************** -->
+    <node pkg="uav_platform" type="pose_filter" name="filter_marker2" 
+        output="screen">
+        <param name="filter_ratio" type="double" value="0.1" />
+        <param name="frame_id" type="string" value="/map" />
+        <param name="child_frame_id" type="string" value="/marker2" />
+        <param name="filtered_child_frame" type="string" value="/m2" />
+    </node>
+
+    <!-- *************** Marker3 Filter ************** -->
+    <node pkg="uav_platform" type="pose_filter" name="filter_marker3" 
+        output="screen">
+        <param name="filter_ratio" type="double" value="0.1" />
+        <param name="frame_id" type="string" value="/map" />
+        <param name="child_frame_id" type="string" value="/marker3" />
+        <param name="filtered_child_frame" type="string" value="/m3" />
+    </node>
+
+    <!-- *************** Marker4 Filter ************** -->
+    <node pkg="uav_platform" type="pose_filter" name="filter_marker4" 
+        output="screen">
+        <param name="filter_ratio" type="double" value="0.1" />
+        <param name="frame_id" type="string" value="/map" />
+        <param name="child_frame_id" type="string" value="/marker4" />
+        <param name="filtered_child_frame" type="string" value="/m4" />
+    </node>
 
 	<!-- *********** ARToolkit for camera 0 ********** -->
 	<node name="ar_pose0" pkg="ar_pose" type="ar_multi" respawn="false" 
@@ -50,6 +84,7 @@
 		<param name="marker_pattern_list" type="string" 
 				value="$(find uav_camera)/data/multi_pattern"/>
 		<param name="threshold" type="int" value="80"/>
+		<param name="use_history" type="bool" value="false"/>
 	</node>
 
 	<!-- *********** ARToolkit for camera 1 ********** -->
@@ -60,6 +95,8 @@
 		<param name="marker_pattern_list" type="string" 
 				value="$(find uav_camera)/data/multi_pattern"/>
 		<param name="threshold" type="int" value="80"/>
+		<param name="use_history" type="bool" value="false"/>
 	</node> 
 
 </launch>
+
