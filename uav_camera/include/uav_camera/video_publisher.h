@@ -10,6 +10,8 @@
 #include <uav_msgs/camera_msg.h>
 #include <stdio.h>
 #include <boost/thread.hpp>
+#include <dynamic_reconfigure/server.h>
+#include <uav_camera/thresholdConfig.h>
 
 typedef struct {
 	int width;
@@ -34,6 +36,8 @@ class video_publisher {
 		void create_publishers();
 		void create_subscribers();
 		void set_camera_calibration();
+		void binarize(cv::Mat &source, cv::Mat &dest);
+		void reconf(uav_camera::thresholdConfig &config, uint32_t level);
 		
 		void main_loop();
 		boost::thread* main_loop_;
@@ -42,8 +46,8 @@ class video_publisher {
 		image_transport::ImageTransport it_;
 
 		cv::VideoCapture capture;
-		image_transport::Publisher image_pub_;	
-		ros::Publisher info_pub_;	
+		image_transport::Publisher image_pub_, image_pub2_;	
+		ros::Publisher info_pub_, info_pub2_;	
 
 		int camera_number;
 		bool camera_on_;
@@ -52,6 +56,8 @@ class video_publisher {
 		ar_params ar_params_;
 		cv::Mat camera_matrix_;
 		cv::Mat distorted_coefficients_;
+		int threshold_;
 };
 
 #endif
+
