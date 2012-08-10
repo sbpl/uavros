@@ -174,9 +174,12 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
       // printf("alt point %f %f %f\n", pout.point.x, pout.point.y, pout.point.z);
     }
 
-
-    zs.push_back(pout.point.z);
-    voxels.push_back(pout.point);
+    // only accept height estimates that are close to previous height
+    if ((pout.point.z < state_.pose.pose.position.z + 0.3)&&(pout.point.z > state_.pose.pose.position.z - 0.3)) {
+      ROS_WARN("good range at %f (%f)\n", pout.point.z, state_.pose.pose.position.z);
+      zs.push_back(pout.point.z);
+      voxels.push_back(pout.point);
+    }
     ang += scan->angle_increment;
   }
   // ROS_ERROR("size: %d first: %f\n", zs.size(),zs[0]);
