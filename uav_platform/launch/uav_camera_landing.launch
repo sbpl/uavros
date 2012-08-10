@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
 
 <launch>
+	<include file="$(find uav_launch)/launch/uav_launch.launch" /> 
+
 	<!-- ************ Camera0 to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera0" 
-		args="0.23 0.05 -0.1 -1.57 0 -1.57 body_frame usb_cam0 100" /> 
+		args="0.23 0.02 -0.1 -1.57 0 -1.57 body_frame usb_cam0 100" /> 
 
 	<!-- ************ Camera1 to hexa ************ -->
 	<node pkg="tf" type="static_transform_publisher" name="hexa_to_camera1" 
@@ -26,9 +28,9 @@
 	</node> 
 -->	
 	<!-- ************ Platform Controller *********** -->
-    <node pkg="uav_platform" type="platform_controller" 
-		name="platform_controller" output="screen">
-		<rosparam file="$(find uav_platform)/config/marker_goals.yaml"	command="load" />
+    <node pkg="uav_platform" type="nav_markers" name="nav_marker" 
+		output="screen">
+		<rosparam file="$(find uav_platform)/params/marker_goals.yaml"	command="load" />
 	</node>
 
 	<!-- *********** Interactive Marker for changing mode *********** -->
@@ -38,7 +40,7 @@
 
 	<!-- **** Interactive Marker to choose marker and mode **** -->
 		<node pkg="uav_platform" type="align_mode" name="align_node"
-		otuput="screen"/>
+		output="screen"/>
 
     <!-- *************** Marker1 Filter ************** -->
     <node pkg="uav_platform" type="pose_filter" name="filter_marker1" 
@@ -88,7 +90,7 @@
 	</node>
 
 	<!-- *********** ARToolkit for camera 1 ********** -->
-	<node name="ar_pose1" pkg="ar_pose" type="ar_multi" respawn="false" 
+<!--	<node name="ar_pose1" pkg="ar_pose" type="ar_multi" respawn="false" 
 		output="screen">
 		<param name="camera_image" type="string" value="/usb_cam1/image_raw"/>
 		<param name="camera_info" type="string" value="/usb_cam1/camera_info"/>
@@ -97,6 +99,6 @@
 		<param name="threshold" type="int" value="80"/>
 		<param name="use_history" type="bool" value="false"/>
 	</node> 
-
+-->
 </launch>
 

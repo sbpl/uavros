@@ -33,7 +33,7 @@ class pose_filter{
 		btQuaternion filtered_quat_; 
 		btVector3 filtered_pos_;
 
-		bool tf_found_;
+		ros::Time last_ts_;	
 };
 
 #endif
