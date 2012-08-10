@@ -6,6 +6,8 @@
 #define APPROACH_POINT	1
 #define LAND_POINT		2
 
+ros::Publisher align_mode_pub;
+
 /* Callback from a change of the interactive marker */
 void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 {
@@ -16,46 +18,55 @@ void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr
 		if(feedback->menu_entry_id == 5) {
 			msg.marker = 1;
 			msg.mode = APPROACH_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M1 Approach");
 		}
 		if(feedback->menu_entry_id == 6) {
 			msg.marker = 1;
 			msg.mode = LAND_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M1 Land");
 		}
 		if(feedback->menu_entry_id == 7) {
 			msg.marker = 2;
 			msg.mode = APPROACH_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M2 Approach");
 		}
 		if(feedback->menu_entry_id == 8) {
 			msg.marker = 2;
 			msg.mode = LAND_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M2 Land");
 		}
 		if(feedback->menu_entry_id == 9) {
 			msg.marker = 3;
 			msg.mode = APPROACH_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M3 Approach");
 		}
 		if(feedback->menu_entry_id == 10) {
 			msg.marker = 3;
 			msg.mode = LAND_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M3 Land");
 		}
 		if(feedback->menu_entry_id == 11) {
 			msg.marker = 4;
 			msg.mode = APPROACH_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M4 Approach");
 		}
 		if(feedback->menu_entry_id == 12) {
 			msg.marker = 4;
 			msg.mode = LAND_POINT;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("M4 Land");
 		}
 		if(feedback->menu_entry_id == 13) {
 			msg.marker = LAND;
 			msg.mode = LAND;
+			align_mode_pub.publish(msg);
 			ROS_ERROR("Land");
 		}
 //	}
@@ -66,7 +77,7 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, "align_node");
 	ros::NodeHandle nh;
 
-	ros::Publisher align_mode_pub = nh.advertise<uav_msgs::mode_msg>("/align_mode", 1);
+	align_mode_pub = nh.advertise<uav_msgs::mode_msg>("/align_mode", 1);
 
 	interactive_markers::MenuHandler menu_handler;
 
@@ -99,7 +110,7 @@ int main(int argc, char** argv)
     /* Create Interactive Marker */
     visualization_msgs::InteractiveMarker int_marker;
     int_marker.header.frame_id = "/map";
-    int_marker.pose.position.z = 2;
+    int_marker.pose.position.z = 1;
     int_marker.scale = 1;
     int_marker.name = "align_mode_marker";
     int_marker.description = "Menu";

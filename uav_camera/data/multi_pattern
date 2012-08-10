@@ -1,14 +1,26 @@
 #the number of patterns to be recognized
-2
+4
 
 #pattern 1
 marker1
-data/4x4/4x4_35.patt
-202.0
+data/4x4/4x4_25.patt
+199.0
 0.0 0.0
 
 #pattern 2
 marker2
-data/4x4/4x4_24.patt
-69.0
+data/4x4/4x4_35.patt
+199.0
+0.0 0.0
+
+#pattern 3
+marker3
+data/4x4/4x4_45.patt
+199.0
+0.0 0.0
+
+#pattern 4
+marker4
+data/4x4/4x4_74.patt
+199.0
 0.0 0.0
