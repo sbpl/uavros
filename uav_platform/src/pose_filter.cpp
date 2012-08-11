@@ -62,23 +62,28 @@ void pose_filter::get_params()
 void pose_filter::main_loop()
 {
 	tf::TransformListener listener;
+	bool tf_available;
 	last_ts_ = ros::Time::now();
 	ros::Rate rate(50.0);
 	while(n_.ok()) {
+		tf_available = true;
+
 		tf::StampedTransform transform, transform2;
 		try {
 			listener.lookupTransform(frame_id_, child_frame_id_, ros::Time(0),
 									 transform2);
-			listener.lookupTransform(frame_id_, child_frame_id_, transform2.stamp_ - ros::Duration(0.25), 
+			ts_ = transform2.stamp_;
+			listener.lookupTransform(frame_id_, child_frame_id_, ts_ - ros::Duration(0.10), 
 									 transform);
 		} catch (tf::TransformException ex) {
 			ROS_DEBUG("%s", ex.what());
+			tf_available = false;
 		}
 
-		if(last_ts_ != transform.stamp_) {
+		if(last_ts_ != transform.stamp_ && tf_available) {
 			filter(transform);
 			publish_filtered();
-		}
+		} 
 		last_ts_ = transform.stamp_;
 
 		rate.sleep();
@@ -88,6 +93,7 @@ void pose_filter::main_loop()
 /* Filter the pose with the past poses */
 void pose_filter::filter(tf::StampedTransform transform) 
 {
+	static bool first_tf = true;
 	btVector3 current_pos(transform.getOrigin().x(),
 						  transform.getOrigin().y(),
 						  transform.getOrigin().z());
@@ -97,9 +103,15 @@ void pose_filter::filter(tf::StampedTransform transform)
 							 transform.getRotation().z(),
 							 transform.getRotation().w());
 
-	/* Filter postion and rotation */
-	filtered_pos_ = filtered_pos_.lerp(current_pos, filter_ratio_);
-	filtered_quat_ = filtered_quat_.slerp(current_rot, filter_ratio_);
+	if(!first_tf) {
+		/* Filter postion and rotation */
+		filtered_pos_ = filtered_pos_.lerp(current_pos, filter_ratio_);
+		filtered_quat_ = filtered_quat_.slerp(current_rot, filter_ratio_);
+	} else {
+		filtered_pos_ = current_pos;
+		filtered_quat_ = current_rot;
+		first_tf = false;
+	}
 }	
 
 /* Publish the filtered pose to tf */
@@ -109,6 +121,7 @@ void pose_filter::publish_filtered()
 	tf::Transform transform;
 	transform.setOrigin(filtered_pos_);
 	transform.setRotation(filtered_quat_);
-	br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),
+//	br.sendTransform(tf::StampedTransform(transform, ros::Time::now(),
+	br.sendTransform(tf::StampedTransform(transform, ts_,
 									filtered_frame_, filtered_child_frame_));
 }

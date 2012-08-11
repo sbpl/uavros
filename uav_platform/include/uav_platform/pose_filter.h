@@ -33,6 +33,7 @@ class pose_filter{
 		btQuaternion filtered_quat_; 
 		btVector3 filtered_pos_;
 
+		ros::Time ts_;	
 		ros::Time last_ts_;	
 };
 

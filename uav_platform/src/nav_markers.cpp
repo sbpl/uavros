@@ -135,15 +135,12 @@ void nav_markers::align(tf::tfMessageConstPtr msg, double goal_from_marker[3])
 	tf::StampedTransform transform;
 
 	get_pose_from_msg(msg, pos, quat);
-	btMatrix3x3(quat).getRPY(r, p, y);
-	ROS_INFO("%f\t%f\t%f", r*180/PI, p*180/PI, y*180/PI);
 	tf::quaternionMsgToTF( msg->transforms[0].transform.rotation, quat);
 	btMatrix3x3(quat).getRPY(r, p, y);
-	ROS_INFO("%f\t%f\t%f", r*180/PI, p*180/PI, y*180/PI);
 
 	calculated_goal.x = pos.getX() - goal_from_marker[0] * cos(p);
 	calculated_goal.y = pos.getY() + goal_from_marker[0] * sin(p);
-	calculated_goal.z = 1.0;
+	calculated_goal.z = pos.getZ();//goal_from_marker[2];
 	calculated_goal.theta = -p;
 
 	update_goal(calculated_goal);
