@@ -87,7 +87,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   trans.transform.translation.x = state_.pose.pose.position.x;
   trans.transform.translation.y = state_.pose.pose.position.y;
   trans.transform.translation.z = state_.pose.pose.position.z;
-  //ROS_ERROR("pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
+  //ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
 
   trans.child_frame_id = body_map_aligned_topic_;
   trans.transform.rotation = tf::createQuaternionMsgFromYaw(0);
@@ -174,12 +174,14 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
       // printf("alt point %f %f %f\n", pout.point.x, pout.point.y, pout.point.z);
     }
 
+    pout.point.z = -pout.point.z;
     // only accept height estimates that are close to previous height
-    if ((pout.point.z < state_.pose.pose.position.z + 0.3)&&(pout.point.z > state_.pose.pose.position.z - 0.3)) {
+    //TODO: Make window parameter 
+    if ( (state_.pose.pose.position.z == 0) || ((pout.point.z < state_.pose.pose.position.z + 0.2)&&(pout.point.z > state_.pose.pose.position.z - 0.2)) ) {
         zs.push_back(pout.point.z);
       voxels.push_back(pout.point);
     }
-    else {   ROS_WARN("good range at %f (%f)\n", pout.point.z, state_.pose.pose.position.z); }
+    else {   ROS_WARN("bad height at %f (%f)\n", pout.point.z, state_.pose.pose.position.z); }
 
     ang += scan->angle_increment;
   }
@@ -196,11 +198,16 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
   cloud.header.stamp = ros::Time::now();
   pointCloud_pub_.publish(cloud);
 
-  sort(zs.begin(),zs.end());
-  state_.pose.pose.position.z = -zs[zs.size()/2];
-  //ROS_ERROR("LC z: %f\n", state_.pose.pose.position.z);
-  z_fifo_.insert(state_.pose.pose.position.z);
-  z_time_fifo_.insert(scan->header.stamp.toSec());
+  //ROS_ERROR("size is %d median is %f \n", (int) zs.size(), zs[zs.size()/2] );
+  if(zs.size() > 0)
+  {
+    sort(zs.begin(),zs.end());
+    state_.pose.pose.position.z = zs[zs.size()/2];
+    //ROS_ERROR("LC z: %f\n", state_.pose.pose.position.z);
+    z_fifo_.insert(state_.pose.pose.position.z);
+    z_time_fifo_.insert(scan->header.stamp.toSec());
+  }
+
 
   pcl::PointCloud<pcl::PointXYZ> pclmedianpt;
   pclmedianpt.push_back(pcl::PointXYZ(state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z));
