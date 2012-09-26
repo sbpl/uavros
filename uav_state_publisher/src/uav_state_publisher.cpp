@@ -177,7 +177,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
     pout.point.z = -pout.point.z;
     // only accept height estimates that are close to previous height
     //TODO: Make window parameter 
-    if ( (state_.pose.pose.position.z == 0) || ((pout.point.z < state_.pose.pose.position.z + 0.2)&&(pout.point.z > state_.pose.pose.position.z - 0.2)) ) {
+    if ( (state_.pose.pose.position.z <= 0) || ((pout.point.z < state_.pose.pose.position.z + 0.2)&&(pout.point.z > state_.pose.pose.position.z - 0.2)) ) {
         zs.push_back(pout.point.z);
       voxels.push_back(pout.point);
     }
