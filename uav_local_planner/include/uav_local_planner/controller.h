@@ -140,4 +140,12 @@ class UAVController {
 private:
   tf::TransformListener tf_;
   ros::Publisher PID_pub_;
+  ros::Publisher Pos_err ;
+  ros::Publisher Vel_err;
+  ros::Publisher A_Vel_err;
+  ros::Publisher Or_err ;
+  ros::Publisher Roll_p_gain ;
+  ros::Publisher Pitch_p_gain ;
+  ros::Publisher Roll_o_gain ;
+  ros::Publisher Pitch_o_gain ;
 };

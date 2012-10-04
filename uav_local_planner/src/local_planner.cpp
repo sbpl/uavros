@@ -36,6 +36,7 @@ ROS_ERROR("[local_planner] done getting params");
   //publish UAV commands and goals (in case we detect a collision up ahead we publish the same goal state to engage the planner)
   waypoint_vis_pub_ = nh.advertise<visualization_msgs::Marker>(next_waypoint_topic_,1);
   command_pub_ = nh.advertise<uav_msgs::ControllerCommand>(ctrl_cmd_topic_,1);
+  RPYT_pub_ = nh.advertise<uav_msgs::ControllerCommand>("/RPYT_cmd",1);
   goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>(goal_pub_topic_,1);
 
   status_pub_ = nh.advertise<uav_msgs::FlightModeStatus>(flt_mode_stat_topic_, 1);
@@ -167,6 +168,7 @@ void UAVLocalPlanner::controllerThread(){
     // ROS_INFO("**************************    +=Right     +=Forward   +=CCW       +=Up\n");
 
     command_pub_.publish(u);
+    RPYT_pub_.publish(u);
     status_pub_.publish(state);
     ros::Time stop_ = ros::Time::now();
     ROS_DEBUG("[local_planner] main loop %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );

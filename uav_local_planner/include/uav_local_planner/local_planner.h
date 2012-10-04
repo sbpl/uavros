@@ -57,6 +57,7 @@ class UAVLocalPlanner{
 
     ros::Publisher waypoint_vis_pub_;
     ros::Publisher command_pub_;
+    ros::Publisher RPYT_pub_;
     ros::Publisher status_pub_;
     ros::Publisher goal_pub_;
     ros::Subscriber collision_map_sub_;

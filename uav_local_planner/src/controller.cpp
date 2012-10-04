@@ -9,7 +9,17 @@ UAVController::UAVController() : tf_(ros::NodeHandle(), ros::Duration(10), true)
 {
   ros::NodeHandle nh("~");
   UAVController::InitializeGains();
-  PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_out", 1);
+  Pos_err = nh.advertise<geometry_msgs::PointStamped>("Pos_error",1);
+  Or_err = nh.advertise<geometry_msgs::PointStamped>("Or_error",1);
+  Vel_err = nh.advertise<geometry_msgs::PointStamped>("Vel_error",1);
+  A_Vel_err = nh.advertise<geometry_msgs::PointStamped>("A_Vel_error",1);
+  Roll_p_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Pos_Gains",1);
+  Pitch_p_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Pos_Gains",1);
+  Roll_o_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Or_Gains",1);
+  Pitch_o_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Or_Gains",1);   
+
+  PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_altitude", 1);
+  
   ROS_WARN("[controller] did I get here end?");
 
 }
@@ -228,6 +238,35 @@ Eigen::Vector3f UAVController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     CONT.RI += err[0];
     CONT.PI += err[1];
     CONT.YI += err[2];
+
+    geometry_msgs::PointStamped Or_e;
+    Or_e.header.stamp = ros::Time::now();
+    Or_e.point.x = err[0];
+    Or_e.point.y = err[1];
+    Or_e.point.z = err[2];
+    Or_err.publish(Or_e);
+
+    geometry_msgs::PointStamped A_Vel_e;
+    A_Vel_e.header.stamp = ros::Time::now();
+    A_Vel_e.point.x = err[3];
+    A_Vel_e.point.y = err[4];
+    A_Vel_e.point.z = err[5];
+    A_Vel_err.publish(A_Vel_e);
+
+    geometry_msgs::PointStamped Roll_o_g;
+    Roll_o_g.header.stamp = ros::Time::now();
+    Roll_o_g.point.x = CONT.RPkp*err[0];
+    Roll_o_g.point.y = CONT.RPkd*err[3];
+    Roll_o_g.point.z = CONT.RI*CONT.RPki;
+    Roll_o_gain.publish(Roll_o_g);
+
+    geometry_msgs::PointStamped Pitch_o_g;
+    Pitch_o_g.header.stamp = ros::Time::now();
+    Pitch_o_g.point.x = CONT.RPkp*err[1];
+    Pitch_o_g.point.y = CONT.RPkd*err[4];
+    Pitch_o_g.point.z = CONT.PI*CONT.RPki;
+    Pitch_o_gain.publish(Pitch_o_g);
+
     return RPY;
     //TODO: Error Logging  --- meaning what????
 }
@@ -276,6 +315,34 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
   //pitch
   RP_Pose[1] = err_p[0]*CONT.Posekp + err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
   CONT.PposeI += err_p[0];
+
+  geometry_msgs::PointStamped Pos_e;
+  Pos_e.header.stamp = ros::Time::now();
+  Pos_e.point.x = err_p[0]; 
+  Pos_e.point.y = err_p[1];
+  Pos_e.point.z = err_p[2];
+  Pos_err.publish(Pos_e);
+
+  geometry_msgs::PointStamped Vel_e;
+  Vel_e.header.stamp = ros::Time::now();
+  Vel_e.point.x = err_v[0];
+  Vel_e.point.y = err_v[1];
+  Vel_e.point.z = err_v[2];
+  Vel_err.publish(Vel_e);
+
+  geometry_msgs::PointStamped Roll_p_g;
+  Roll_p_g.header.stamp = ros::Time::now();
+  Roll_p_g.point.x = -err_p[1]*CONT.Posekp;
+  Roll_p_g.point.y = -err_v[1]*CONT.Posekd;
+  Roll_p_g.point.z = -CONT.RposeI*CONT.Poseki;
+  Roll_p_gain.publish(Roll_p_g);
+
+  geometry_msgs::PointStamped Pitch_p_g;
+  Pitch_p_g.header.stamp = ros::Time::now();
+  Pitch_p_g.point.x = err_p[0]*CONT.Posekp;
+  Pitch_p_g.point.y = err_v[0]*CONT.Posekd;
+  Pitch_p_g.point.z = CONT.PposeI*CONT.Poseki;
+  Pitch_p_gain.publish(Pitch_p_g);
 
   return  RP_Pose;
 }
