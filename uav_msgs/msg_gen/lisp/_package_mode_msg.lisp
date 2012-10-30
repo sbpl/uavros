@@ -1,4 +1,6 @@
 (cl:in-package uav_msgs-msg)
-(cl:export '(MODE-VAL
+(cl:export '(MARKER-VAL
+          MARKER
+          MODE-VAL
           MODE
 ))

@@ -20,6 +20,7 @@ UAVStatePublisher::UAVStatePublisher()
   ph.param<std::string>("body_topic",body_topic_,"/body_frame");
   ph.param<std::string>("body_map_aligned_topic",body_map_aligned_topic_,"/body_frame_map_aligned");
   ph.param<std::string>("body_stabilized_topic",body_stabilized_topic_,"/body_frame_stabilized");
+  ph.param<std::string>("rpy_pub_topic",rpy_pub_topic_,"rpy");
 
   ph.param("min_lidar_angle",min_lidar_angle_,80.0*M_PI/180.0);
   ph.param("max_lidar_angle",max_lidar_angle_,100.0*M_PI/180.0);
@@ -28,6 +29,8 @@ UAVStatePublisher::UAVStatePublisher()
   state_pub_ = nh.advertise<nav_msgs::Odometry>(state_pub_topic_, 1);
   pointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_topic_, 1);
   point_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_median_topic_, 1);
+  rpy_pub_ = nh.advertise<geometry_msgs::Vector3>(rpy_pub_topic_, 1);
+  
 
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
   ekf_sub_ = nh.subscribe(position_sub_topic_, 3, &UAVStatePublisher::ekfCallback,this);
@@ -62,6 +65,13 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   btQuaternion q;
   tf::quaternionMsgToTF(p->pose.pose.orientation, q);
   btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
+  //Publish RPY for debugging (in degrees)
+  geometry_msgs::Vector3 rpy;
+  rpy.x = roll*180/M_PI;
+  rpy.y = pitch*180/M_PI;
+  rpy.z = yaw*180/M_PI;
+  rpy_pub_.publish(rpy);
+
   state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
 
   //get the x and y

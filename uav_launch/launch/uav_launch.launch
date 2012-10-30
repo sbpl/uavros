@@ -7,7 +7,7 @@
  <!-- <include file="$(find uav_platform)/launch/uav_camera_landing.launch" /> -->
 
 <!-- start recording this stuff -->
-<node pkg="rosbag" type="rosbag" name="rosbag_record" args="record -a -x /usb_cam(.*) -O /home/jbutzke/Bag/HexaData"/>
+<node pkg="rosbag" type="rosbag" name="rosbag_record" args="record -a -x /usb_cam(.*) -O /home/venkat/ros_workspace/Bag/HexaData"/>
 
 
 <!-- Robot State Publisher  -->
@@ -22,11 +22,11 @@
 </node>
 
 <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
-
+<!--TODO: Goal interpolater not needed, assuming planner provides discretized paths
 <node pkg="uav_goal_interpolate" type="uav_goal_interpolate" name="uav_goal_interpolate" output="screen" >
   <rosparam file="$(find uav_launch)/config/uav_goal_interpolate.yaml" command="load"/>
 </node>
-
+-->
 <!-- ....................sensor_msgs imu............................................................. -->
 <!-- Bring up the hokuyos -->
 <!-- Vertical hokuyo -->

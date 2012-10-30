@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# Install script for directory: /home/eduardo/uavros/uav_platform
-=======
-# Install script for directory: /home/jbutzke/HexaRosPackages/UAVstack/uav_platform
->>>>>>> fbf1baf70379b053dca4b7f2c4939b2a8f7ce0c4
+# Install script for directory: /home/venkat/ros_workspace/uavros/uav_platform
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -42,13 +38,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-<<<<<<< HEAD
-FILE(WRITE "/home/eduardo/uavros/uav_platform/build/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/venkat/ros_workspace/uavros/uav_platform/build/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/eduardo/uavros/uav_platform/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
-=======
-FILE(WRITE "/home/jbutzke/HexaRosPackages/UAVstack/uav_platform/build/${CMAKE_INSTALL_MANIFEST}" "")
-FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/jbutzke/HexaRosPackages/UAVstack/uav_platform/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
->>>>>>> fbf1baf70379b053dca4b7f2c4939b2a8f7ce0c4
+  FILE(APPEND "/home/venkat/ros_workspace/uavros/uav_platform/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)
