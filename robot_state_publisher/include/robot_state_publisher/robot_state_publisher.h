@@ -75,6 +75,8 @@ public:
    */
   void publishTransforms(const std::map<std::string, double>& joint_positions, const ros::Time& time);
   void publishFixedTransforms();
+  
+  ros::Time last_time;
 
 private:
   void addChildren(const KDL::SegmentMap::const_iterator segment);

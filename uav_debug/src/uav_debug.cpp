@@ -21,6 +21,7 @@ UAVDebug::UAVDebug()
   ph.param<std::string>("body_map_aligned_topic",body_map_aligned_topic_,"/body_frame_map_aligned");
   ph.param<std::string>("body_stabilized_topic",body_stabilized_topic_,"/body_frame_stabilized");
   ph.param<std::string>("imu_topic",imu_topic_,"/raw_imu");
+  ph.param<std::string>("accelerometer_frame",accelerometer_frame_topic_,"/accelerometer_frame");
 
   vel_pub_ = nh.advertise<geometry_msgs::PointStamped>("/acel_integrated",1);
   ac_pub_ = nh.advertise<geometry_msgs::PointStamped>("/acel_trans",1);
@@ -32,10 +33,10 @@ UAVDebug::UAVDebug()
   imu_sub_ = nh.subscribe(imu_topic_, 1, &UAVDebug::rawImuCallback,this);
   slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVDebug::slamCallback,this);
   
-  x_integrated_ = new integrated_accel(40);
-  y_integrated_ = new integrated_accel(40);
-  x_velo_ = new velo_list(41);
-  y_velo_ = new velo_list(41);
+  x_integrated_ = new integrated_accel(10);
+  y_integrated_ = new integrated_accel(10);
+  x_velo_ = new velo_list(11);
+  y_velo_ = new velo_list(11);
 
 }
 
@@ -46,9 +47,11 @@ void UAVDebug::rawImuCallback(sensor_msgs::Imu imu)
   //determine gravity compensated accelerations
   tf::Point p(imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
   tf::StampedTransform transform;
+  
+  tf_.waitForTransform (body_map_aligned_topic_, accelerometer_frame_topic_, imu.header.stamp, ros::Duration(0.1));
    
   try {
-     tf_.lookupTransform( body_map_aligned_topic_, body_topic_, ros::Time(0), transform);
+     tf_.lookupTransform( body_map_aligned_topic_, accelerometer_frame_topic_, imu.header.stamp, transform);
   }
   catch (tf::TransformException ex){
      return;

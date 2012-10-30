@@ -123,7 +123,7 @@ public:
       
       void set_value(double val, ros::Time time)
       {
-	if(!offset_set) { offset_set = true; offset = val; }
+	//if(!offset_set) { offset_set = true; offset = val; }
 
 	if(count == size )
         {
@@ -172,7 +172,7 @@ public:
   void rawImuCallback(sensor_msgs::Imu imu);
   void slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg);
 
-  std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_, slam_topic_, map_topic_, body_topic_, body_map_aligned_topic_, body_stabilized_topic_, imu_topic_;
+  std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_, slam_topic_, map_topic_, body_topic_, body_map_aligned_topic_, body_stabilized_topic_, imu_topic_, accelerometer_frame_topic_;
 
   nav_msgs::Odometry state_;
   ros::Publisher vel_pub_;

@@ -5,10 +5,16 @@
 
 
  <!-- <include file="$(find uav_platform)/launch/uav_camera_landing.launch" /> -->
+ 
+ 
+ <!-- Load the configuration files -->
+<rosparam command="load" file="$(find uav_launch)/config/UAV.yaml" ns="/UAV" />
 
-<!-- start recording this stuff -->
-<node pkg="rosbag" type="rosbag" name="rosbag_record" args="record -a -x /usb_cam(.*) -O /home/jbutzke/Bag/HexaData"/>
 
+
+<param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
+ 
+ 
 
 <!-- Robot State Publisher  -->
 <node pkg="robot_state_publisher" type="state_publisher" name="rob_st_pub" output="screen">
@@ -31,36 +37,12 @@
 <!-- Bring up the hokuyos -->
 <!-- Vertical hokuyo -->
 <!-- if="$(arg use_tilt_laser_)"-->
-<node name="panning_laser" pkg="hokuyo_node" type="hokuyo_node" >
-<param name="port" value="/dev/ttyACM1" />
-<param name="frame_id" value="panning_laser_frame" />
-<param name="min_ang" value="-0.7" />
-<param name="max_ang" value="2.35" />
-<remap from="/scan" to="panning_laser" />
-</node>
 
-<!-- Horizontal hokuyo -->
-<node name="fixed_laser" pkg="hokuyo_node" type="hokuyo_node">
-<param name="port" value="/dev/ttyACM0" />
-<param name="frame_id" value="fixed_laser_frame" />
-<param name="min_ang" value="-2.356" />
-<param name="max_ang" value="2.356" />
-<remap from="/scan" to="fixed_laser" />
-</node>
-
-<!-- Servos -->
-<!--if="$(arg use_servos_)" -->
-<node name="panning_servo" pkg="uav_servo_node" type="servo_node" >
-<param name="servoID" value="0" />
-<param name="minAngle" value="-20" />
-<param name="maxAngle" value="20" />
-<param name="velocity" value="80" />
-</node>
 
 <!-- .................................................................................... -->
 <!-- Hector Slam -->
-<node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
-<rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
+<node pkg="hector_mapping" type="hector_mapping" name="hector_slam" output="screen">
+<rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"  />
 </node>
 
 <!-- TODO: There is hector_geotiff node that can be brought up to save the trajectory of the UAV-->
@@ -72,7 +54,10 @@
 <remap from="state" to="ekf_state"/>
 <param name="with_covariances" value="false"/>
 <param name="system/gyro_stddev" value="0.1" />
-<param name="system/acceleration_stddev" value="1.0" />
+<param name="system/acceleration_drift" value="0.0" />
+<param name="system/acceleration_stddev" value="4.0" />
+<param name="system/velocity_stddev" value="0.0" />
+<param name="poseupdate/fixed_position_xy_stddev" value="0.0" />
 </node>
 <!--Only one param. No yaml file needed -->
 
