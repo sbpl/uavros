@@ -125,6 +125,13 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   btQuaternion q;
   tf::quaternionMsgToTF(p->pose.pose.orientation, q);
   btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
+  //Publish RPY for debugging (in degrees)
+  geometry_msgs::Vector3 rpy;
+  rpy.x = roll*180/M_PI;
+  rpy.y = pitch*180/M_PI;
+  rpy.z = yaw*180/M_PI;
+  rpy_pub_.publish(rpy);
+
   state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
 
   //get the x and y
