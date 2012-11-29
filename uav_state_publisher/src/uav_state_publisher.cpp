@@ -39,7 +39,7 @@ UAVStatePublisher::UAVStatePublisher()
   ekf_sub_ = nh.subscribe(position_sub_topic_, 3, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe(vertical_laser_data_topic_, 1, &UAVStatePublisher::lidarCallback,this);
   slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVStatePublisher::slamCallback,this);
-  imu_sub_ = nh.subscribe(imu_topic_, 1, &UAVStatePublisher::rawImuCallback,this);
+  //imu_sub_ = nh.subscribe(imu_topic_, 1, &UAVStatePublisher::rawImuCallback,this);
   
   x_integrated_ = new integrated_accel(40);
   y_integrated_ = new integrated_accel(40);
@@ -48,7 +48,7 @@ UAVStatePublisher::UAVStatePublisher()
 
 }
 
-void UAVStatePublisher::rawImuCallback(sensor_msgs::Imu imu)
+/*void UAVStatePublisher::rawImuCallback(sensor_msgs::Imu imu)
 {
   ros::Time start_ = ros::Time::now();
   
@@ -97,7 +97,7 @@ void UAVStatePublisher::rawImuCallback(sensor_msgs::Imu imu)
   acc_trans.point.z = accel_z/40;
   ac_pub_.publish(acc_trans);
   
-}
+}*/
 
 void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg) {
   ros::Time start_ = ros::Time::now();
