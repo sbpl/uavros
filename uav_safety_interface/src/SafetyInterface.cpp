@@ -58,10 +58,10 @@ void uavSafetyInterface::scanCallback (const sensor_msgs::LaserScan &scan_in)
 
 void uavSafetyInterface::cmdReceived(const uav_msgs::ControllerCommand &cmd_in){
 	ROS_INFO("command received!");
-	visualizeCmd(cmd_in, "cmd_in", 0);
+	visualizeCmd(cmd_in, "cmd_in", 240);
 	uav_msgs::ControllerCommand cmd_out;
 	filterCommand(cmd_in, &cmd_out);
-	visualizeCmd(cmd_out, "cmd_out", 240);
+	visualizeCmd(cmd_out, "cmd_out", 30);
 	//TODO: publish cmd_out
 }
 
@@ -111,6 +111,10 @@ double uavSafetyInterface::angle_diff(double th1, double th2){
 //roll+ : right wing down
 //roll- : left wing down
 bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in, uav_msgs::ControllerCommand *cmd_out){
+
+	double pitch_gain = 5.0;
+	double roll_gain = 5.0;
+
 	if(laser_data_received){
 		std::vector<double> weights;
 		cmd_out->thrust = cmd_in.thrust;
@@ -131,8 +135,8 @@ bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in
 			//weights.push_back(120.0 - dist_coeff*8.0);
 			weights.push_back((120.0 - 8.0*angle_coeff*dist_coeff));
 		}
-		cmd_out->pitch = pitch;
-		cmd_out->roll = roll;
+		cmd_out->pitch = cmd_in.pitch + pitch_gain * pitch / (double) las_ranges.size();
+		cmd_out->roll = cmd_in.roll + roll_gain * roll / (double) las_ranges.size();
 		visualizeRanges(las_ranges, las_angles, "weights", weights);
 		return true;
 	} else {
