@@ -180,7 +180,7 @@ private:
   void slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg);
   void rawImuCallback(sensor_msgs::Imu imu);
 
-  std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_, slam_topic_, map_topic_, body_topic_, body_map_aligned_topic_, body_stabilized_topic_, imu_topic_;
+  std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_, slam_topic_, map_topic_, body_topic_, body_map_aligned_topic_, body_stabilized_topic_, imu_topic_, rpy_pub_topic_;
 
   nav_msgs::Odometry state_;
   ros::Publisher state_pub_;
@@ -193,6 +193,8 @@ private:
   ros::Subscriber slam_sub_;
   ros::Subscriber lidar_sub_;
   ros::Subscriber imu_sub_;
+  ros::Publisher rpy_pub_;
+  
 
   tf::StampedTransform Pan2BodyTransform_;
 
