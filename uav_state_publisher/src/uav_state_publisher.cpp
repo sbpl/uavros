@@ -20,7 +20,8 @@ UAVStatePublisher::UAVStatePublisher()
   ph.param<std::string>("body_topic",body_topic_,"/body_frame");
   ph.param<std::string>("body_map_aligned_topic",body_map_aligned_topic_,"/body_frame_map_aligned");
   ph.param<std::string>("body_stabilized_topic",body_stabilized_topic_,"/body_frame_stabilized");
-  ph.param<std::string>("rpy_pub_topic",rpy_pub_topic_,"rpy");
+  ph.param<std::string>("imu_topic",imu_topic_,"/raw_imu");
+  ph.param<std::string>("rpy_pub_topic",rpy_pub_topic_,"/rpy_with_acc4");
 
   ph.param("min_lidar_angle",min_lidar_angle_,80.0*M_PI/180.0);
   ph.param("max_lidar_angle",max_lidar_angle_,100.0*M_PI/180.0);
@@ -29,16 +30,74 @@ UAVStatePublisher::UAVStatePublisher()
   state_pub_ = nh.advertise<nav_msgs::Odometry>(state_pub_topic_, 1);
   pointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_topic_, 1);
   point_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_median_topic_, 1);
-  rpy_pub_ = nh.advertise<geometry_msgs::Vector3>(rpy_pub_topic_, 1);
-  
+  vel_pub_ = nh.advertise<geometry_msgs::PointStamped>("/acel_integrated",1);
+  ac_pub_ = nh.advertise<geometry_msgs::PointStamped>("/acel_trans",1);
+  slam_vel_pub_ = nh.advertise<geometry_msgs::PointStamped>("/slam_vel",1);
+  rpy_pub_ = nh.advertise<geometry_msgs::PointStamped>(rpy_pub_topic_, 1);
 
   //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
   ekf_sub_ = nh.subscribe(position_sub_topic_, 3, &UAVStatePublisher::ekfCallback,this);
   lidar_sub_ = nh.subscribe(vertical_laser_data_topic_, 1, &UAVStatePublisher::lidarCallback,this);
   slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVStatePublisher::slamCallback,this);
-
+  //imu_sub_ = nh.subscribe(imu_topic_, 1, &UAVStatePublisher::rawImuCallback,this);
+  
+  x_integrated_ = new integrated_accel(40);
+  y_integrated_ = new integrated_accel(40);
+  x_velo_ = new velo_list(41);
+  y_velo_ = new velo_list(41);
 
 }
+
+/*void UAVStatePublisher::rawImuCallback(sensor_msgs::Imu imu)
+{
+  ros::Time start_ = ros::Time::now();
+  
+  //determine gravity compensated accelerations
+  tf::Point p(imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
+  tf::StampedTransform transform;
+   
+  try {
+     tf_.lookupTransform( body_map_aligned_topic_, body_topic_, ros::Time(0), transform);
+  }
+  catch (tf::TransformException ex){
+     return;
+  }
+  
+  tf::Point pout = transform * p;
+  double accel_x = pout[0];
+  double accel_y = pout[1];
+  double accel_z = pout[2];
+  
+  ROS_ERROR("BEFORE %f %f %f", p[0], p[1], p[2]);
+  ROS_ERROR("AFTER %f %f %f\n", pout[0],pout[1],pout[2]);
+  
+  x_integrated_->set_value(accel_x,imu.header.stamp);
+  double total_sum_x = x_integrated_->get_total_sum();
+  double part_sum_x = x_integrated_->get_list_sum() + x_velo_->get_last();
+  
+  y_integrated_->set_value(accel_y,imu.header.stamp);
+  double total_sum_y = y_integrated_->get_total_sum();
+  double part_sum_y = y_integrated_->get_list_sum() + y_velo_->get_last();
+  
+  ROS_ERROR("VALUES X %f Y %f", imu.linear_acceleration.x, imu.linear_acceleration.y);
+  ROS_ERROR("TOTAL X_SUM %f Y_SUM %f ", total_sum_x, total_sum_y);
+  ROS_ERROR("PARTIAL X_SUM %f Y_SUM %f", part_sum_x, part_sum_y);
+  ROS_ERROR("VELO X %f Y %f\n", x_velo_->get_last(), y_velo_->get_last());
+  
+  geometry_msgs::PointStamped accel_int;
+  accel_int.header.stamp = start_;
+  accel_int.point.x = part_sum_x;
+  accel_int.point.y = part_sum_y;
+  vel_pub_.publish(accel_int);
+  
+  geometry_msgs::PointStamped acc_trans;
+  acc_trans.header.stamp = start_;
+  acc_trans.point.x = accel_x/40;
+  acc_trans.point.y = accel_y/40;
+  acc_trans.point.z = accel_z/40;
+  ac_pub_.publish(acc_trans);
+  
+}*/
 
 void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg) {
   ros::Time start_ = ros::Time::now();
@@ -56,6 +115,9 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
 //on the order of 50Hz
 void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   ros::Time start_ = ros::Time::now();
+  
+  x_velo_->add_value(p->twist.twist.linear.x);
+  y_velo_->add_value(p->twist.twist.linear.y);
 
   //get angular velocities
   state_.twist.twist.angular = p->twist.twist.angular;
@@ -66,10 +128,11 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   tf::quaternionMsgToTF(p->pose.pose.orientation, q);
   btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
   //Publish RPY for debugging (in degrees)
-  geometry_msgs::Vector3 rpy;
-  rpy.x = roll*180/M_PI;
-  rpy.y = pitch*180/M_PI;
-  rpy.z = yaw*180/M_PI;
+   geometry_msgs::PointStamped rpy;
+   rpy.header.stamp = p->header.stamp;
+  rpy.point.x = roll*180/M_PI;
+  rpy.point.y = pitch*180/M_PI;
+  rpy.point.z = yaw*180/M_PI;
   rpy_pub_.publish(rpy);
 
   state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
