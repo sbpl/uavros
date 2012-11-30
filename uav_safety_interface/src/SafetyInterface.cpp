@@ -38,6 +38,7 @@ void uavSafetyInterface::scanCallback (const sensor_msgs::LaserScan &scan_in)
 	if(las_angles.size() < scan_in.ranges.size()) las_angles.resize(scan_in.ranges.size());
 	for(int i = 0; i < (int)scan_in.ranges.size(); i++){
 		double dist = scan_in.ranges[i];
+		if(dist < 0.50) dist = 10.0;
 		double angle = scan_in.angle_min + ang_range * i / (double)scan_in.ranges.size();
 		//store angle and distance info
 		las_ranges[i] = dist;
@@ -57,12 +58,18 @@ void uavSafetyInterface::scanCallback (const sensor_msgs::LaserScan &scan_in)
 }
 
 void uavSafetyInterface::cmdReceived(const uav_msgs::ControllerCommand &cmd_in){
-	ROS_INFO("command received!");
 	visualizeCmd(cmd_in, "cmd_in", 240);
 	uav_msgs::ControllerCommand cmd_out;
+	cmd_out.header.stamp = ros::Time::now();
 	filterCommand(cmd_in, &cmd_out);
 	visualizeCmd(cmd_out, "cmd_out", 30);
-	//TODO: publish cmd_out
+	
+	//enforce max/min here!!!
+	cmd_out.roll = max(-1.0, min(1.0, cmd_out.roll));
+	cmd_out.pitch = max(-1.0, min(1.0, cmd_out.pitch));
+	
+	cmd_writer_.publish(cmd_out);
+	ROS_INFO("command received! in RPYT [%.3f, %.3f, %.3f, %.3f] out RPYT [%.3f, %.3f, %.3f, %.3f]", cmd_in.roll, cmd_in.pitch, cmd_in.yaw, cmd_in.thrust, cmd_out.roll, cmd_out.pitch, cmd_out.yaw, cmd_out.thrust);
 }
 
 double uavSafetyInterface::estimate_heading(double pitch, double roll){
@@ -72,6 +79,7 @@ double uavSafetyInterface::estimate_heading(double pitch, double roll){
 	//|A| = sqrtf(r*r + p*p)
 	//|B| = 1
 	//theta = acos(A . B / |A|*|B|)
+	if(pitch < 0.001 && roll < 0.001) return 0.0;
 	double theta = acos(pitch / sqrtf(pitch*pitch+roll*roll));
 	if(roll < 0.0){
 		theta = 2.0 * 3.14159265359 - theta;
@@ -119,7 +127,7 @@ bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in
 		std::vector<double> weights;
 		cmd_out->thrust = cmd_in.thrust;
 		cmd_out->yaw = cmd_in.yaw;
-		double heading_est = estimate_heading(cmd_in.pitch, cmd_in.roll); //estimate heading direction based on roll and pitch of cmd_in
+		double heading_est = estimate_heading(cmd_in.pitch, -cmd_in.roll); //estimate heading direction based on roll and pitch of cmd_in
 		visualizeHeading(heading_est, "heading_est", 60);
 		double pitch = 0;
 		double roll = 0;
@@ -136,7 +144,7 @@ bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in
 			weights.push_back((120.0 - 8.0*angle_coeff*dist_coeff));
 		}
 		cmd_out->pitch = cmd_in.pitch + pitch_gain * pitch / (double) las_ranges.size();
-		cmd_out->roll = cmd_in.roll + roll_gain * roll / (double) las_ranges.size();
+		cmd_out->roll = -(-cmd_in.roll + roll_gain * roll / (double) las_ranges.size());
 		visualizeRanges(las_ranges, las_angles, "weights", weights);
 		return true;
 	} else {
@@ -154,8 +162,14 @@ int main(int argc, char** argv)
   printf("Initializing safety interface...");
   ros::init(argc,argv,"uav_safety_interface");
   ros::NodeHandle nh;
-  uavTestController* tctrl = new uavTestController(nh, "/cmd_in");
-  uavSafetyInterface* safety = new uavSafetyInterface(nh, "/cmd_in", "/cmd_out", "/tilt_scan");
+ // uavTestController* tctrl = new uavTestController(nh, "/cmd_in");
+  std::string high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic;
+  nh.param<std::string>("high_level_controller_cmd",high_ctrl_cmd_topic,"/high_level_controller_cmd");
+  nh.param<std::string>("controller_cmd",ctrl_cmd_topic,"/controller_cmd");
+  nh.param<std::string>("fixe_laser_topic",laser_topic,"/fixed_laser");
+  
+
+  uavSafetyInterface* safety = new uavSafetyInterface(nh, high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic);
   //tctrl->run();
   ros::spin();
   return 0;

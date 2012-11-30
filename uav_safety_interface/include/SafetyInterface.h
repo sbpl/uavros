@@ -161,7 +161,7 @@ private:
 		HSVtoRGB(&r, &g, &b, color, 1.0, 1.0);
 
 		marker.header.stamp = ros::Time::now();
-		marker.header.frame_id = "base_link"; //reference_frame_;
+		marker.header.frame_id = "body_frame"; //reference_frame_;
 		marker.ns = ns;
 		marker.id = 1;
 		marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -177,7 +177,7 @@ private:
 		marker.points[2].y = 0.0;
 		marker.points[2].z = 0.0;
 		marker.points[3].x = 0.0;
-		marker.points[3].y = 0.5*cmd.roll;
+		marker.points[3].y = -0.5*cmd.roll;
 		marker.points[3].z = 0.0;
  		marker.scale.x = 0.05;
 		marker.color.r = r;
@@ -195,7 +195,7 @@ private:
 		HSVtoRGB(&r, &g, &b, color, 1.0, 1.0);
 
 		marker.header.stamp = ros::Time::now();
-		marker.header.frame_id = "base_link"; //reference_frame_;
+		marker.header.frame_id = "body_frame"; //reference_frame_;
 		marker.ns = ns;
 		marker.id = 1;
 		marker.type = visualization_msgs::Marker::LINE_LIST;
@@ -222,7 +222,7 @@ private:
 		double r=0,g=0,b=0;
 
 		marker.header.stamp = ros::Time::now();
-		marker.header.frame_id = "base_link"; //reference_frame_;
+		marker.header.frame_id = "body_frame"; //reference_frame_;
 		marker.ns = ns;
 		marker.id = 1;
 		marker.type = visualization_msgs::Marker::POINTS;
