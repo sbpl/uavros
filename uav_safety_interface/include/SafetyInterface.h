@@ -25,6 +25,8 @@
 #define UAVSAFETY_PITCH_MAX 0.785398163
 
 //#define UAVSAFETY_VERBOSE
+#define UAVSAFETY_VISUALS
+//#define UAVSAFETY_TESTCONTROLLER
 
 double max(double a, double b){
 	return a>b?a:b;
@@ -83,43 +85,6 @@ void HSVtoRGB( double *r, double *g, double *b, double h, double s, double v )
 	}
 }
 
-class uavTestController {
-public:
-	ros::NodeHandle nh_;
-	std::string cmd_topic_;
-	ros::Publisher cmd_writer_;
-	
-	inline uavTestController(ros::NodeHandle n, std::string cmd_topic) : 
-		nh_(n),
-		cmd_topic_(cmd_topic) {
-		printf("Advertising controller topic %s...", cmd_topic_.c_str());
-		cmd_writer_ = nh_.advertise<uav_msgs::ControllerCommand>(cmd_topic_, 1);
-		printf("done!\n");
-	}
-	
-	inline double unirand(double min, double max){
-		double zeroone = ((double) rand()) / ((double) RAND_MAX); //random between 0 and 1
-		return min + zeroone*(max - min);
-	}
-
-	inline void run(){
-		uav_msgs::ControllerCommand cmd;
-		cmd.thrust = 0;
-		cmd.yaw = 0;
-		cmd.pitch = 0;
-		cmd.roll = 0;
-		while(ros::ok()){
-			printf("."); fflush(stdout);
-			cmd.header.seq = 0;
-			cmd.header.stamp = ros::Time::now();
-			cmd.pitch = unirand(-10.0, 10.0);
-			cmd.roll = unirand(-10.0, 10.0);
-			cmd_writer_.publish(cmd);
-			ros::Rate(1.0).sleep();
-		}
-	}
-};
-
 class uavSafetyInterface {
 
 public: 
@@ -128,6 +93,24 @@ public:
 	void scanCallback (const sensor_msgs::LaserScan &scan_in);
 	
 	void cmdReceived(const uav_msgs::ControllerCommand &cmd_in);
+	
+	inline void setPitchGain(double pg){
+		pitch_gain = pg;
+	}
+	
+	inline void setRollGain(double rg){
+		roll_gain = rg;
+	}
+	
+	inline void setRollLimits(double rmin, double rmax){
+		roll_min = rmin;
+		roll_max = rmax;
+	}
+	
+	inline void setPitchLimits(double pmin, double pmax){
+		pitch_max = pmax;
+		pitch_min = pmin;
+	}
 	
 private:
 	ros::NodeHandle n_;
@@ -143,6 +126,9 @@ private:
 	
 	double min_range;
 	double min_angle;
+	
+	double pitch_gain, pitch_min, pitch_max;
+	double roll_gain, roll_min, roll_max;
 	
 	bool laser_data_received;
 	boost::mutex laser_mutex_;

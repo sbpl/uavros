@@ -3,19 +3,20 @@
 uavSafetyInterface::uavSafetyInterface(ros::NodeHandle n, std::string in_cmd_topic, std::string out_cmd_topic, std::string laser_topic) : 
 	n_()
 {
-	ROS_INFO("SafetyInterface!");
-	printf("Subscribing to laser topic %s...", laser_topic.c_str());
+	printf("\tSubscribing to laser topic %s...", laser_topic.c_str());
 	laser_sub_ = n_.subscribe(laser_topic, 1, &uavSafetyInterface::scanCallback, this);
 	printf("done!\n");
-	printf("Subscribing to cmd_in topic %s...", in_cmd_topic.c_str());
+	printf("\tSubscribing to cmd_in topic %s...", in_cmd_topic.c_str());
 	cmd_reader_ = n_.subscribe(in_cmd_topic, 10, &uavSafetyInterface::cmdReceived,this);
 	printf("done!\n");
-	printf("Advertising cmd_out topic %s...", out_cmd_topic.c_str());
+	printf("\tAdvertising cmd_out topic %s...", out_cmd_topic.c_str());
 	cmd_writer_ = n_.advertise<uav_msgs::ControllerCommand>(out_cmd_topic, 1);
 	printf("done!\n");
-	
+	#ifdef UAVSAFETY_VISUALS
 	marker_publisher_ = n_.advertise<visualization_msgs::Marker>("visualization_marker", 500);
-	
+	#endif
+	roll_gain = 5.0;
+	pitch_gain = 5.0;
 	laser_data_received = false;
 }
 
@@ -58,15 +59,19 @@ void uavSafetyInterface::scanCallback (const sensor_msgs::LaserScan &scan_in)
 }
 
 void uavSafetyInterface::cmdReceived(const uav_msgs::ControllerCommand &cmd_in){
+	#ifdef UAVSAFETY_VISUALS
 	visualizeCmd(cmd_in, "cmd_in", 240);
+	#endif
 	uav_msgs::ControllerCommand cmd_out;
 	cmd_out.header.stamp = ros::Time::now();
 	filterCommand(cmd_in, &cmd_out);
+	#ifdef UAVSAFETY_VISUALS
 	visualizeCmd(cmd_out, "cmd_out", 30);
+	#endif
 	
 	//enforce max/min here!!!
-	cmd_out.roll = max(-1.0, min(1.0, cmd_out.roll));
-	cmd_out.pitch = max(-1.0, min(1.0, cmd_out.pitch));
+	cmd_out.roll = max(roll_min, min(roll_max, cmd_out.roll));
+	cmd_out.pitch = max(pitch_min, min(pitch_max, cmd_out.pitch));
 	
 	cmd_writer_.publish(cmd_out);
 	ROS_INFO("command received! in RPYT [%.3f, %.3f, %.3f, %.3f] out RPYT [%.3f, %.3f, %.3f, %.3f]", cmd_in.roll, cmd_in.pitch, cmd_in.yaw, cmd_in.thrust, cmd_out.roll, cmd_out.pitch, cmd_out.yaw, cmd_out.thrust);
@@ -119,10 +124,6 @@ double uavSafetyInterface::angle_diff(double th1, double th2){
 //roll+ : right wing down
 //roll- : left wing down
 bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in, uav_msgs::ControllerCommand *cmd_out){
-
-	double pitch_gain = 5.0;
-	double roll_gain = 5.0;
-
 	if(laser_data_received){
 		std::vector<double> weights;
 		cmd_out->thrust = cmd_in.thrust;
@@ -159,18 +160,27 @@ bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in
 
 int main(int argc, char** argv)
 {
-  printf("Initializing safety interface...");
+  printf("Initializing safety interface...\n");
   ros::init(argc,argv,"uav_safety_interface");
   ros::NodeHandle nh;
  // uavTestController* tctrl = new uavTestController(nh, "/cmd_in");
   std::string high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic;
+  double roll_gain, pitch_gain;
   nh.param<std::string>("high_level_controller_cmd",high_ctrl_cmd_topic,"/high_level_controller_cmd");
   nh.param<std::string>("controller_cmd",ctrl_cmd_topic,"/controller_cmd");
-  nh.param<std::string>("fixe_laser_topic",laser_topic,"/fixed_laser");
-  
-
+  nh.param<std::string>("fixed_laser_topic",laser_topic,"/fixed_laser");
+  if(!nh.getParam("safety_roll_gain", roll_gain)){
+  	roll_gain = 5.0;
+  }
+  if(!nh.getParam("safety_pitch_gain", pitch_gain)){
+  	pitch_gain = 5.0;
+  }
+  printf("\tRoll Gain: %.3f\n", roll_gain);
+  printf("\tPitch Gain: %.3f\n", pitch_gain);
   uavSafetyInterface* safety = new uavSafetyInterface(nh, high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic);
-  //tctrl->run();
+  safety->setRollGain(roll_gain);
+  safety->setPitchGain(pitch_gain);
+  printf("Safety interface running!\n");
   ros::spin();
   return 0;
 }
