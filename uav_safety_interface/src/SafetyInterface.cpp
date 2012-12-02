@@ -129,9 +129,13 @@ bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in
 		cmd_out->thrust = cmd_in.thrust;
 		cmd_out->yaw = cmd_in.yaw;
 		double heading_est = estimate_heading(cmd_in.pitch, -cmd_in.roll); //estimate heading direction based on roll and pitch of cmd_in
+		#ifdef UAVSAFETY_VISUALS
 		visualizeHeading(heading_est, "heading_est", 60);
+		#endif
 		double pitch = 0;
 		double roll = 0;
+		double max_coeff = 0;
+		double max_hdg = 0;
 		for(unsigned int i = 0; i < las_ranges.size(); i++){
 			double dist_coeff = max(0.0, 10.0 / (las_ranges[i]) - 5.0);
 			double pitch_component = cos(las_angles[i]);
@@ -139,14 +143,27 @@ bool uavSafetyInterface::filterCommand(const uav_msgs::ControllerCommand &cmd_in
 			double angl_dif = fabs(angle_diff(heading_est, las_angles[i]));
 			double angle_coeff = cos(angl_dif);
 			if(angl_dif > 0.5*3.14159265359 && angl_dif < 1.5 * 3.14159265359) angle_coeff = 0.0;
-			pitch -= angle_coeff*dist_coeff * pitch_component;
-			roll -= angle_coeff*dist_coeff * roll_component;
+			
+			#ifdef UAV_SAFETY_USEALLPOINTS			
+			pitch -= angle_coeff*dist_coeff * pitch_component / (double) las_ranges.size();
+			roll -= angle_coeff*dist_coeff * roll_component / (double) las_ranges.size();
+			#else
+			if(max_coeff < angle_coeff*dist_coeff){
+				max_hdg = las_angles[i];
+				max_coeff = angle_coeff*dist_coeff;
+				pitch = angle_coeff*dist_coeff * pitch_component;
+				roll = angle_coeff*dist_coeff * pitch_component;
+			}
+			#endif
 			//weights.push_back(120.0 - dist_coeff*8.0);
 			weights.push_back((120.0 - 8.0*angle_coeff*dist_coeff));
 		}
-		cmd_out->pitch = cmd_in.pitch + pitch_gain * pitch / (double) las_ranges.size();
-		cmd_out->roll = -(-cmd_in.roll + roll_gain * roll / (double) las_ranges.size());
+		cmd_out->pitch = cmd_in.pitch + pitch_gain * pitch;
+		cmd_out->roll = -(-cmd_in.roll + roll_gain * roll);
+		#ifdef UAVSAFETY_VISUALS
+		visualizeHeading(max_hdg, "danger", 0);
 		visualizeRanges(las_ranges, las_angles, "weights", weights);
+		#endif
 		return true;
 	} else {
 		ROS_WARN("Laser data not fully received!");
@@ -163,7 +180,6 @@ int main(int argc, char** argv)
   printf("Initializing safety interface...\n");
   ros::init(argc,argv,"uav_safety_interface");
   ros::NodeHandle nh;
- // uavTestController* tctrl = new uavTestController(nh, "/cmd_in");
   std::string high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic;
   double roll_gain, pitch_gain;
   nh.param<std::string>("high_level_controller_cmd",high_ctrl_cmd_topic,"/high_level_controller_cmd");

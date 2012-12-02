@@ -42,7 +42,7 @@ int main(int argc, char** argv)
   printf("Initializing test controller...");
   ros::init(argc,argv,"uav_test_controller");
   ros::NodeHandle nh;
-  uavTestController* tctrl = new uavTestController(nh, "/cmd_in");
+  uavTestController* tctrl = new uavTestController(nh, "/high_level_controller_cmd");
   tctrl->run();
   return 0;
 }
