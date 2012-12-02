@@ -1,6 +1,6 @@
 #include <SafetyInterface.h>
 
-uavSafetyInterface::uavSafetyInterface(ros::NodeHandle n, std::string in_cmd_topic, std::string out_cmd_topic, std::string laser_topic) : 
+uavSafetyInterface::uavSafetyInterface(ros::NodeHandle n, std::string in_cmd_topic, std::string out_cmd_topic, std::string laser_topic, std::string imu_topic) : 
 	n_()
 {
 	printf("\tSubscribing to laser topic %s...", laser_topic.c_str());
@@ -9,15 +9,47 @@ uavSafetyInterface::uavSafetyInterface(ros::NodeHandle n, std::string in_cmd_top
 	printf("\tSubscribing to cmd_in topic %s...", in_cmd_topic.c_str());
 	cmd_reader_ = n_.subscribe(in_cmd_topic, 10, &uavSafetyInterface::cmdReceived,this);
 	printf("done!\n");
+	printf("\tSubscribing to imu topic %s...", imu_topic.c_str());
+	imu_sub_ = n_.subscribe(imu_topic, 1, &uavSafetyInterface::imuCallback, this);
+	printf("done!\n");
 	printf("\tAdvertising cmd_out topic %s...", out_cmd_topic.c_str());
 	cmd_writer_ = n_.advertise<uav_msgs::ControllerCommand>(out_cmd_topic, 1);
 	printf("done!\n");
 	#ifdef UAVSAFETY_VISUALS
 	marker_publisher_ = n_.advertise<visualization_msgs::Marker>("visualization_marker", 500);
 	#endif
+	imu_linear_acc.resize(3,0.0);
+	imu_linear_acc[0] = 0.0;
+	imu_linear_acc[1] = 0.0;
+	imu_linear_acc[2] = -9.8;
 	roll_gain = 5.0;
 	pitch_gain = 5.0;
 	laser_data_received = false;
+	imu_data_received = false;
+}
+
+void uavSafetyInterface::imuCallback( const sensor_msgs::Imu &imu_in)
+{
+	if(!imu_mutex_.try_lock()){
+		ROS_WARN("uavSafetyInterface::imuCallback could not get mutex lock! skipping");
+		return;
+	}
+	imu_linear_acc[0] = imu_in.linear_acceleration.x;
+	imu_linear_acc[1] = imu_in.linear_acceleration.y;
+	imu_linear_acc[2] = imu_in.linear_acceleration.z;
+	
+	roll_estimate  = atan2(imu_linear_acc[1], imu_linear_acc[2]);
+	pitch_estimate = atan2(imu_linear_acc[0], imu_linear_acc[2]);
+	
+	uav_msgs::ControllerCommand cmd;
+	cmd.thrust = 0.0;
+	cmd.yaw = 0.0;
+	cmd.roll = roll_estimate;
+	cmd.pitch = pitch_estimate;
+	visualizeCmd(cmd, "imu roll pitch estimate", 330);
+	visualizeVector(imu_linear_acc, "imu linear acc", 0); 
+	imu_data_received = true;
+	imu_mutex_.unlock();
 }
 
 void uavSafetyInterface::scanCallback (const sensor_msgs::LaserScan &scan_in)
@@ -180,11 +212,12 @@ int main(int argc, char** argv)
   printf("Initializing safety interface...\n");
   ros::init(argc,argv,"uav_safety_interface");
   ros::NodeHandle nh;
-  std::string high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic;
+  std::string high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic, imu_topic;
   double roll_gain, pitch_gain;
   nh.param<std::string>("high_level_controller_cmd",high_ctrl_cmd_topic,"/high_level_controller_cmd");
   nh.param<std::string>("controller_cmd",ctrl_cmd_topic,"/controller_cmd");
   nh.param<std::string>("fixed_laser_topic",laser_topic,"/fixed_laser");
+  nh.param<std::string>("imu_data", imu_topic, "/imu_data");
   if(!nh.getParam("safety_roll_gain", roll_gain)){
   	roll_gain = 5.0;
   }
@@ -193,7 +226,7 @@ int main(int argc, char** argv)
   }
   printf("\tRoll Gain: %.3f\n", roll_gain);
   printf("\tPitch Gain: %.3f\n", pitch_gain);
-  uavSafetyInterface* safety = new uavSafetyInterface(nh, high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic);
+  uavSafetyInterface* safety = new uavSafetyInterface(nh, high_ctrl_cmd_topic, ctrl_cmd_topic, laser_topic, imu_topic);
   safety->setRollGain(roll_gain);
   safety->setPitchGain(pitch_gain);
   printf("Safety interface running!\n");

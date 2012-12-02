@@ -6,6 +6,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <laser_geometry/laser_geometry.h>
 #include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/Imu.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <tf/message_filter.h>
@@ -88,9 +89,11 @@ void HSVtoRGB( double *r, double *g, double *b, double h, double s, double v )
 class uavSafetyInterface {
 
 public: 
-	uavSafetyInterface(ros::NodeHandle n, std::string in_cmd_topic, std::string out_cmd_topic, std::string laser_topic);
+	uavSafetyInterface(ros::NodeHandle n, std::string in_cmd_topic, std::string out_cmd_topic, std::string laser_topic, std::string imu_topic);
 	
 	void scanCallback (const sensor_msgs::LaserScan &scan_in);
+	
+	void imuCallback(const sensor_msgs::Imu &imu_in);
 	
 	void cmdReceived(const uav_msgs::ControllerCommand &cmd_in);
 	
@@ -116,6 +119,7 @@ private:
 	ros::NodeHandle n_;
 	
 	ros::Subscriber laser_sub_;
+	ros::Subscriber imu_sub_;
 	ros::Subscriber cmd_reader_;
 	ros::Publisher cmd_writer_;
 	
@@ -124,14 +128,18 @@ private:
 	std::vector<double> las_ranges;
 	std::vector<double> las_angles;
 	
+	std::vector<double> imu_linear_acc;
+	double pitch_estimate;
+	double roll_estimate;
+	
 	double min_range;
 	double min_angle;
 	
 	double pitch_gain, pitch_min, pitch_max;
 	double roll_gain, roll_min, roll_max;
 	
-	bool laser_data_received;
-	boost::mutex laser_mutex_;
+	bool laser_data_received, imu_data_received;
+	boost::mutex laser_mutex_, imu_mutex_;
 	
 	bool filterCommand(const uav_msgs::ControllerCommand &cmd_in, uav_msgs::ControllerCommand *cmd_out);
 	
@@ -230,6 +238,34 @@ private:
  		marker.color.r = 1.0;
 		marker.color.g = 1.0;
 		marker.color.b = 1.0;
+		marker.color.a = 1.0;
+		marker.lifetime = ros::Duration(180.0);
+		marker_publisher_.publish(marker);
+		marker_publisher_.publish(marker);
+	}
+	
+	inline void visualizeVector(const std::vector<double> v, std::string ns, double color){
+		visualization_msgs::Marker marker;
+		double r=0,g=0,b=0;
+		HSVtoRGB(&r, &g, &b, color, 1.0, 1.0);
+
+		marker.header.stamp = ros::Time::now();
+		marker.header.frame_id = "body_frame"; //reference_frame_;
+		marker.ns = ns;
+		marker.id = 1;
+		marker.type = visualization_msgs::Marker::LINE_LIST;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.points.resize(2);
+		marker.points[0].x = 0.0;
+		marker.points[0].y = 0.0;
+		marker.points[0].z = 0.0;
+		marker.points[1].x = v[0];
+		marker.points[1].y = v[1];
+		marker.points[1].z = v[2];
+ 		marker.scale.x = 0.05;
+		marker.color.r = r;
+		marker.color.g = g;
+		marker.color.b = b;
 		marker.color.a = 1.0;
 		marker.lifetime = ros::Duration(180.0);
 		marker_publisher_.publish(marker);
