@@ -23,7 +23,7 @@ UAVLocalPlanner::UAVLocalPlanner()
 
   ph.param<std::string>("flt_mode_req_topic",flt_mode_req_topic_,"flight_mode_request");
   ph.param<std::string>("flt_mode_stat_topic",flt_mode_stat_topic_,"/flight_mode_status");
-  ph.param<std::string>("high_level_controller_cmd",ctrl_cmd_topic_,"/high_level_controller_cmd");
+  ph.param<std::string>("ctrl_cmd_topic",ctrl_cmd_topic_,"/high_level_controller_cmd");
   ph.param<std::string>("goal_pub_topic",goal_pub_topic_,"/goal");
   ph.param<std::string>("goal_sub_topic",goal_sub_topic_,"goal");
   ph.param<std::string>("next_waypoint_topic",next_waypoint_topic_,"/controller/next_waypoint");
