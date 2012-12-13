@@ -139,8 +139,8 @@ void UAVLocalPlanner::controllerThread(){
       case uav_msgs::FlightModeStatus::TAKE_OFF:
         ROS_INFO("[controller] state: TAKE_OFF\n");
         u = takeOff(pose,velocity,state);
-        hover_pose_.pose.position.x = pose.pose.position.x;
-        hover_pose_.pose.position.y = pose.pose.position.y;
+        //hover_pose_.pose.position.x = pose.pose.position.x;
+        //hover_pose_.pose.position.y = pose.pose.position.y;
         hover_pose_.pose.position.z = 1.2;
         hover_pose_.pose.orientation.x = 0;
         hover_pose_.pose.orientation.y = 0;
@@ -153,6 +153,7 @@ void UAVLocalPlanner::controllerThread(){
         break;
       case uav_msgs::FlightModeStatus::FOLLOWING:
         ROS_INFO("[controller] state: FOLLOWING\n");
+	hover_pose_ = pose;
         u = followPath(pose,velocity,state,isNewPath);
         break;
       default:
@@ -193,7 +194,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::land(geometry_msgs::PoseStamped pos
       u.thrust -= 0.2;
   }
   else{
-    geometry_msgs::PoseStamped target = pose;
+    geometry_msgs::PoseStamped target = hover_pose_;
     if(pose.pose.position.z <= landing_z_ + 0.2)
       landing_z_ -= 0.003;
     target.pose.position.z = landing_z_;
