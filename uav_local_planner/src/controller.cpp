@@ -315,6 +315,10 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
   //pitch
   RP_Pose[1] = err_p[0]*CONT.Posekp + err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
   CONT.PposeI += err_p[0];
+  
+  //HACK REMOVE LATER
+  double pitch_limit = abs(0.15 / CONT.Poseki);
+  CONT.PposeI = max(-pitch_limit,min(pitch_limit,CONT.PposeI));
 
   geometry_msgs::PointStamped Pos_e;
   Pos_e.header.stamp = ros::Time::now();
