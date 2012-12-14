@@ -142,10 +142,10 @@ void UAVLocalPlanner::controllerThread(){
         //hover_pose_.pose.position.x = pose.pose.position.x;
         //hover_pose_.pose.position.y = pose.pose.position.y;
         hover_pose_.pose.position.z = 1.2;
-        hover_pose_.pose.orientation.x = 0;
-        hover_pose_.pose.orientation.y = 0;
-        hover_pose_.pose.orientation.z = 0;
-        hover_pose_.pose.orientation.w = 1;
+        //hover_pose_.pose.orientation.x = 0;
+        //hover_pose_.pose.orientation.y = 0;
+        //hover_pose_.pose.orientation.z = 0;
+        //hover_pose_.pose.orientation.w = 1;
         break;
       case uav_msgs::FlightModeStatus::HOVER:
           ROS_INFO("[controller] state: HOVER\n");
