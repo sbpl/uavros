@@ -45,7 +45,7 @@ class nav_markers {
 		void get_params();
 		void create_publishers();
 		void create_subscribers();
-		
+
 		void mode_callback(const uav_msgs::mode_msg msg);
 		void align_done_callback(const ros::TimerEvent&);
 		void transform_callback(tf::tfMessageConstPtr msg);
@@ -60,9 +60,9 @@ class nav_markers {
 		void publish_goal(double x, double y, double z, double theta);
 		bool get_transform(std::string parent, std::string child,
 						   tf::StampedTransform &transform);
-		void get_pose_from_msg(tf::tfMessageConstPtr msg, btVector3 &p,
-                               btQuaternion &q);
-		void get_pose_from_tf(double pos[3], double quat[4], 
+		void get_pose_from_msg(tf::tfMessageConstPtr msg, tf::Vector3 &p,
+                               tf::Quaternion &q);
+		void get_pose_from_tf(double pos[3], double quat[4],
 					 		  tf::StampedTransform transform);
 		void quat_to_euler(double q[4], double r[3]);
 

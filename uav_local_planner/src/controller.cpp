@@ -16,10 +16,10 @@ UAVController::UAVController() : tf_(ros::NodeHandle(), ros::Duration(10), true)
   Roll_p_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Pos_Gains",1);
   Pitch_p_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Pos_Gains",1);
   Roll_o_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Or_Gains",1);
-  Pitch_o_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Or_Gains",1);   
+  Pitch_o_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Or_Gains",1);
 
   PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_altitude", 1);
-  
+
   ROS_WARN("[controller] did I get here end?");
 
 }
@@ -160,9 +160,9 @@ Eigen::VectorXf UAVController::SetDesState(const geometry_msgs::PoseStamped goal
 
 
   double roll, pitch, yaw;
-  btQuaternion q;
+  tf::Quaternion q;
   tf::quaternionMsgToTF(goal_pose.pose.orientation, q);
-  btMatrix3x3(q).getRPY(roll, pitch, yaw);
+  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
   // ROS_INFO("Roll, Pitch, Yaw from Quaternion:  %f %f %f",roll,pitch,yaw);
 
   // Roll, Pitch, Yaw in world frame
@@ -183,9 +183,9 @@ Eigen::VectorXf UAVController::SetCurrState(const geometry_msgs::PoseStamped cur
   current_state[2] = current_pose.pose.position.z;
 
   double roll, pitch, yaw;
-  btQuaternion q;
+  tf::Quaternion q;
   tf::quaternionMsgToTF(current_pose.pose.orientation, q);
-  btMatrix3x3(q).getRPY(roll, pitch, yaw);
+  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
   // Roll, Pitch, Yaw in world frame
   current_state[3] = roll;
@@ -315,14 +315,14 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
   //pitch
   RP_Pose[1] = err_p[0]*CONT.Posekp + err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
   CONT.PposeI += err_p[0];
-  
+
   //HACK REMOVE LATER
   double pitch_limit = abs(0.15 / CONT.Poseki);
   CONT.PposeI = std::max(-pitch_limit,min(pitch_limit,CONT.PposeI));
 
   geometry_msgs::PointStamped Pos_e;
   Pos_e.header.stamp = ros::Time::now();
-  Pos_e.point.x = err_p[0]; 
+  Pos_e.point.x = err_p[0];
   Pos_e.point.y = err_p[1];
   Pos_e.point.z = err_p[2];
   Pos_err.publish(Pos_e);
@@ -374,7 +374,7 @@ float UAVController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   tf::StampedTransform transform;
   this->tf_.lookupTransform("body_frame", "body_frame_stabilized", ros::Time(0), transform);
 
-  btMatrix3x3 rot;
+  tf::Matrix3x3 rot;
   rot = transform.getBasis();
   double rot22;
   rot22 = rot[2].getZ();

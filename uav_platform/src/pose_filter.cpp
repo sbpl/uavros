@@ -22,8 +22,8 @@ pose_filter::pose_filter(ros::NodeHandle &n): n_ (n)
 void pose_filter::init()
 {
 	filtered_pos_.setValue(0.0, 0.0, 0.0);
-	btVector3 temp(0.001,0.001,0.001);
-	btScalar sca = 1.0;
+	tf::Vector3 temp(0.001,0.001,0.001);
+	double sca = 1.0;
 	filtered_quat_.setRotation(temp, sca);
 }
 
@@ -34,7 +34,7 @@ void pose_filter::get_params()
 
 	if(!n_param.getParam("filter_ratio", filter_ratio_)) {
 		filter_ratio_ = 0.5;
-	} 
+	}
 	ROS_DEBUG("Filter ratio: %f", filter_ratio_);
 
 	if(!n_param.getParam("frame_id", frame_id_)) {
@@ -48,7 +48,7 @@ void pose_filter::get_params()
 	ROS_DEBUG("Child frame id: %s", child_frame_id_.c_str());
 
 	if(!n_param.getParam("filtered_frame", filtered_frame_)) {
-		filtered_frame_ = frame_id_; 
+		filtered_frame_ = frame_id_;
 	}
 	ROS_DEBUG("Filtered frame id: %s", filtered_frame_.c_str());
 
@@ -73,7 +73,7 @@ void pose_filter::main_loop()
 			listener.lookupTransform(frame_id_, child_frame_id_, ros::Time(0),
 									 transform2);
 			ts_ = transform2.stamp_;
-			listener.lookupTransform(frame_id_, child_frame_id_, ts_ - ros::Duration(0.10), 
+			listener.lookupTransform(frame_id_, child_frame_id_, ts_ - ros::Duration(0.10),
 									 transform);
 		} catch (tf::TransformException ex) {
 			ROS_DEBUG("%s", ex.what());
@@ -83,22 +83,22 @@ void pose_filter::main_loop()
 		if(last_ts_ != transform.stamp_ && tf_available) {
 			filter(transform);
 			publish_filtered();
-		} 
+		}
 		last_ts_ = transform.stamp_;
 
 		rate.sleep();
 	}
-}			
+}
 
 /* Filter the pose with the past poses */
-void pose_filter::filter(tf::StampedTransform transform) 
+void pose_filter::filter(tf::StampedTransform transform)
 {
 	static bool first_tf = true;
-	btVector3 current_pos(transform.getOrigin().x(),
+	tf::Vector3 current_pos(transform.getOrigin().x(),
 						  transform.getOrigin().y(),
 						  transform.getOrigin().z());
 
-	btQuaternion current_rot(transform.getRotation().x(),
+	tf::Quaternion current_rot(transform.getRotation().x(),
 							 transform.getRotation().y(),
 							 transform.getRotation().z(),
 							 transform.getRotation().w());
@@ -112,7 +112,7 @@ void pose_filter::filter(tf::StampedTransform transform)
 		filtered_quat_ = current_rot;
 		first_tf = false;
 	}
-}	
+}
 
 /* Publish the filtered pose to tf */
 void pose_filter::publish_filtered()

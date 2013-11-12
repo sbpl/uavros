@@ -34,7 +34,7 @@ nav_markers::~nav_markers()
 void nav_markers::get_params()
 {
 	ros::NodeHandle n_param("~");
-	
+
 	n_param.getParam("m1_a_x", marker_goals_[0].approach[0]);
 	n_param.getParam("m1_a_y", marker_goals_[0].approach[1]);
 	n_param.getParam("m1_a_z", marker_goals_[0].approach[2]);
@@ -42,7 +42,7 @@ void nav_markers::get_params()
 	n_param.getParam("m1_l_y", marker_goals_[0].land[1]);
 	n_param.getParam("m1_l_z", marker_goals_[0].land[2]);
 	n_param.getParam("m1_height", marker_goals_[0].height);
-	
+
 	n_param.getParam("m2_a_x", marker_goals_[1].approach[0]);
 	n_param.getParam("m2_a_y", marker_goals_[1].approach[1]);
 	n_param.getParam("m2_a_z", marker_goals_[1].approach[2]);
@@ -50,7 +50,7 @@ void nav_markers::get_params()
 	n_param.getParam("m2_l_y", marker_goals_[1].land[1]);
 	n_param.getParam("m2_l_z", marker_goals_[1].land[2]);
 	n_param.getParam("m2_height", marker_goals_[1].height);
-	
+
 	n_param.getParam("m3_a_x", marker_goals_[2].approach[0]);
 	n_param.getParam("m3_a_y", marker_goals_[2].approach[1]);
 	n_param.getParam("m3_a_z", marker_goals_[2].approach[2]);
@@ -58,7 +58,7 @@ void nav_markers::get_params()
 	n_param.getParam("m3_l_y", marker_goals_[2].land[1]);
 	n_param.getParam("m3_l_z", marker_goals_[2].land[2]);
 	n_param.getParam("m3_height", marker_goals_[2].height);
-	
+
 	n_param.getParam("m4_a_x", marker_goals_[3].approach[0]);
 	n_param.getParam("m4_a_y", marker_goals_[3].approach[1]);
 	n_param.getParam("m4_a_z", marker_goals_[3].approach[2]);
@@ -78,7 +78,7 @@ void nav_markers::create_publishers()
 void nav_markers::create_subscribers()
 {
 	tf_sub_ = n_.subscribe("/tf", 1000, &nav_markers::transform_callback, this);
-	mode_sub_ = n_.subscribe("/align_mode", 1, 
+	mode_sub_ = n_.subscribe("/align_mode", 1,
 							 &nav_markers::mode_callback, this);
 }
 
@@ -101,21 +101,21 @@ void nav_markers::transform_callback(tf::tfMessageConstPtr msg)
 		} else if (align_mode_ == LAND_POINT) {
 			align(msg, marker_goals_[0].land);
 		}
-    } else if(msg->transforms[0].child_frame_id == "/m2" 
+    } else if(msg->transforms[0].child_frame_id == "/m2"
 			  && align_marker_ == 2) {
 		if(align_mode_ == APPROACH_POINT) {
 			align(msg, marker_goals_[1].approach);
 		} else if (align_mode_ == LAND_POINT) {
 			align(msg, marker_goals_[1].land);
 		}
-    } else if(msg->transforms[0].child_frame_id == "/m3" 
+    } else if(msg->transforms[0].child_frame_id == "/m3"
 			  && align_marker_ == 3) {
 		if(align_mode_ == APPROACH_POINT) {
 			align(msg, marker_goals_[2].approach);
 		} else if (align_mode_ == LAND_POINT) {
 			align(msg, marker_goals_[2].land);
 		}
-    } else if(msg->transforms[0].child_frame_id == "/m4" 
+    } else if(msg->transforms[0].child_frame_id == "/m4"
 			  && align_marker_ == 4) {
 		if(align_mode_ == APPROACH_POINT) {
 			align(msg, marker_goals_[3].approach);
@@ -128,15 +128,15 @@ void nav_markers::transform_callback(tf::tfMessageConstPtr msg)
 /* Calculate goal to go to desired position */
 void nav_markers::align(tf::tfMessageConstPtr msg, double goal_from_marker[3])
 {
-	btVector3 pos;
-	btQuaternion quat;
+	tf::Vector3 pos;
+	tf::Quaternion quat;
 	goal calculated_goal;
 	double r, p, y;
 	tf::StampedTransform transform;
 
 	get_pose_from_msg(msg, pos, quat);
 	tf::quaternionMsgToTF( msg->transforms[0].transform.rotation, quat);
-	btMatrix3x3(quat).getRPY(r, p, y);
+	tf::Matrix3x3(quat).getRPY(r, p, y);
 
 	calculated_goal.x = pos.getX() - goal_from_marker[0] * cos(p);
 	calculated_goal.y = pos.getY() + goal_from_marker[0] * sin(p);
@@ -147,7 +147,7 @@ void nav_markers::align(tf::tfMessageConstPtr msg, double goal_from_marker[3])
 }
 
 /* Land on marker */
-void nav_markers::land() 
+void nav_markers::land()
 {
     ROS_INFO("Need to land");
 }
@@ -172,16 +172,16 @@ void nav_markers::update_goal(goal goal_calculated)
 	goal_.theta = goal_calculated.theta;
 
 	if(ros::Time::now() - old_goal_ts_ > GOAL_FREQUENCY) {
-	
+
 		/* Publish the goal */
 		publish_goal(goal_.x, goal_.y, goal_.z, goal_.theta);
 
 		old_goal_ts_ = ros::Time::now();
-	} 
+	}
 }
 
 /* Publish the goal */
-void nav_markers::publish_goal(double x, double y, double z, 
+void nav_markers::publish_goal(double x, double y, double z,
 									  double theta)
 {
     goal_pose_.header.stamp = ros::Time::now();
@@ -201,7 +201,7 @@ void nav_markers::check_time()
 {
 	if(check_in_range()) {
 		if(!timer_.isValid()) {
-			timer_ = n_.createTimer(IN_RANGE_TIME, 
+			timer_ = n_.createTimer(IN_RANGE_TIME,
 							&nav_markers::align_done_callback, this);
 			timer_.start();
 				ROS_INFO("Start timer");
@@ -213,7 +213,7 @@ void nav_markers::check_time()
 				timer_.start();
 			}
 		}
-		last_marker_ts_ = ros::Time::now();		
+		last_marker_ts_ = ros::Time::now();
 	} else {
 		timer_.stop();
 		ROS_INFO("Stoping timer");
@@ -225,13 +225,13 @@ bool nav_markers::check_in_range()
 {
 	tf::StampedTransform current_pose;
 	get_transform("/map", "/body_frame", current_pose);
-	if(fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x) 
+	if(fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x)
 			< IN_RANGE_DIST) {
-		if(fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y) 
+		if(fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y)
 				< IN_RANGE_DIST) {
-			if(fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z) 
+			if(fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z)
 					< IN_RANGE_DIST) {
-				if(fabs(current_pose.getRotation().z() - 
+				if(fabs(current_pose.getRotation().z() -
 					goal_pose_.pose.orientation.z) < IN_RANGE_RAD) {
 					ROS_WARN("In range");
 					return true;
@@ -249,7 +249,7 @@ bool nav_markers::get_transform(std::string parent, std::string child,
 {
     tf::TransformListener listener;
     try {
-        listener.waitForTransform(parent, child, ros::Time(), 
+        listener.waitForTransform(parent, child, ros::Time(),
 								  ros::Duration(0.5));
         listener.lookupTransform(parent, child, ros::Time(), transform);
     } catch (tf::TransformException ex) {
@@ -260,22 +260,22 @@ bool nav_markers::get_transform(std::string parent, std::string child,
 }
 
 /* Get pose from a tf message */
-void nav_markers::get_pose_from_msg(tf::tfMessageConstPtr msg, btVector3 &p,
-									btQuaternion &q)
+void nav_markers::get_pose_from_msg(tf::tfMessageConstPtr msg, tf::Vector3 &p,
+									tf::Quaternion &q)
 {
 	p.setValue(msg->transforms[0].transform.translation.x,
 	  msg->transforms[0].transform.translation.y,
 	  msg->transforms[0].transform.translation.z);
 
-	btVector3 temp(msg->transforms[0].transform.rotation.x,
+	tf::Vector3 temp(msg->transforms[0].transform.rotation.x,
 				   msg->transforms[0].transform.rotation.y,
 				   msg->transforms[0].transform.rotation.z);
-	btScalar scalar = msg->transforms[0].transform.rotation.w;
+	double scalar = msg->transforms[0].transform.rotation.w;
 	q.setRotation(temp, scalar);
 }
 
 /* Get position translation and rotation of the transform */
-void nav_markers::get_pose_from_tf(double pos[3], double quat[4], 
+void nav_markers::get_pose_from_tf(double pos[3], double quat[4],
 								   		   tf::StampedTransform transform)
 {
     pos[0] = transform.getOrigin().x();
@@ -289,7 +289,7 @@ void nav_markers::get_pose_from_tf(double pos[3], double quat[4],
 }
 
 /* Return the Euler angles with the Quaternion */
-void nav_markers::quat_to_euler(double q[4], double r[3]) 
+void nav_markers::quat_to_euler(double q[4], double r[3])
 {
     r[0] = atan2(2 * (q[0] * q[1] + q[2] * q[3]),
                  1 - 2 * ((q[0] * q[0]) + (q[1] * q[1])));

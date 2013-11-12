@@ -10,3 +10,6 @@ bin/**
 bin
 build
 CMakeCache.txt
+*/msg_gen/*
+*cmake*
+*/catkin*

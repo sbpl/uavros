@@ -5,6 +5,8 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/LinearMath/Matrix3x3.h>
+#include <tf/LinearMath/Quaternion.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Imu.h>
 #include <pcl/point_types.h>
@@ -60,9 +62,9 @@ private:
     int size_, head_, tail_, elements_;
     double* q_;
   };
-  
+
   class velo_list{
-    
+
   public:
 
     velo_list(int s)
@@ -70,11 +72,11 @@ private:
       count =0;
       size = s;
     }
-    
+
     ~velo_list()
     {
     }
-    
+
     void add_value(double val)
     {
       if(count == size )
@@ -91,24 +93,24 @@ private:
     {
       return my_list.front();
     }
-    
+
   private:
     std::list<double> my_list;
     int count;
     int size;
   };
-  
+
   struct reading{
-   
+
     double value;
     ros::Time time;
-    
+
   };
-  
+
   class integrated_accel{
-    
+
     public:
-      
+
       integrated_accel(int s)
       {
 	size = s;
@@ -117,11 +119,11 @@ private:
 	offset = 0;
 	sum = 0;
       }
-      
+
       ~integrated_accel()
       {
       }
-      
+
       void set_value(double val, ros::Time time)
       {
 	if(!offset_set) { offset_set = true; offset = val; }
@@ -139,12 +141,12 @@ private:
 	r.time = time;
         my_list.push_back(r);
       }
-      
+
       double get_total_sum()
       {
 	return sum;
       }
-	
+
       double get_list_sum()
       {
 	double s=0;
@@ -165,7 +167,7 @@ private:
 	}
 	return s;
       }
-      
+
   private:
       std::list<reading> my_list;
       int count;
@@ -194,7 +196,7 @@ private:
   ros::Subscriber lidar_sub_;
   ros::Subscriber imu_sub_;
   ros::Publisher rpy_pub_;
-  
+
 
   tf::StampedTransform Pan2BodyTransform_;
 
@@ -208,12 +210,12 @@ private:
 
   FIFO z_fifo_;
   FIFO z_time_fifo_;
-  
+
   integrated_accel* x_integrated_;
   integrated_accel* y_integrated_;
   velo_list* x_velo_;
   velo_list* y_velo_;
-  
+
   ros::Time l_t_;
 
 };

@@ -40,7 +40,7 @@ UAVStatePublisher::UAVStatePublisher()
   lidar_sub_ = nh.subscribe(vertical_laser_data_topic_, 1, &UAVStatePublisher::lidarCallback,this);
   slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVStatePublisher::slamCallback,this);
   //imu_sub_ = nh.subscribe(imu_topic_, 1, &UAVStatePublisher::rawImuCallback,this);
-  
+
   x_integrated_ = new integrated_accel(40);
   y_integrated_ = new integrated_accel(40);
   x_velo_ = new velo_list(41);
@@ -51,52 +51,52 @@ UAVStatePublisher::UAVStatePublisher()
 /*void UAVStatePublisher::rawImuCallback(sensor_msgs::Imu imu)
 {
   ros::Time start_ = ros::Time::now();
-  
+
   //determine gravity compensated accelerations
   tf::Point p(imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
   tf::StampedTransform transform;
-   
+
   try {
      tf_.lookupTransform( body_map_aligned_topic_, body_topic_, ros::Time(0), transform);
   }
   catch (tf::TransformException ex){
      return;
   }
-  
+
   tf::Point pout = transform * p;
   double accel_x = pout[0];
   double accel_y = pout[1];
   double accel_z = pout[2];
-  
+
   ROS_ERROR("BEFORE %f %f %f", p[0], p[1], p[2]);
   ROS_ERROR("AFTER %f %f %f\n", pout[0],pout[1],pout[2]);
-  
+
   x_integrated_->set_value(accel_x,imu.header.stamp);
   double total_sum_x = x_integrated_->get_total_sum();
   double part_sum_x = x_integrated_->get_list_sum() + x_velo_->get_last();
-  
+
   y_integrated_->set_value(accel_y,imu.header.stamp);
   double total_sum_y = y_integrated_->get_total_sum();
   double part_sum_y = y_integrated_->get_list_sum() + y_velo_->get_last();
-  
+
   ROS_ERROR("VALUES X %f Y %f", imu.linear_acceleration.x, imu.linear_acceleration.y);
   ROS_ERROR("TOTAL X_SUM %f Y_SUM %f ", total_sum_x, total_sum_y);
   ROS_ERROR("PARTIAL X_SUM %f Y_SUM %f", part_sum_x, part_sum_y);
   ROS_ERROR("VELO X %f Y %f\n", x_velo_->get_last(), y_velo_->get_last());
-  
+
   geometry_msgs::PointStamped accel_int;
   accel_int.header.stamp = start_;
   accel_int.point.x = part_sum_x;
   accel_int.point.y = part_sum_y;
   vel_pub_.publish(accel_int);
-  
+
   geometry_msgs::PointStamped acc_trans;
   acc_trans.header.stamp = start_;
   acc_trans.point.x = accel_x/40;
   acc_trans.point.y = accel_y/40;
   acc_trans.point.z = accel_z/40;
   ac_pub_.publish(acc_trans);
-  
+
 }*/
 
 void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg) {
@@ -115,7 +115,7 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
 //on the order of 50Hz
 void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
   ros::Time start_ = ros::Time::now();
-  
+
   x_velo_->add_value(p->twist.twist.linear.x);
   y_velo_->add_value(p->twist.twist.linear.y);
 
@@ -124,9 +124,9 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p){
 
   //get the orientation
   double roll, pitch, yaw;
-  btQuaternion q;
+  tf::Quaternion q;
   tf::quaternionMsgToTF(p->pose.pose.orientation, q);
-  btMatrix3x3(q).getEulerZYX(yaw, pitch, roll);
+  tf::Matrix3x3(q).getEulerZYX(yaw, pitch, roll);
   //Publish RPY for debugging (in degrees)
    geometry_msgs::PointStamped rpy;
    rpy.header.stamp = p->header.stamp;
@@ -249,7 +249,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan){
 
     pout.point.z = -pout.point.z;
     // only accept height estimates that are close to previous height
-    //TODO: Make window parameter 
+    //TODO: Make window parameter
     if ( (state_.pose.pose.position.z <= 0) || ((pout.point.z < state_.pose.pose.position.z + 0.2)&&(pout.point.z > state_.pose.pose.position.z - 0.2)) ) {
         zs.push_back(pout.point.z);
       voxels.push_back(pout.point);

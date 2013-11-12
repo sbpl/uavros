@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2010, Maxim Likhachev
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the University of Pennsylvania nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,7 +31,7 @@
 #include <vector>
 #include <fstream>
 #include <ros/ros.h>
-#include <LinearMath/btTransform.h>
+#include <tf/LinearMath/Transform.h>
 #include <distance_field/distance_field.h>
 #include <distance_field/voxel_grid.h>
 #include <distance_field/propagation_distance_field.h>
@@ -44,12 +44,12 @@ using namespace std;
 class OccupancyGrid{
 
   public:
-   
-    /** @brief Default constructor - sets default values */ 
+
+    /** @brief Default constructor - sets default values */
     OccupancyGrid();
 
-    /** 
-     * @brief Constructor 
+    /**
+     * @brief Constructor
      * @param dimension of grid along X
      * @param dimension of grid along Y
      * @param dimension of grid along Z
@@ -65,9 +65,9 @@ class OccupancyGrid{
 
     /** @brief convert grid cell coords into world coords*/
     inline void gridToWorld(int x, int y, int z, double &wx, double &wy, double &wz);
-    
+
     /** @brief convert world coords into grid cell coords*/
-    inline void worldToGrid(double wx, double wy, double wz, int &x, int &y, int &z); 
+    inline void worldToGrid(double wx, double wy, double wz, int &x, int &y, int &z);
 
     /** @brief get the cell's distance to the nearest obstacle in cells*/
     inline unsigned char getCell(int x, int y, int z);
@@ -80,7 +80,7 @@ class OccupancyGrid{
 
     /** @brief return a pointer to the distance field */
     const distance_field::PropagationDistanceField* getDistanceFieldPtr();
-    
+
     /** @brief get the dimensions of the grid */
     void getGridSize(int &dim_x, int &dim_y, int &dim_z);
 
@@ -89,32 +89,32 @@ class OccupancyGrid{
 
     /** @brief set the dimensions of the world (meters)*/
     void setWorldSize(double dim_x, double dim_y, double dim_z);
-    
+
     /** @brief get the dimensions of the world (meters)*/
     void getWorldSize(double &dim_x, double &dim_y, double &dim_z);
 
     /** @brief set the origin of the world (meters)*/
     void setOrigin(double wx, double wy, double wz);
-    
+
     /** @brief get the origin of the world (meters)*/
     void getOrigin(double &wx, double &wy, double &wz);
 
     /** @brief set the resolution of the world (meters)*/
     void setResolution(double resolution_m);
-    
+
     /** @brief get the resolution of the world (meters)*/
     double getResolution();
 
     /** @brief update the distance field from the collision_map */
     void updateFromCollisionMap(const arm_navigation_msgs::CollisionMap &collision_map);
-    
+
     /** @brief display distance field visualizations to rviz */
     void visualize();
-    
-    /** 
+
+    /**
      * @brief manually add a cuboid to the collision map
-     * @param X_origin_of_cuboid 
-     * @param Y_origin_of_cuboid 
+     * @param X_origin_of_cuboid
+     * @param Y_origin_of_cuboid
      * @param Z_origin_of_cuboid
      * @param size along the X dimension (meters)
      * @param size along the Y dimension (meters)
@@ -122,9 +122,9 @@ class OccupancyGrid{
     */
     void addCollisionCuboid(double origin_x, double origin_y, double origin_z, double size_x, double size_y, double size_z);
 
-    void addPointsToField(const std::vector<btVector3> &points);
+    void addPointsToField(const std::vector<tf::Vector3> &points);
 
-    void getVoxelsInBox(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<btVector3> &voxels);
+    void getVoxelsInBox(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<tf::Vector3> &voxels);
     bool saveGridToBinaryFile(std::string filename);
 
     void printGridFromBinaryFile(std::string filename);
@@ -142,12 +142,12 @@ class OccupancyGrid{
     std::string reference_frame_;
     distance_field::PropagationDistanceField* grid_;
 
-    std::vector<btVector3> cuboid_points_;
+    std::vector<tf::Vector3> cuboid_points_;
 };
 
 inline void OccupancyGrid::gridToWorld(int x, int y, int z, double &wx, double &wy, double &wz)
 {
-  grid_->gridToWorld(x, y, z, wx, wy, wz); 
+  grid_->gridToWorld(x, y, z, wx, wy, wz);
 }
 
 inline void OccupancyGrid::worldToGrid(double wx, double wy, double wz, int &x, int &y, int &z)
@@ -169,7 +169,7 @@ inline bool OccupancyGrid::isInBounds(int x, int y, int z)
 {
   if(x >= grid_size_[0] || 0 > x || y >= grid_size_[1] || 0 > y || z >= grid_size_[2] || 0 > z)
     return false;
-  
+
   return true;
 }
 
@@ -178,7 +178,7 @@ inline std::string OccupancyGrid::getReferenceFrame()
   return reference_frame_;
 }
 
-inline void OccupancyGrid::addPointsToField(const std::vector<btVector3> &points)
+inline void OccupancyGrid::addPointsToField(const std::vector<tf::Vector3> &points)
 {
   grid_->addPointsToField(points);
 }

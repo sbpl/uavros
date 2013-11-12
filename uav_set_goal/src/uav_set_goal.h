@@ -3,8 +3,8 @@
 #include <interactive_markers/menu_handler.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <uav_msgs/FlightModeRequest.h>
-#include <uav_msgs/FlightModeStatus.h>
+#include "uav_msgs/FlightModeRequest.h"
+#include "uav_msgs/FlightModeStatus.h"
 #include "boost/thread/mutex.hpp"
 
 #define MENU_ENTRY_NEW_GOAL 1

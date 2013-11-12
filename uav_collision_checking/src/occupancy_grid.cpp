@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2010, Maxim Likhachev
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the University of Pennsylvania nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,8 +30,8 @@
  /** \author Benjamin Cohen */
 
 #include <uav_collision_checking/occupancy_grid.h>
-#include <LinearMath/btTransform.h>
-#include <LinearMath/btVector3.h>
+#include <tf/LinearMath/Transform.h>
+#include <tf/LinearMath/Vector3.h>
 
 using namespace std;
 
@@ -56,7 +56,7 @@ OccupancyGrid::OccupancyGrid()
   grid_ = new distance_field::PropagationDistanceField(world_size_[0], world_size_[1], world_size_[2], grid_resolution_, origin_[0], origin_[1], origin_[2], prop_distance_);
 
   grid_->reset();
-  
+
   reference_frame_="base_link";
 }
 
@@ -77,7 +77,7 @@ OccupancyGrid::OccupancyGrid(double dim_x, double dim_y, double dim_z, double re
   grid_size_[2] = world_size_[2] / grid_resolution_;
 
   prop_distance_ = 0.60;
- 
+
   grid_ = new distance_field::PropagationDistanceField(world_size_[0], world_size_[1], world_size_[2], grid_resolution_, origin_[0], origin_[1], origin_[2], prop_distance_);
   grid_->reset();
 
@@ -145,7 +145,7 @@ void OccupancyGrid::updateFromCollisionMap(const arm_navigation_msgs::CollisionM
   }
 
   reference_frame_ = collision_map.header.frame_id;
-  
+
   ROS_DEBUG("[OccupancyGrid] Resetting grid and updating from collision map");
   grid_->reset();
   //grid_->addPointsToField(cuboid_points_);
@@ -156,28 +156,28 @@ void OccupancyGrid::addCollisionCuboid(double origin_x, double origin_y, double 
 {
   int num_points=0;
   //cuboid_points_.clear();
-  
+
   for (double x=origin_x-size_x/2.0; x<=origin_x+size_x/2.0; x+=grid_resolution_)
   {
     for (double y=origin_y-size_y/2.0; y<=origin_y+size_y/2.0; y+=grid_resolution_)
     {
       for (double z=origin_z-size_z/2.0; z<=origin_z+size_z/2.0; z+=grid_resolution_)
       {
-        cuboid_points_.push_back(btVector3(x,y,z));
+        cuboid_points_.push_back(tf::Vector3(x,y,z));
         ++num_points;
       }
     }
   }
- 
+
   grid_->addPointsToField(cuboid_points_);
 
   ROS_DEBUG("[addCollisionCuboid] Added %d points for collision cuboid (origin: %0.2f %0.2f %0.2f  size: %0.2f %0.2f %0.2f).", num_points, origin_x, origin_y, origin_z, size_x, size_y, size_z);
 }
 
-void OccupancyGrid::getVoxelsInBox(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<btVector3> &voxels)
+void OccupancyGrid::getVoxelsInBox(const geometry_msgs::Pose &pose, const std::vector<double> &dim, std::vector<tf::Vector3> &voxels)
 {
-  btVector3 vin, vout, v(pose.position.x, pose.position.y, pose.position.z);
-  btMatrix3x3 m(btQuaternion(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w));
+  tf::Vector3 vin, vout, v(pose.position.x, pose.position.y, pose.position.z);
+  tf::Matrix3x3 m(tf::Quaternion(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w));
 
   for (double x=0-dim[0]/2.0; x<=dim[0]/2.0; x+=grid_resolution_)
   {
@@ -198,10 +198,10 @@ void OccupancyGrid::getVoxelsInBox(const geometry_msgs::Pose &pose, const std::v
 }
 
 void OccupancyGrid::visualize()
-{
-  btTransform trans; 
+{  //TODO:  this is old shit
+  tf::Transform trans;
   trans.setIdentity();
-  grid_->visualize(0.01, 0.02, reference_frame_, trans, ros::Time::now());
+//   grid_->visualize(0.01, 0.02, reference_frame_, trans, ros::Time::now());
 }
 
 const distance_field::PropagationDistanceField* OccupancyGrid::getDistanceFieldPtr()

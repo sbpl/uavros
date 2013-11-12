@@ -15,7 +15,7 @@ class pose_filter{
 		void get_params();
 		void create_subscribers();
 		void main_loop();
-		
+
 		void tf_callback(const tf::tfMessageConstPtr msg);
 		void filter(const tf::tfMessageConstPtr msg);
 		void filter(tf::StampedTransform transform);
@@ -25,16 +25,16 @@ class pose_filter{
 		ros::Subscriber tf_sub_;
 
 		double filter_ratio_;
-		std::string frame_id_; 
+		std::string frame_id_;
 		std::string child_frame_id_;
-		std::string filtered_frame_; 
+		std::string filtered_frame_;
 		std::string filtered_child_frame_;
 
-		btQuaternion filtered_quat_; 
-		btVector3 filtered_pos_;
+		tf::Quaternion filtered_quat_;
+		tf::Vector3 filtered_pos_;
 
-		ros::Time ts_;	
-		ros::Time last_ts_;	
+		ros::Time ts_;
+		ros::Time last_ts_;
 };
 
 #endif
