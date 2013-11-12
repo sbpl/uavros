@@ -46,9 +46,9 @@ void platform_controller::create_publishers()
 /* Create the subscribers to the corresponding topics */
 void platform_controller::create_subscribers()
 {
-	tf_sub_ = n_.subscribe("/tf", 1000, 
+	tf_sub_ = n_.subscribe("/tf", 1000,
 						  &platform_controller::transform_callback, this);
-	track_sub_ = n_.subscribe("/track_mode", 1000, 
+	track_sub_ = n_.subscribe("/track_mode", 1000,
 							 &platform_controller::mode_callback, this);
 }
 
@@ -69,7 +69,7 @@ void platform_controller::align_done_callback(const ros::TimerEvent&)
 			break;
 		case ALIGN_TOP:
 			if(!bottom_camera_) {
-				ROS_INFO("Changing to bottom camera");	
+				ROS_INFO("Changing to bottom camera");
 				bottom_camera_ = true;
 			} else {
 				ROS_INFO("Finish aligning on top, changing to rotate");
@@ -93,7 +93,7 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 
     /* Check wether we are seeing a marker and take action  *
      * depending on the last track mode send                */
-    if(msg->transforms[0].child_frame_id == "/marker1_filtered" 
+    if(msg->transforms[0].child_frame_id == "/marker1_filtered"
 				&& !bottom_camera_) {
         if(track_mode_ == ALIGN_FRONT) {
 			align_front(msg);
@@ -102,7 +102,7 @@ void platform_controller::transform_callback(tf::tfMessageConstPtr msg)
 			align_top(msg, false);
 			check_time();
         }
-    } else if(msg->transforms[0].child_frame_id == "/marker2_filtered" 
+    } else if(msg->transforms[0].child_frame_id == "/marker2_filtered"
 				&& bottom_camera_) {
         if(track_mode_ == ALIGN_TOP) {
 			align_top(msg, false);
@@ -137,7 +137,7 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	/* Get the angle in map's z axis */
 	tf::Quaternion q2;
 	tf::quaternionMsgToTF( msg->transforms[0].transform.rotation, q2);
-	btMatrix3x3(q2).getRPY(r,p,y);
+	tf::Matrix3x3(q2).getRPY(r,p,y);
 	theta = p;
 
     /* Check the sign of theta */
@@ -163,7 +163,7 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 	/* Get transform from the camera to the map */
     get_transform("/map", "/usb_cam0", transform);
     get_pose_from_tf(pos, quat, transform);
-    
+
 	/* Update the goal considering the position of the camera */
 	goal_x += pos[0];// - DISTANCE_FROM_PLATFORM;
     goal_y += pos[1];
@@ -175,9 +175,9 @@ void platform_controller::align_front(tf::tfMessageConstPtr msg)
 
     get_pose_from_tf(pos, quat, transform);
 	goal_z = pos[2] + HOVER_ABOVE_PLATFORM;
-    
+
 	tf::Quaternion q = transform.getRotation();
-	btMatrix3x3(q).getRPY(r,p,y);
+	tf::Matrix3x3(q).getRPY(r,p,y);
 
 	/* Update goal */
 	update_goal(goal_x, goal_y, goal_z, y + PI/2);
@@ -199,7 +199,7 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, bool rotate)
 	/* Get the angle in map's z axis */
 	tf::Quaternion q2;
 	tf::quaternionMsgToTF( msg->transforms[0].transform.rotation, q2);
-	btMatrix3x3(q2).getRPY(r,p,y);
+	tf::Matrix3x3(q2).getRPY(r,p,y);
 	theta = p;
 
 	/* Update goal depending if the front or bottom camera	*
@@ -225,20 +225,20 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, bool rotate)
 
 	/* Get transform from the marker to the map */
 	if(!bottom_camera_) {
-   		if(!get_transform("/map", "/marker1_filtered", transform)) { 
+   		if(!get_transform("/map", "/marker1_filtered", transform)) {
 			return;
 		}
 	} else {
-		if (!get_transform("/map", "/marker2_filtered", transform)) { 
+		if (!get_transform("/map", "/marker2_filtered", transform)) {
 			return;
 		}
 	}
 
     get_pose_from_tf(pos, quat, transform);
 	goal_z = pos[2] + HOVER_ABOVE_PLATFORM;
-    
+
 	tf::Quaternion q = transform.getRotation();
-	btMatrix3x3(q).getRPY(r,p,y);
+	tf::Matrix3x3(q).getRPY(r,p,y);
 
 	/* Update Goal depending on the mode the orientation changes*/
 	if(rotate) {
@@ -249,14 +249,14 @@ void platform_controller::align_top(tf::tfMessageConstPtr msg, bool rotate)
 }
 
 /* Land on marker */
-void platform_controller::land(tf::tfMessageConstPtr msg) 
+void platform_controller::land(tf::tfMessageConstPtr msg)
 {
     ROS_INFO("Need to land");
 }
 
 
 /* Update the goal in the class */
-void platform_controller::update_goal(double x, double y, double z, 
+void platform_controller::update_goal(double x, double y, double z,
 									  double theta)
 {
 	goal_.x = goal_.x * OLD_GOAL_RATIO + x * NEW_GOAL_RATIO;
@@ -265,16 +265,16 @@ void platform_controller::update_goal(double x, double y, double z,
 	goal_.theta = goal_.theta * OLD_GOAL_RATIO + theta * NEW_GOAL_RATIO;
 
 	if(ros::Time::now() - old_goal_ts_ > GOAL_FREQUENCY) {
-	
+
 		/* Publish the goal */
 		publish_goal(goal_.x, goal_.y, goal_.z, goal_.theta);
 
 		old_goal_ts_ = ros::Time::now();
-	} 
+	}
 }
 
 /* Publish the goal */
-void platform_controller::publish_goal(double x, double y, double z, 
+void platform_controller::publish_goal(double x, double y, double z,
 									  double theta)
 {
     goal_pose_.header.stamp = ros::Time::now();
@@ -294,7 +294,7 @@ void platform_controller::check_time()
 {
 	if(check_in_range()) {
 		if(!timer_.isValid()) {
-			timer_ = n_.createTimer(IN_RANGE_TIME, 
+			timer_ = n_.createTimer(IN_RANGE_TIME,
 							&platform_controller::align_done_callback, this);
 			timer_.start();
 				ROS_INFO("Start timer");
@@ -306,7 +306,7 @@ void platform_controller::check_time()
 				timer_.start();
 			}
 		}
-		last_marker_ts_ = ros::Time::now();		
+		last_marker_ts_ = ros::Time::now();
 	} else {
 		timer_.stop();
 		ROS_INFO("Stoping timer");
@@ -318,13 +318,13 @@ bool platform_controller::check_in_range()
 {
 	tf::StampedTransform current_pose;
 	get_transform("/map", "/body_frame", current_pose);
-	if(fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x) 
+	if(fabs(current_pose.getOrigin().x() - goal_pose_.pose.position.x)
 			< IN_RANGE_DIST) {
-		if(fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y) 
+		if(fabs(current_pose.getOrigin().y() - goal_pose_.pose.position.y)
 				< IN_RANGE_DIST) {
-			if(fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z) 
+			if(fabs(current_pose.getOrigin().z() - goal_pose_.pose.position.z)
 					< IN_RANGE_DIST) {
-				if(fabs(current_pose.getRotation().z() - 
+				if(fabs(current_pose.getRotation().z() -
 					goal_pose_.pose.orientation.z) < IN_RANGE_RAD) {
 					ROS_WARN("In range");
 					return true;
@@ -342,7 +342,7 @@ bool platform_controller::get_transform(std::string parent, std::string child,
 {
     tf::TransformListener listener;
     try {
-        listener.waitForTransform(parent, child, ros::Time(), 
+        listener.waitForTransform(parent, child, ros::Time(),
 								  ros::Duration(0.5));
         listener.lookupTransform(parent, child, ros::Time(), transform);
     } catch (tf::TransformException ex) {
@@ -370,10 +370,10 @@ void platform_controller::get_pose_from_msg(tf::tfMessageConstPtr msg)
 	pose_.rot.y = euler_rad[1];
 	pose_.rot.z = euler_rad[2];
 }
-	
+
 
 /* Get position translation and rotation of the transform */
-void platform_controller::get_pose_from_tf(double pos[3], double quat[4], 
+void platform_controller::get_pose_from_tf(double pos[3], double quat[4],
 								   		   tf::StampedTransform transform)
 {
     pos[0] = transform.getOrigin().x();
@@ -387,7 +387,7 @@ void platform_controller::get_pose_from_tf(double pos[3], double quat[4],
 }
 
 /* Return the Euler angles with the Quaternion */
-void platform_controller::quat_to_euler(double q[4], double r[3]) 
+void platform_controller::quat_to_euler(double q[4], double r[3])
 {
     r[0] = atan2(2 * (q[0] * q[1] + q[2] * q[3]),
                  1 - 2 * ((q[0] * q[0]) + (q[1] * q[1])));

@@ -73,7 +73,7 @@ class platform_controller {
 		void get_params();
 		void create_publishers();
 		void create_subscribers();
-		
+
 		void transform_callback(const tf::tfMessageConstPtr msg);
 		void mode_callback(const uav_msgs::mode_msg msg);
 		void align_done_callback(const ros::TimerEvent&);
@@ -90,7 +90,7 @@ class platform_controller {
 		bool get_transform(std::string parent, std::string child,
 						   tf::StampedTransform &transform);
 		void get_pose_from_msg(tf::tfMessageConstPtr msg);
-		void get_pose_from_tf(double pos[3], double quat[4], 
+		void get_pose_from_tf(double pos[3], double quat[4],
 					 		  tf::StampedTransform transform);
 		void quat_to_euler(double q[4], double r[3]);
 

@@ -222,31 +222,45 @@ uav_msgs::ControllerCommand UAVLocalPlanner::hover(geometry_msgs::PoseStamped po
 uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus &state, bool isNewPath){
   if(isNewPath)
     path_idx_ = 0;
+  ROS_WARN("size is %d \n", controller_path_->poses.size());
   double dx = pose.pose.position.x - controller_path_->poses[path_idx_].pose.position.x;
   double dy = pose.pose.position.y - controller_path_->poses[path_idx_].pose.position.y;
   double dz = pose.pose.position.z - controller_path_->poses[path_idx_].pose.position.z;
   double dist = sqrt(dx*dx + dy*dy + dz*dz);
   unsigned int i;
+  ROS_DEBUG("a\n");
   for(i=path_idx_+1; i<controller_path_->poses.size(); i++){
     dx = pose.pose.position.x - controller_path_->poses[i].pose.position.x;
     dy = pose.pose.position.y - controller_path_->poses[i].pose.position.y;
     dz = pose.pose.position.z - controller_path_->poses[i].pose.position.z;
     double temp = sqrt(dx*dx + dy*dy + dz*dz);
-    if(temp > dist)
+    if(temp > dist && temp > 0.3)
       break;
     dist = temp;
   }
+  ROS_DEBUG("b\n");
   path_idx_ = i-1;
-  if(i == controller_path_->poses.size()) {
-    i--;
+  if(3 >= ((int) (controller_path_->poses.size()) - ((int) i) ))  {
     state.mode = uav_msgs::FlightModeStatus::HOVER;
-    hover_pose_=controller_path_->poses[i];
+    hover_pose_=controller_path_->poses[controller_path_->poses.size()-1];
+    i = controller_path_->poses.size()-1;  
   }
+
+  ROS_DEBUG("c\n");
+  ROS_DEBUG("point index is %d\n", i);
+
+  if(controller_path_->poses[i].pose.position.z < 0.6)
+  {
+    ROS_DEBUG("Target height was %f, Setting it to 0.6", controller_path_->poses[i].pose.position.z);
+    controller_path_->poses[i].pose.position.z = 0.6;
+  }
+
+  //TODO: verify that i is never out of bounds
 
   //TODO: collision check the path from our pose to the target pose (just check the straight line)
     //TODO: collision check the path from the target to the next few points (use a time horizon)
     geometry_msgs::PoseStamped target = controller_path_->poses[i];
-    ROS_INFO("next target is %f %f %f\n", target.pose.position.x, target.pose.position.y, target.pose.position.z);
+    ROS_DEBUG("next target is %f %f %f\n", target.pose.position.x, target.pose.position.y, target.pose.position.z);
     visualizeTargetPose(target);
     uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
     //TODO: collision check the controls for some very short period of time

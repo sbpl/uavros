@@ -43,6 +43,7 @@ UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   menu_handler.insert( "Land", boost::bind(&UAV_SET_GOAL_C::procFeedback, this, _1) );
   menu_handler.insert( "Take off", boost::bind(&UAV_SET_GOAL_C::procFeedback, this, _1) );
   menu_handler.insert( "Square Test", boost::bind(&UAV_SET_GOAL_C::procFeedback, this, _1) );
+  menu_handler.insert( "Auto Flight", boost::bind(&UAV_SET_GOAL_C::procFeedback, this, _1) );
   menu_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MENU;
   menu_control.description="UAV Control Options";
   menu_control.name = "menu_only_control";
@@ -99,6 +100,53 @@ UAV_SET_GOAL_C::~UAV_SET_GOAL_C() {
 }
 
 void UAV_SET_GOAL_C::FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr status) {
+  if (AutoFlight) {
+	if (ros::Time::now().toSec() - lastTime.toSec() > 0.2) {
+	  lastTime = ros::Time::now();
+	  ROS_WARN("Auto Flight is in realm: %d\n", AutoFlightRealm);
+	  switch (AutoFlightRealm) {
+		case -1:  // just called for first time
+			if (status->mode == uav_msgs::FlightModeStatus::LANDED) {
+			  AutoFlightRealm = 1;  // only go to 1 if initially on the ground
+			}
+			break;
+		case 1:  // take off
+			if (status->mode == uav_msgs::FlightModeStatus::LANDED) {
+			  ROS_INFO_STREAM("AF sending take off request");
+			  uav_msgs::FlightModeRequest mode_msg;
+			  mode_msg.mode = uav_msgs::FlightModeRequest::TAKE_OFF;
+			  flight_request_pub.publish(mode_msg);
+			}
+			else if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
+			  AutoFlightRealm = 2;
+			}
+			break;
+		case 2:  // initial goto point
+		  ROS_INFO_STREAM("AF sending new goal !" );
+		  goal_pose.header.stamp = ros::Time::now();
+		  goal_pose_pub.publish(goal_pose);
+		  AutoFlightRealm = 3;
+		  break;
+		case 3: // waiting for acknowledgment to follow path
+		  if (status->mode == uav_msgs::FlightModeStatus::FOLLOWING) {
+			AutoFlightRealm = 4;
+		  }
+		  break;
+		case 4:  // done following - land and stop Auto Follow
+			if (status->mode == uav_msgs::FlightModeStatus::HOVER) {
+			  AutoFlightRealm = 0; AutoFlight = false;
+
+			  ROS_INFO_STREAM("AF sending land request");
+			  uav_msgs::FlightModeRequest mode_msg;
+			  mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
+			  flight_request_pub.publish(mode_msg);
+			}
+			break;
+	  }
+	}
+  }
+
+
   if (SquareTest) {
     if (ros::Time::now().toSec() - lastTime.toSec() > 0.2) {
       lastTime = ros::Time::now();
@@ -236,12 +284,12 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
     if(feedback->menu_entry_id == MENU_ENTRY_NEW_GOAL)
     {
       ROS_INFO_STREAM("Sending new goal !" );
-      geometry_msgs::PoseStamped goal_pose;
+      //geometry_msgs::PoseStamped goal_pose;
       goal_pose.header.stamp = ros::Time::now();
       goal_pose.header.frame_id = map_topic_;
       goal_pose.pose = feedback->pose;
       goal_pose_pub.publish(goal_pose);
-      SquareTest = false;
+	  SquareTest = false;AutoFlight = false;
     }
     else if(feedback->menu_entry_id == MENU_ENTRY_HOVER)
     {
@@ -249,7 +297,7 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
       uav_msgs::FlightModeRequest mode_msg;
       mode_msg.mode = uav_msgs::FlightModeRequest::HOVER;
       flight_request_pub.publish(mode_msg);
-      SquareTest = false;
+	  SquareTest = false;AutoFlight = false;
     }
     else if(feedback->menu_entry_id == MENU_ENTRY_LAND)
     {
@@ -257,7 +305,7 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
       uav_msgs::FlightModeRequest mode_msg;
       mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
       flight_request_pub.publish(mode_msg);
-      SquareTest = false;
+	  SquareTest = false;AutoFlight = false;
     }
     else if(feedback->menu_entry_id == MENU_ENTRY_TAKE_OFF)
     {
@@ -265,14 +313,27 @@ void UAV_SET_GOAL_C::procFeedback(const visualization_msgs::InteractiveMarkerFee
       uav_msgs::FlightModeRequest mode_msg;
       mode_msg.mode = uav_msgs::FlightModeRequest::TAKE_OFF;
       flight_request_pub.publish(mode_msg);
-      SquareTest = false;
+	  SquareTest = false;AutoFlight = false;
     }
     else if(feedback->menu_entry_id == MENU_ENTRY_SQUARE_TEST)
     {
       ROS_INFO_STREAM("Starting Square Flight Test");
-      SquareTest = true;
+	  SquareTest = true;
+	  AutoFlight = false;
       SqTPt = 0;
     }
+    else if(feedback->menu_entry_id == MENU_ENTRY_AUTO_FLIGHT)
+	{
+	  ROS_INFO_STREAM("Starting Square Flight Test");
+	  AutoFlight = true;
+	  SquareTest = false;
+	  AutoFlightRealm = -1;
+
+	  // save the goal location
+	  goal_pose.header.stamp = ros::Time::now();
+	  goal_pose.header.frame_id = map_topic_;
+	  goal_pose.pose = feedback->pose;
+	}
   }
 
 }

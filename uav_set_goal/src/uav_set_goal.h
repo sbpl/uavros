@@ -12,6 +12,7 @@
 #define MENU_ENTRY_LAND 3
 #define MENU_ENTRY_TAKE_OFF 4
 #define MENU_ENTRY_SQUARE_TEST 5
+#define MENU_ENTRY_AUTO_FLIGHT 6
 
 
 class UAV_SET_GOAL_C {
@@ -32,7 +33,11 @@ public:
   ~UAV_SET_GOAL_C();
 
   bool SquareTest;
+  bool AutoFlight;
   int SqTPt;
+  int AutoFlightRealm;
+
+  geometry_msgs::PoseStamped goal_pose;
 
 private:
   ros::Time lastTime;
