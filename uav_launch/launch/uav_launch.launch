@@ -94,17 +94,16 @@
 <!--    </node> -->
 
 <!-- Bring up the UAV Local Planner -->
-<!--<node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
+<node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen">
 <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
 <remap from="goal" to="goal_pose"/>
-<remap from="path" to="path" />-->
+<remap from="path" to="path" />
 <!-- Future use -->
-<!--<remap from="twist" to="uav_state"/>-->
+<remap from="twist" to="uav_state"/>
 <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Che/hector_localization/system/gyro_stddevck this. -->
-<!--<remap from="local_collision_map" to="local_collision_map"/>-->
+<remap from="local_collision_map" to="local_collision_map"/>
 <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
-
-<!--</node>-->
+</node>
 
 
 

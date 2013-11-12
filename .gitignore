@@ -13,3 +13,4 @@ CMakeCache.txt
 */msg_gen/*
 *cmake*
 */catkin*
+*/devel/*
