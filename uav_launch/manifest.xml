@@ -8,7 +8,9 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/uav_launch</url>
-
+  <depend package="usb_cam"/>
+  <depend package="hector_mapping"/>
+  <depend package="hector_pose_estimation"/>
 </package>
 
 

@@ -1,5 +1,12 @@
 *~
+.*
+*.pc
+!.gitignore
 *.*~
+*.so
+*/msg_gen/*
+*/src/*/msg/*
+__*
 CMakeFiles
 */Makefile
 *.swp
@@ -10,7 +17,7 @@ bin/**
 bin
 build
 CMakeCache.txt
-*/msg_gen/*
-*cmake*
-*/catkin*
-*/devel/*
+cmake_install*
+install_manifest.txt
+*/cfg/*
+*/docs/*
