@@ -42,11 +42,11 @@ ROS_ERROR("[local_planner] done getting params");
   status_pub_ = nh.advertise<uav_msgs::FlightModeStatus>(flt_mode_stat_topic_, 1);
 
   //set up a occupancy grid triple buffer
-  controller_grid_ = new OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
-  latest_grid_ = new OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
-  callback_grid_ = new OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
+//   controller_grid_ = new nav_msgs::OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
+//   latest_grid_ = new nav_msgs::OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
+//   callback_grid_ = new nav_msgs::OccupancyGrid(sizex_,sizey_,sizez_,resolution_,sizex_/2,sizey_/2,sizez_/2);
   new_grid_ = false;
-  cspace_ = new UAVCollisionSpace(controller_grid_);
+  //cspace_ = new UAVCollisionSpace(controller_grid_);
 
   //set up a path triple buffer
   controller_path_ = new nav_msgs::Path();
@@ -70,13 +70,13 @@ ROS_ERROR("[local_planner] done getting params");
 }
 
 UAVLocalPlanner::~UAVLocalPlanner(){
-  delete controller_grid_;
-  delete latest_grid_;
-  delete callback_grid_;
+//   delete controller_grid_;
+//   delete latest_grid_;
+//   delete callback_grid_;
   delete controller_path_;
   delete latest_path_;
   delete callback_path_;
-  delete cspace_;
+  //delete cspace_;
 
   controller_thread_->join();
 }
@@ -272,19 +272,19 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamp
 bool UAVLocalPlanner::updateCollisionMap(){
   //if there is a new occupancy grid in latest then swap into the controller occupancy grid
   bool updated = false;
-  boost::unique_lock<boost::mutex> lock(grid_mutex_);
-  if(new_grid_){
-    OccupancyGrid* temp = latest_grid_;
-    latest_grid_ = controller_grid_;
-    controller_grid_ = temp;
-    new_grid_ = false;
-    updated = true;
-  }
-  lock.unlock();
+//   boost::unique_lock<boost::mutex> lock(grid_mutex_);
+//   if(new_grid_){
+// //     OccupancyGrid* temp = latest_grid_;
+//     latest_grid_ = controller_grid_;
+//     controller_grid_ = temp;
+//     new_grid_ = false;
+//     updated = true;
+//   }
+//   lock.unlock();
 
   //if we did a swap, then update the collision space to use the new occupancy grid
-  if(updated)
-    cspace_->setGrid(controller_grid_);
+// if(updated)
+//    cspace_->setGrid(controller_grid_);
   return updated;
 }
 
@@ -362,19 +362,19 @@ void UAVLocalPlanner::getRobotPose(geometry_msgs::PoseStamped& pose, geometry_ms
 void UAVLocalPlanner::collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm){
   ros::Time start_ = ros::Time::now();
 
-  //compute distance field and load it into the callback occupancy grid
-  callback_grid_->updateFromCollisionMap(*cm);
-  callback_grid_->visualize();
-
-  //take the grid mutex and swap into the latest occupancy grid
-  boost::unique_lock<boost::mutex> lock(path_mutex_);
-  OccupancyGrid* temp = latest_grid_;
-  latest_grid_ = callback_grid_;
-  callback_grid_ = temp;
-  new_grid_ = true;
-  lock.unlock();
-  ros::Time stop_ = ros::Time::now();
-  ROS_DEBUG("[local_planner] collision callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
+//   //compute distance field and load it into the callback occupancy grid
+//   callback_grid_->updateFromCollisionMap(*cm);
+//   callback_grid_->visualize();
+// 
+//   //take the grid mutex and swap into the latest occupancy grid
+//   boost::unique_lock<boost::mutex> lock(path_mutex_);
+// //   OccupancyGrid* temp = latest_grid_;
+//   latest_grid_ = callback_grid_;
+//   callback_grid_ = temp;
+//   new_grid_ = true;
+//   lock.unlock();
+//   ros::Time stop_ = ros::Time::now();
+//   ROS_DEBUG("[local_planner] collision callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
 }
 

@@ -9,9 +9,10 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
+// #include <nav_msgs/OccupancyGrid.h>
 #include <arm_navigation_msgs/CollisionMap.h>
+#include <visualization_msgs/Marker.h>
 #include <tf/transform_listener.h>
-#include <uav_collision_checking/uav_collision_space.h>
 #include <uav_local_planner/controller.h>
 #include <string>
 
@@ -66,10 +67,10 @@ class UAVLocalPlanner{
     ros::Subscriber state_sub_;
     ros::Subscriber flight_mode_sub_;
 
-    UAVCollisionSpace* cspace_;
-    OccupancyGrid* controller_grid_;
-    OccupancyGrid* latest_grid_;
-    OccupancyGrid* callback_grid_;
+    //UAVCollisionSpace* cspace_;
+//     OccupancyGrid* controller_grid_;
+//     OccupancyGrid* latest_grid_;
+//     OccupancyGrid* callback_grid_;
     nav_msgs::Path* controller_path_;
     nav_msgs::Path* latest_path_;
     nav_msgs::Path* callback_path_;

@@ -17,7 +17,6 @@
   <depend package="dynamic_reconfigure"/>
   <depend package="nav_msgs" />
   <depend package="arm_navigation_msgs" />
-  <depend package="uav_collision_checking" />
 
 </package>
 
