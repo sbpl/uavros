@@ -93,6 +93,8 @@ UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
   flight_request_pub.publish(mode_msg);
   SquareTest = false;
+  
+  AutoFlight = 0;
 }
 
 UAV_SET_GOAL_C::~UAV_SET_GOAL_C() {
