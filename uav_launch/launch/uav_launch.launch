@@ -11,7 +11,7 @@
 -->
 
 <!-- start recording this stuff -->
-<node pkg="rosbag" type="rosbag" name="rosbag_record" args="record -a -x /usb_cam(.*) -O /home/bmaca/Bag/HexaData"/>
+<node pkg="rosbag" type="record" name="rosbag_record" args=" -a -O /home/bmaca/Bag/HexaData"/>
 
 <!-- Robot State Publisher  -->
 <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" output="screen">
@@ -70,9 +70,11 @@
 <!-- ................................................................................ -->
 <!-- Hector Localization -->
 <!-- Subscribes to raw_imu, pressure_height, magnetic, fix (gps), fix_velocity (gps velocity), poseupdate     -->
-<node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization" output="screen">
+<node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
 <remap from="state" to="ekf_state"/>
 <param name="with_covariances" value="false"/>
+<param name="system/gyro_stddev" value="0.1" />
+<param name="system/acceleration_stddev" value="1.0" />
 </node>
 <!--Only one param. No yaml file needed -->
 
