@@ -16,7 +16,6 @@
   <depend package="tf"/>
   <depend package="dynamic_reconfigure"/>
   <depend package="nav_msgs" />
-  <depend package="arm_navigation_msgs" />
 
 </package>
 
