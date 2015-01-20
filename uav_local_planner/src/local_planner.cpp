@@ -58,7 +58,7 @@ ROS_ERROR("[local_planner] done getting params");
   controller_thread_ = new boost::thread(boost::bind(&UAVLocalPlanner::controllerThread, this));
 
   //subscribe to the collision map, tf, path, goal, and flight mode
-  collision_map_sub_ = nh.subscribe(local_collision_topic_, 1, &UAVLocalPlanner::collisionMapCallback,this);
+  //collision_map_sub_ = nh.subscribe(local_collision_topic_, 1, &UAVLocalPlanner::collisionMapCallback,this);
   path_sub_ = nh.subscribe(path_topic_, 1, &UAVLocalPlanner::pathCallback,this);
   goal_sub_ = nh.subscribe(goal_sub_topic_, 1, &UAVLocalPlanner::goalCallback,this);
   state_sub_ = nh.subscribe(uav_state_topic_, 1, &UAVLocalPlanner::stateCallback,this);
@@ -88,7 +88,7 @@ void UAVLocalPlanner::controllerThread(){
   ROS_INFO("[controller] Starting controller thread...\n\n");
   ros::NodeHandle n;
   ros::Rate r(controller_frequency_);
-  double last_collision_map_update = ros::Time::now().toSec();
+  //double last_collision_map_update = ros::Time::now().toSec();
   uav_msgs::FlightModeStatus state;
   state.mode = uav_msgs::FlightModeStatus::LANDED;
   last_state_.mode = uav_msgs::FlightModeStatus::LANDED;
@@ -359,8 +359,8 @@ void UAVLocalPlanner::getRobotPose(geometry_msgs::PoseStamped& pose, geometry_ms
 
 /***************** CALLBACKS *****************/
 
-void UAVLocalPlanner::collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm){
-  ros::Time start_ = ros::Time::now();
+//void UAVLocalPlanner::collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm){
+  //ros::Time start_ = ros::Time::now();
 
 //   //compute distance field and load it into the callback occupancy grid
 //   callback_grid_->updateFromCollisionMap(*cm);
@@ -376,7 +376,7 @@ void UAVLocalPlanner::collisionMapCallback(arm_navigation_msgs::CollisionMapCons
 //   ros::Time stop_ = ros::Time::now();
 //   ROS_DEBUG("[local_planner] collision callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec()-start_.toSec() );
 
-}
+//}
 
 void UAVLocalPlanner::pathCallback(nav_msgs::PathConstPtr path){
   ros::Time start_ = ros::Time::now();

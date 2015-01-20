@@ -10,7 +10,6 @@
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
 // #include <nav_msgs/OccupancyGrid.h>
-#include <arm_navigation_msgs/CollisionMap.h>
 #include <visualization_msgs/Marker.h>
 #include <tf/transform_listener.h>
 #include <uav_local_planner/controller.h>
@@ -43,7 +42,6 @@ class UAVLocalPlanner{
     void getFlightMode(uav_msgs::FlightModeStatus &state);
     void getRobotPose(geometry_msgs::PoseStamped& pose, geometry_msgs::TwistStamped& velocity);
 
-    void collisionMapCallback(arm_navigation_msgs::CollisionMapConstPtr cm);
     void pathCallback(nav_msgs::PathConstPtr path);
     void goalCallback(geometry_msgs::PoseStampedConstPtr goal);
     void stateCallback(nav_msgs::OdometryConstPtr state);
