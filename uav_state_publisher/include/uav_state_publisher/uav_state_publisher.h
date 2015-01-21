@@ -198,6 +198,7 @@ private:
 	void lidarCallback(sensor_msgs::LaserScanConstPtr scan);
 	void slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg);
 	void rawImuCallback(sensor_msgs::Imu imu);
+	bool estimateInitialHeight( sensor_msgs::LaserScanConstPtr  scan, double & ret_height);
 
 	std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_,
 			slam_topic_, map_topic_, body_topic_, body_map_aligned_topic_, body_stabilized_topic_, imu_topic_, rpy_pub_topic_;

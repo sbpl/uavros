@@ -201,6 +201,18 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 	int i;
 	vector<geometry_msgs::Point> voxels;
 
+	//when height estimation is first called, estimate initial height
+	if (z_fifo_.size() < 1)
+	{
+		double est_height;
+		bool suc = estimateInitialHeight(scan,est_height);
+		if(!suc)
+		{
+			return;
+		}
+		state_.pose.pose.position.z = est_height;
+	}
+
 	try
 	{
 		tf_.lookupTransform(body_topic_, vertical_laser_frame_topic_, ros::Time(0), Pan2BodyTransform_);
@@ -271,9 +283,8 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 
 		pout.point.z = -pout.point.z;
 		// only accept height estimates that are close to previous height
-		if ((state_.pose.pose.position.z <= 0)
-				|| ((pout.point.z < state_.pose.pose.position.z + height_filter_deviation_max_)
-						&& (pout.point.z > state_.pose.pose.position.z - height_filter_deviation_max_)))
+		if (((pout.point.z < state_.pose.pose.position.z + height_filter_deviation_max_)
+				&& (pout.point.z > state_.pose.pose.position.z - height_filter_deviation_max_)))
 		{
 			zs.push_back(pout.point.z);
 			voxels.push_back(pout.point);
@@ -331,3 +342,81 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr scan, double & ret_height)
+{
+	std::vector<tf::Point> points;
+	points.reserve(scan->ranges.size());
+	float ang = scan->angle_min;
+
+	//get points from lidar frame between desginated lidar angles and ranges
+	for (size_t i = 0; i < scan->ranges.size(); i++)
+	{
+		bool valid = true;
+		if (scan->ranges[i] < scan->range_min || scan->ranges[i] > scan->range_max)
+		{
+			valid = false;
+		}
+
+		if (ang <= min_lidar_angle_ || ang >= max_lidar_angle_)
+		{
+			valid = false;
+		}
+
+		if(valid)
+		{
+		tf::Point p(scan->ranges[i] * cos(ang), scan->ranges[i] * sin(ang), 0);
+			points.push_back(p);
+		}
+		ang += scan->angle_increment;
+	}
+
+	//get transformation from body frame map aligned
+	tf::StampedTransform Pan2BodyMapAligned;
+	double r,p,y;
+	try
+	{
+		tf_.lookupTransform(body_map_aligned_topic_, vertical_laser_frame_topic_, ros::Time(0), Pan2BodyMapAligned);
+	}
+
+	catch (tf::TransformException& ex)
+	{
+		ROS_ERROR("UavStatePublisher: Unable to retrieve vertical laser to body_map_aligned transform: %s", ex.what());
+		return false;
+	}
+	Pan2BodyMapAligned.getBasis().getRPY(r,p,y);
+
+	//transform all these points and store their heights
+	vector<double> zs;
+	zs.reserve(points.size());
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		tf::Point & p = points.at(i);
+		p = Pan2BodyMapAligned * p;
+		zs.push_back(p.getZ());
+		printf("%f\n", p.getZ());
+	}
+
+
+	//grab 10 of the smallest points and return the median of those as height
+	int range = min(10, (int) zs.size());
+	double smallest_z = 0;
+	if (!zs.empty())
+	{
+		std::sort(zs.begin(), zs.end());
+		std::vector<double>min_heights(range);
+		std::copy(zs.begin(), zs.begin()+range, min_heights.begin());
+
+		for(std::vector<double>::iterator it = min_heights.begin(); it != min_heights.end(); it++)
+		{
+			printf("height %f\n", * it);
+		}
+
+		smallest_z = min_heights.at(range/2);
+	}
+
+	ret_height = -smallest_z;
+	return true;
+
+}
+
