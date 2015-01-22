@@ -210,6 +210,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 		{
 			return;
 		}
+		ROS_INFO("uav_state_publisher: estimated initial height is %f\n",est_height);
 		state_.pose.pose.position.z = est_height;
 	}
 
@@ -394,7 +395,6 @@ bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr sca
 		tf::Point & p = points.at(i);
 		p = Pan2BodyMapAligned * p;
 		zs.push_back(p.getZ());
-		printf("%f\n", p.getZ());
 	}
 
 
@@ -406,12 +406,6 @@ bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr sca
 		std::sort(zs.begin(), zs.end());
 		std::vector<double>min_heights(range);
 		std::copy(zs.begin(), zs.begin()+range, min_heights.begin());
-
-		for(std::vector<double>::iterator it = min_heights.begin(); it != min_heights.end(); it++)
-		{
-			printf("height %f\n", * it);
-		}
-
 		smallest_z = min_heights.at(range/2);
 	}
 
