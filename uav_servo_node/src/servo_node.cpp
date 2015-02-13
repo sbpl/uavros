@@ -15,7 +15,7 @@ enum { DYNAMIXEL_STATE_UNINITIALIZED,
      };
 
 ServoNode::ServoNode() : nh("~"){
-  dev = (char*)"/dev/ttyUSB1";
+  dev = (char*)"/dev/ttyUSB0";
   baudRate = 57600;
 
   nh.param("servoID", moduleId, 0);

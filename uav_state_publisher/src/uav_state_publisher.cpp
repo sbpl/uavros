@@ -307,7 +307,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 	pointCloud_pub_.publish(cloud);
 
 //	ROS_INFO("size is %d median is %f \n", (int) zs.size(), zs[zs.size()/2] );
-	if (zs.size() > 10)
+	if (zs.size() > 6)
 	{
 		sort(zs.begin(), zs.end());
 		state_.pose.pose.position.z = zs[zs.size() / 2];
@@ -320,7 +320,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
                 z_fifo_.insert(state_.pose.pose.position.z);
                 z_time_fifo_.insert(scan->header.stamp.toSec());
 
-		ROS_ERROR("could not calculate height as size of height points is %d\n", (int )zs.size());
+		//ROS_ERROR("could not calculate height as size of height points is %d\n", (int )zs.size());
 	        return;
         }
 
