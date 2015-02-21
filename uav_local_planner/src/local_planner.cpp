@@ -141,7 +141,7 @@ void UAVLocalPlanner::controllerThread(){
         u = takeOff(pose,velocity,state);
         //hover_pose_.pose.position.x = pose.pose.position.x;
         //hover_pose_.pose.position.y = pose.pose.position.y;
-        hover_pose_.pose.position.z = 1.6;
+        hover_pose_.pose.position.z = 1.5;
         //hover_pose_.pose.orientation.x = 0;
         //hover_pose_.pose.orientation.y = 0;
         //hover_pose_.pose.orientation.z = 0;

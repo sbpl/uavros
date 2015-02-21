@@ -7,7 +7,7 @@
 </node>
 
 <!-- start recording this stuff -->
-<node pkg="rosbag" type="record" name="rosbag_record" args=" -a -x /hexa_cam/image_raw(.*) -O /home/utacc/Bag/HexaData"/> 
+<!--<node pkg="rosbag" type="record" name="rosbag_record" args=" -a -x /hexa_cam/image_raw(.*) /hexa_cam -O /home/utacc/Bag/HexaData"/> --> 
 
 <!-- Robot State Publisher  -->
 <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" output="screen">
