@@ -200,6 +200,8 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 	float ang = scan->angle_min;
 	int i;
 	vector<geometry_msgs::Point> voxels;
+	double max_z = 0;
+	double height_cut_off = 0.3;
 
 	//when height estimation is first called, estimate initial height
 	if (z_fifo_.size() < 1)
@@ -283,6 +285,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 		}
 
 		pout.point.z = -pout.point.z;
+		max_z = max(max_z,pout.point.z);
 		// only accept height estimates that are close to previous height
 		if (((pout.point.z < state_.pose.pose.position.z + height_filter_deviation_max_)
 				&& (pout.point.z > state_.pose.pose.position.z - height_filter_deviation_max_)))
@@ -312,19 +315,20 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 		sort(zs.begin(), zs.end());
 		state_.pose.pose.position.z = zs[zs.size() / 2];
 		//ROS_ERROR("LC z: %f\n", state_.pose.pose.position.z);
-		z_fifo_.insert(state_.pose.pose.position.z);
-		z_time_fifo_.insert(scan->header.stamp.toSec());
 	}
 	else
 	{
-                z_fifo_.insert(state_.pose.pose.position.z);
-                z_time_fifo_.insert(scan->header.stamp.toSec());
+		if( abs(max_z - state_.pose.pose.position.z) >= height_cut_off)
+		{
+		      state_.pose.pose.position.z = max_z;
+		}
 
 		//ROS_ERROR("could not calculate height as size of height points is %d\n", (int )zs.size());
-	        return;
+	        
         }
+	z_fifo_.insert(state_.pose.pose.position.z);
+	z_time_fifo_.insert(scan->header.stamp.toSec());
 
-        
 
 	pcl::PointCloud<pcl::PointXYZ> pclmedianpt;
 	pclmedianpt.push_back(pcl::PointXYZ(state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z));
@@ -335,6 +339,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 	medianpt.header.stamp = ros::Time::now();
 
 	point_pub_.publish(medianpt);
+	
 
 	ros::Time stop_ = ros::Time::now();
 	ROS_DEBUG("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec() - start_.toSec());
