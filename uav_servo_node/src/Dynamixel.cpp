@@ -9,8 +9,33 @@
 #include <time.h>
 #include <math.h>
 #include <uav_servo_node/ErrorMessage.h>
+#include <ros/ros.h>
 
 //#define DYNAMIXEL_DEBUG
+
+struct WarnTimer
+{
+    WarnTimer(double timeout) : m_timeout(timeout)
+    {
+        timeval t;
+        gettimeofday(&t, NULL);
+        m_start = t.tv_sec + 1e-6 * t.tv_usec;
+    }
+
+    ~WarnTimer()
+    {
+        timeval t;
+        gettimeofday(&t, NULL);
+        double end = t.tv_sec + 1e-6 * t.tv_usec;
+        if (end - m_start > m_timeout) {
+            ROS_ERROR("WARN TIMER EXPIRED TIMER BY %0.3f SECONDS", (end - m_start) - m_timeout);
+        }
+    }
+
+    double m_timeout;
+    double m_start;
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -248,6 +273,7 @@ void Dynamixel::PrintPacket(char * buf, int length)
 // Request and get the position feedback
 int Dynamixel::GetPosition(float & position)
 {
+    WarnTimer w(1.0 / 50.0);
   char outBuffer[DYNAMIXEL_DEF_BUFFER_LENGTH];
   char inputBuffer[DYNAMIXEL_DEF_BUFFER_LENGTH];
   const unsigned int cmdLen = 3;
@@ -347,6 +373,7 @@ int Dynamixel::VelocityVal2VelocityDeg(uint16_t val, float &velocity)
 // and stored acceleration
 int Dynamixel::MoveToPos(float position, float velocity)
 {
+    WarnTimer w(1.0 / 50.0);
   char outBuffer[DYNAMIXEL_DEF_BUFFER_LENGTH];
   //char inputBuffer[DYNAMIXEL_DEF_BUFFER_LENGTH];
   const char cmdLength=6;

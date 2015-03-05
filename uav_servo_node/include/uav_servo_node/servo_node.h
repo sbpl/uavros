@@ -14,6 +14,7 @@ class ServoNode{
     int initialize();
     int updateServo();
     ros::Publisher angle_pub;
+    float position;
   private:
     ros::NodeHandle nh;
 
@@ -32,7 +33,6 @@ class ServoNode{
 
     Dynamixel dynamixel;
     Upenn::Timer cmdTimer;
-    float position;
 
 };
 

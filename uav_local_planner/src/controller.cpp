@@ -231,6 +231,15 @@ Eigen::Vector3f UAVController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf D
         err[i] += 2*M_PI;
     }
 
+    if(err[2] > M_PI / 3)
+    {
+       err[2] = M_PI / 3;
+    }
+    if(err[2] < -M_PI /3)
+    {
+       err[2] = -M_PI /3;
+    }
+
     RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
     RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
     RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
@@ -361,6 +370,16 @@ float UAVController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   Eigen::Vector2f err;
   err[0] = DesX[2]-X[2];
   err[1] = -X[8];
+
+  // the hope is that this is in meters
+  // todo: make 'something' a parameter
+  const double something = 3.0;
+  if (err[1] >= something) {
+    err[1] = something;
+  }
+  else if (err[1] <= -something) {
+    err[1] = -something;
+  }
 
   if (err[0] > CONT.maxError) {
     err[0] = CONT.maxError;

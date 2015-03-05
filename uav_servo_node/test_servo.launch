@@ -1,0 +1,14 @@
+<launch>
+
+
+<node name="panning_servo" pkg="uav_servo_node" type="servo_node" launch-prefix="nice --1">
+<param name="device_name" value="/dev/ttyUSB0" />
+<param name="servoID" value="1" />
+<param name="minAngle" value="-3" />
+<param name="maxAngle" value="-3" />
+<param name="velocity" value="100" />
+</node>
+
+
+
+</launch>

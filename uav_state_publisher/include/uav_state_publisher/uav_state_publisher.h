@@ -16,6 +16,7 @@
 #include <Eigen/LU>
 #include <string>
 #include <list>
+#include <uav_msgs/FlightModeStatus.h>
 
 class UAVStatePublisher
 {
@@ -199,6 +200,7 @@ private:
 	void slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg);
 	void rawImuCallback(sensor_msgs::Imu imu);
 	bool estimateInitialHeight( sensor_msgs::LaserScanConstPtr  scan, double & ret_height);
+    void flightModeCallback( uav_msgs::FlightModeStatusConstPtr msg);
 
 	std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_,
 			slam_topic_, map_topic_, body_topic_, body_map_aligned_topic_, body_stabilized_topic_, imu_topic_, rpy_pub_topic_;
@@ -215,6 +217,7 @@ private:
 	ros::Subscriber lidar_sub_;
 	ros::Subscriber imu_sub_;
 	ros::Publisher rpy_pub_;
+    ros::Subscriber flight_mode_sub_;
 
 	tf::StampedTransform Pan2BodyTransform_;
 
@@ -236,7 +239,9 @@ private:
 	velo_list* y_velo_;
 
 	ros::Time l_t_;
-
+    uav_msgs::FlightModeStatus last_state_;
+    std::string flt_mode_stat_topic_;
 };
 
 #endif
+

@@ -61,7 +61,32 @@ int ServoNode::initialize(){
 
 ServoNode::~ServoNode(){}
 
+struct WarnTimer
+{
+    WarnTimer(double timeout, const std::string& id = "") : m_timeout(timeout), m_id(id)
+    {
+        timeval t;
+        gettimeofday(&t, NULL);
+        m_start = t.tv_sec + 1e-6 * t.tv_usec;
+    }
+
+    ~WarnTimer()
+    {
+        timeval t;
+        gettimeofday(&t, NULL);
+        double end = t.tv_sec + 1e-6 * t.tv_usec;
+        if (end - m_start > m_timeout) {
+            ROS_ERROR("WARN TIMER EXPIRED '%s' TIMER BY %0.3f SECONDS", m_id.c_str(), (end - m_start) - m_timeout);
+        }
+    }
+
+    double m_timeout;
+    double m_start;
+    std::string m_id;
+};
+
 int ServoNode::updateServo(){
+    WarnTimer w(1.0 / 50.0);
   if(scan){
     //servo back and forth
     switch (state){
@@ -137,16 +162,20 @@ ROS_INFO("sent");
     }
   }
 
-  sensor_msgs::JointState msg;
-  msg.header.stamp = ros::Time::now();
-  msg.name.push_back("panning_laser_to_body");
-  msg.position.push_back(position*PI/180);
-  angle_pub.publish(msg);
+    {
+    WarnTimer w2(1.0 / 50.0, "Publish");
+    sensor_msgs::JointState msg;
+    msg.header.stamp = ros::Time::now();
+    msg.name.push_back("panning_laser_to_body");
+    msg.position.push_back(position*PI/180);
+    angle_pub.publish(msg);
+    }
 
   return 0;
 }
 
 int main(int argc, char** argv){
+
   ros::init(argc, argv, "servo_node");
   ServoNode s;
   if(s.initialize()){
@@ -163,13 +192,17 @@ int main(int argc, char** argv){
     return 1;
   }
 
-  //set up periodic call
+  //set up periodic call 
+  ros::Rate r(50.0);
   while(ros::ok()){
     if(s.updateServo())
       return 1;
     //ros::spinOnce();
+    r.sleep();
   }
 
   return 0;
 }
+
+
 
