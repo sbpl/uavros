@@ -1,15 +1,9 @@
-<?xml version="1.0"?>
 <launch>
+    <node pkg="usb_cam" type="usb_cam_node" name="hexa_cam" >
+        <param name="video_device" value="/dev/video0"/>
+    </node>
 
+    <include file="$(find ooi_detection)/launch/hexa_detection.launch"/>
 
-<node pkg="usb_cam" type="usb_cam_node" name="hexa_cam" >
-<param name="video_device" value="/dev/video0"/>
-</node>
-
-<include file="$(find ooi_detection)/launch/hexa_detection.launch"/>
-
-<node name="image_relay" pkg="image_transport" type="republish" args="compressed in:=hexa_cam/image_raw raw out:=hexa_cam"/>
-
-
+    <node name="image_relay" pkg="image_transport" type="republish" args="compressed in:=hexa_cam/image_raw raw out:=hexa_cam"/>
 </launch>
-

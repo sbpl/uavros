@@ -1,0 +1,15 @@
+<package format="2">
+    <name>uav_goal_interpolate</name>
+    <version>0.0.0</version>
+    <description>uav_goal_interpolate</description>
+    <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
+    <author>Jonathan Butzke</author>
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <depend>geometry_msgs</depend>
+    <depend>nav_msgs</depend>
+    <depend>roscpp</depend>
+    <depend>uav_msgs</depend>
+</package>

@@ -1,45 +1,39 @@
-<?xml version="1.0"?>
 <launch>
 
-<!-- Load the configuration files -->
-<rosparam command="load" file="$(find uav_launch)/config/UAV.yaml" ns="/UAV" />
+    <!-- Load the configuration files -->
+    <rosparam command="load" file="$(find uav_launch)/config/UAV.yaml" ns="/UAV" />
 
-<param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
+    <param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
 
-<!-- Robot State Publisher  -->
-<node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" output="screen">
-<param name="publish_frequency" value="50.0" />
-</node>
+    <!-- Robot State Publisher  -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" output="screen">
+        <param name="publish_frequency" value="50.0" />
+    </node>
 
-<!-- Bring up the State Publisher -->
-<!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
-<node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher" output="screen">
-  <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
-</node>
-<node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
+    <!-- Bring up the State Publisher -->
+    <!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
+    <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher" output="screen">
+        <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
+    </node>
 
+    <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
 
+    <!-- .................................................................................... -->
+    <!-- Hector Slam -->
+    <node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
+        <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
+    </node>
 
-<!-- .................................................................................... -->
-<!-- Hector Slam -->
-<node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
-<rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
-</node>
+    <!-- TODO: There is hector_geotiff node that can be brought up to save the trajectory of the UAV-->
 
-<!-- TODO: There is hector_geotiff node that can be brought up to save the trajectory of the UAV-->
-
-<!-- ................................................................................ -->
-<!-- Hector Localization -->
-<!-- Subscribes to raw_imu, pressure_height, magnetic, fix (gps), fix_velocity (gps velocity), poseupdate     -->
-<node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
-<remap from="state" to="ekf_state"/>
-<param name="with_covariances" value="false"/>
-<param name="system/gyro_stddev" value="0.1" />
-<param name="system/acceleration_stddev" value="1.0" />
-</node>
-<!--Only one param. No yaml file needed -->
-
-
+    <!-- ................................................................................ -->
+    <!-- Hector Localization -->
+    <!-- Subscribes to raw_imu, pressure_height, magnetic, fix (gps), fix_velocity (gps velocity), poseupdate     -->
+    <node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
+        <remap from="state" to="ekf_state"/>
+        <param name="with_covariances" value="false"/>
+        <param name="system/gyro_stddev" value="0.1" />
+        <param name="system/acceleration_stddev" value="1.0" />
+    </node>
+    <!--Only one param. No yaml file needed -->
 </launch>
-
-

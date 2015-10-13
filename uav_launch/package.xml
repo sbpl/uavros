@@ -1,0 +1,27 @@
+<package format="2">
+    <name>uav_launch</name>
+    <version>0.0.0</version>
+    <description>uav_launch</description>
+    <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
+    <author>Venkatraman</author>
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <exec_depend>behavior_controller</exec_depend>
+    <exec_depend>dynamic_reconfigure</exec_depend>
+    <exec_depend>hector_mapping</exec_depend>
+    <exec_depend>hector_pose_estimation</exec_depend>
+    <exec_depend>hokuyo_node</exec_depend>
+    <exec_depend>image_transport</exec_depend>
+    <exec_depend>ooi_detection</exec_depend>
+    <exec_depend>robot_state_publisher</exec_depend>
+    <exec_depend>rosbag</exec_depend>
+    <exec_depend>tf</exec_depend>
+    <exec_depend>uav_goal_interpolate</exec_depend>
+    <exec_depend>uav_local_planner</exec_depend>
+    <exec_depend>uav_servo_node</exec_depend>
+    <exec_depend>uav_set_goal</exec_depend>
+    <exec_depend>uav_state_publisher</exec_depend>
+    <exec_depend>usb_cam</exec_depend>
+</package>
