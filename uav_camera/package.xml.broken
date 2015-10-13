@@ -1,0 +1,17 @@
+<package format="2">
+    <name>uav_camera</name>
+    <version>0.0.0</version>
+    <description>uav_camera</description>
+    <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
+    <author>eduardo</author>
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <depend>cv_bridge</depend>
+    <depend>dynamic_reconfigure</depend>
+    <depend>image_transport</depend>
+    <depend>opencv3</depend>
+    <depend>roscpp</depend>
+    <depend>uav_msgs</depend>
+</package>
