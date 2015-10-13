@@ -1,55 +1,45 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(robot_state_publisher)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Release)
 
-rosbuild_init()
-rosbuild_add_boost_directories()
+find_package(Boost REQUIRED)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+find_package(catkin REQUIRED
+    COMPONENTS
+        kdl_parser 
+        roscpp 
+        sensor_msgs 
+        tf 
+        tf_conversions)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
+find_package(orocos_kdl REQUIRED)
 
-rosbuild_add_library(${PROJECT_NAME} src/robot_state_publisher.cpp src/treefksolverposfull_recursive.cpp)
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES robot_state_publisher
+    CATKIN_DEPENDS roscpp sensor_msgs tf
+    DEPENDS Boost orocos_kdl)
 
-rosbuild_add_executable(state_publisher src/joint_state_listener.cpp )
-target_link_libraries(state_publisher ${PROJECT_NAME})
+# note: must come before catkin_INCLUDE_DIRS so the robot_state_publisher.h from
+# this package is found before the one available in /opt/ros/<distro>
+include_directories(include) 
 
-# rosbuild_add_executable(test_publisher test/test_publisher.cpp )
-# target_link_libraries(test_publisher ${PROJECT_NAME})
-# rosbuild_add_gtest_build_flags(test_publisher)
-# rosbuild_declare_test(test_publisher)
-# rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_publisher.launch)
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS})
 
-# rosbuild_add_executable(test_one_link test/test_one_link.cpp )
-# target_link_libraries(test_one_link ${PROJECT_NAME})
-# rosbuild_add_gtest_build_flags(test_one_link)
-# rosbuild_declare_test(test_one_link)
-# rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_one_link.launch)
+add_library(
+    robot_state_publisher 
+    src/robot_state_publisher.cpp 
+    src/treefksolverposfull_recursive.cpp)
+target_link_libraries(
+    robot_state_publisher 
+    ${catkin_LIBRARIES} 
+    ${orocos_kdl_LIBRARIES})
 
-# rosbuild_add_executable(test_two_links_fixed_joint test/test_two_links_fixed_joint.cpp )
-# target_link_libraries(test_two_links_fixed_joint ${PROJECT_NAME})
-# rosbuild_add_gtest_build_flags(test_two_links_fixed_joint)
-# rosbuild_declare_test(test_two_links_fixed_joint)
-# rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_two_links_fixed_joint.launch)
-
-# rosbuild_add_executable(test_two_links_moving_joint test/test_two_links_moving_joint.cpp )
-# target_link_libraries(test_two_links_moving_joint ${PROJECT_NAME})
-# rosbuild_add_gtest_build_flags(test_two_links_moving_joint)
-# rosbuild_declare_test(test_two_links_moving_joint)
-# rosbuild_add_rostest(${CMAKE_CURRENT_SOURCE_DIR}/test/test_two_links_moving_joint.launch)
-
-# Download needed data file
-# rosbuild_download_test_data(http://pr.willowgarage.com/data/robot_state_publisher/joint_states_indexed.bag test/joint_states_indexed.bag 793e0b566ebe4698265a936b92fa2bba)
+add_executable(state_publisher src/joint_state_listener.cpp)
+target_link_libraries(
+    state_publisher 
+    ${catkin_LIBRARIES} 
+    ${orocos_kdl_LIBRARIES} 
+    robot_state_publisher)

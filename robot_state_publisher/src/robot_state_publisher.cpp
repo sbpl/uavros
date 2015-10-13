@@ -35,6 +35,7 @@
 /* Author: Wim Meeussen */
 
 #include "robot_state_publisher/robot_state_publisher.h"
+ 
 #include <kdl/frames_io.hpp>
 #include <tf_conversions/tf_kdl.h>
 
@@ -75,7 +76,9 @@ namespace robot_state_publisher{
 
 
   // publish moving transforms
-  void RobotStatePublisher::publishTransforms(const map<string, double>& joint_positions, const Time& time)
+  void RobotStatePublisher::publishTransforms(
+    const map<string, double>& joint_positions,
+    const Time& time)
   {
     last_time = time;
     ROS_DEBUG("Publishing transforms for moving joints");

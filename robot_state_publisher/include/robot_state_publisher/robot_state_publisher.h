@@ -37,13 +37,13 @@
 #ifndef ROBOT_STATE_PUBLISHER_H
 #define ROBOT_STATE_PUBLISHER_H
 
-#include <ros/ros.h>
 #include <boost/scoped_ptr.hpp>
-#include <tf/tf.h>
-#include <tf/transform_broadcaster.h>
 #include <kdl/frames.hpp>
 #include <kdl/segment.hpp>
 #include <kdl/tree.hpp>
+#include <ros/ros.h>
+#include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
 
 namespace robot_state_publisher{
 
@@ -85,8 +85,6 @@ private:
   std::map<std::string, SegmentPair> segments_, segments_fixed_;
   tf::TransformBroadcaster tf_broadcaster_;
 };
-
-
 
 }
 
