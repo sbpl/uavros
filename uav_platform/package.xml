@@ -1,0 +1,15 @@
+<package format="2">
+    <name>uav_platform</name>
+    <version>0.0.0</version>
+    <description>uav_platform</description>
+    <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
+    <author>eduardo</author>
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <depend>interactive_markers</depend>
+    <depend>roscpp</depend>
+    <depend>tf</depend>
+    <depend>uav_msgs</depend>
+</package>
