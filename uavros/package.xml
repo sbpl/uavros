@@ -1,0 +1,29 @@
+<package format="2">
+    <name>uavros</name>
+    <version>0.0.0</version>
+    <description>uavros</description>
+    <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
+
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <exec_depend>robot_state_publisher</exec_depend>
+    <exec_depend>uav_camera</exec_depend>
+    <exec_depend>uav_collision_checking</exec_depend>
+    <exec_depend>uav_debug</exec_depend>
+    <exec_depend>uav_goal_interpolate</exec_depend>
+    <exec_depend>uav_launch</exec_depend>
+    <exec_depend>uav_local_planner</exec_depend>
+    <exec_depend>uav_msgs</exec_depend>
+    <exec_depend>uav_platform</exec_depend>
+    <exec_depend>uav_safety_interface</exec_depend>
+    <exec_depend>uav_servo_node</exec_depend>
+    <exec_depend>uav_set_goal</exec_depend>
+    <exec_depend>uav_state_publisher</exec_depend>
+
+    <export>
+        <metapackage />
+        <architecture_independent />
+    </export>
+</package>
