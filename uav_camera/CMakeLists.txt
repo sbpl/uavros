@@ -21,9 +21,3 @@ include_directories(include)
 add_executable(video_publisher src/video_publisher.cpp)
 target_link_libraries(video_publisher ${catkin_LIBRARIES})
 add_dependencies(video_publisher ${uav_camera_EXPORTED_TARGETS})
-
-#add dynamic reconfigure api
-#rosbuild_find_ros_package(dynamic_reconfigure)
-#include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-#gencfg()
-
