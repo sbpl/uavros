@@ -1,0 +1,14 @@
+<package format="2">
+    <name>uav_set_goal</name>
+    <version>0.0.0</version>
+    <description>uav_set_goal</description>
+    <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
+    <author>Venkatraman</author>
+    <license>TODO</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <depend>geometry_msgs</depend>
+    <depend>interactive_markers</depend>
+    <depend>uav_msgs</depend>
+</package>

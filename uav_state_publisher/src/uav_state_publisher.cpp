@@ -1,7 +1,10 @@
 #include <uav_state_publisher/uav_state_publisher.h>
+
 #include <vector>
 
+#include <pcl_conversions/pcl_conversions.h>
 #include <std_msgs/Float32.h>
+#include <sensor_msgs/PointCloud2.h>
 
 using namespace std;
 

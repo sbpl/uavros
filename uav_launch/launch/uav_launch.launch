@@ -48,7 +48,7 @@
 
     <!-- Servos -->
     <!--if="$(arg use_servos_)" -->
-    <node name="panning_servo" pkg="uav_servo_node" type="servo_node" launch-prefix="nice --1">
+    <node name="panning_servo" pkg="uav_servo_node" type="uav_servo_node" launch-prefix="nice --1">
         <param name="device_name" value="/dev/ttyUSB0" />
         <param name="servoID" value="1" />
         <!-- for fixed -->

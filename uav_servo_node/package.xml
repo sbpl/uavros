@@ -1,0 +1,14 @@
+<package format="2">
+    <name>uav_servo_node</name>
+    <version>0.0.0</version>
+    <description>uav_servo_node</description>
+    <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
+    <author>Michael Phillips</author>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <license>TODO</license>
+
+    <depend>roscpp</depend>
+    <depend>sensor_msgs</depend>
+</package>
