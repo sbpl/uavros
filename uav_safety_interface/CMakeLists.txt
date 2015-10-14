@@ -19,6 +19,8 @@ include_directories(include)
 
 add_executable(uavSafetyInterface src/SafetyInterface.cpp)
 target_link_libraries(uavSafetyInterface ${catkin_LIBRARIES})
+add_dependencies(uavSafetyInterface ${catkin_EXPORTED_TARGETS})
 
 add_executable(testController src/TestController.cpp)
 target_link_libraries(testController ${catkin_LIBRARIES})
+add_dependencies(testController ${catkin_EXPORTED_TARGETS})

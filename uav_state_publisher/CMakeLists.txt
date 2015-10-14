@@ -22,3 +22,4 @@ include_directories(include)
 
 add_executable(uav_state_publisher src/uav_state_publisher.cpp)
 target_link_libraries(uav_state_publisher ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(uav_state_publisher ${catkin_EXPORTED_TARGETS})

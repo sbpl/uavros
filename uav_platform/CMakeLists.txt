@@ -12,9 +12,12 @@ include_directories(include)
 
 add_executable(pose_filter src/pose_filter.cpp)
 target_link_libraries(pose_filter ${catkin_LIBRARIES})
+add_dependencies(pose_filter ${catkin_EXPORTED_TARGETS})
 
 add_executable(align_mode src/align_mode.cpp)
 target_link_libraries(align_mode ${catkin_LIBRARIES})
+add_dependencies(align_mode ${catkin_EXPORTED_TARGETS})
 
 add_executable(nav_markers src/nav_markers.cpp)
 target_link_libraries(nav_markers ${catkin_LIBRARIES})
+add_dependencies(nav_markers ${catkin_EXPORTED_TARGETS})
