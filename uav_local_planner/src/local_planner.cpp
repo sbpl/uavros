@@ -222,7 +222,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::hover(geometry_msgs::PoseStamped po
 uav_msgs::ControllerCommand UAVLocalPlanner::followPath(geometry_msgs::PoseStamped pose, geometry_msgs::TwistStamped vel, uav_msgs::FlightModeStatus &state, bool isNewPath){
   if(isNewPath)
     path_idx_ = 0;
-  ROS_WARN("size is %d \n", controller_path_->poses.size());
+  ROS_WARN("size is %zu \n", controller_path_->poses.size());
   double dx = pose.pose.position.x - controller_path_->poses[path_idx_].pose.position.x;
   double dy = pose.pose.position.y - controller_path_->poses[path_idx_].pose.position.y;
   double dz = pose.pose.position.z - controller_path_->poses[path_idx_].pose.position.z;
