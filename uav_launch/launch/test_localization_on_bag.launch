@@ -1,9 +1,10 @@
 <launch>
 
     <!-- Load the configuration files -->
-    <rosparam command="load" file="$(find uav_launch)/config/UAV.yaml" ns="/UAV" />
+    <rosparam command="load" file="$(find uav_launch)/config/UAV.yaml"
+            ns="/UAV"/>
 
-    <param name="robot_description" textfile="$(find HexaURDF)/Hexa.urdf" />
+    <include file="$(find hexa_description)/robots/upload_hexa.launch"/>
 
     <!-- Robot State Publisher  -->
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" output="screen">
