@@ -1,0 +1,14 @@
+state_pub_topic: 'uav_state'
+Z_laser_topic: 'HeightLaser'
+Z_laser_median_topic: 'HeightLaserMedian'
+position_sub_topic: 'ekf_state'
+vertical_laser_data_topic: 'panning_laser'
+vertical_laser_frame_topic: '/panning_laser_frame'
+slam_topic: 'slam_out_pose'
+map_topic: '/map'
+body_topic: '/body_frame'
+body_map_aligned_topic: '/body_frame_map_aligned'
+body_stabilized_topic: '/body_frame_stabilized'
+min_lidar_angle: -3.14159
+max_lidar_angle: 3.14159
+height_filter_deviation_max: 0.05

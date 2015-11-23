@@ -47,15 +47,15 @@
     </node>
 
     <!-- Servos -->
-    <!--if="$(arg use_servos_)" -->
-    <node name="panning_servo" pkg="uav_servo_node" type="uav_servo_node" launch-prefix="nice --1">
-        <param name="device_name" value="/dev/ttyUSB0" />
+    <arg name="use_servos_" value="true" />
+    <node name="panning_servo" pkg="uav_servo_node" type="uav_servo_node" launch-prefix="nice --1" if="$(arg use_servos_)">
+        <param name="device_name" value="/dev/servo" />
         <param name="servoID" value="1" />
         <!-- for fixed -->
         <param name="minAngle" value="-3" />
         <param name="maxAngle" value="-3" />
         <param name="velocity" value="100" />
-        
+
         <!-- for panning -->
         <!--
         <param name="minAngle" value="-24" />

@@ -418,7 +418,8 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     
     ros::Duration dt = start_ - prev_time;
     double ds = abs(state_.pose.pose.position.z - prev_height); 
-    printf("height at %f maxz %f filteredz %f with dt %f ds %f time %f\n", state_.pose.pose.position.z, max_z, filtered_z,  dt.toSec(), ds, start_.toSec());
+    ROS_INFO_THROTTLE(0.5,"height at %f maxz %f filteredz %f with dt %f ds %f time %f", state_.pose.pose.position.z, max_z, filtered_z,  dt.toSec(), ds, start_.toSec());
+
     prev_time = start_;
     ros::Time stop_ = ros::Time::now();
     ROS_DEBUG("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec() - start_.toSec());
@@ -476,7 +477,7 @@ bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr sca
 
 	catch (tf::TransformException& ex)
 	{
-		ROS_ERROR("UavStatePublisher: Unable to retrieve vertical laser to body_map_aligned transform: %s", ex.what());
+		ROS_ERROR_THROTTLE(1,"UavStatePublisher: Unable to retrieve vertical laser to body_map_aligned transform: %s", ex.what());
 		return false;
 	}
 	Pan2BodyMapAligned.getBasis().getRPY(r,p,y);
