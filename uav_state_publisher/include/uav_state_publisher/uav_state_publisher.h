@@ -198,8 +198,7 @@ private:
 	void ekfCallback(nav_msgs::OdometryConstPtr p);
 	void lidarCallback(sensor_msgs::LaserScanConstPtr scan);
 	void slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg);
-	void rawImuCallback(sensor_msgs::Imu imu);
-	bool estimateInitialHeight( sensor_msgs::LaserScanConstPtr  scan, double & ret_height);
+	bool estimateInitialHeight(sensor_msgs::LaserScanConstPtr  scan, double& ret_height);
     void flightModeCallback( uav_msgs::FlightModeStatusConstPtr msg);
 
 	std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_,
@@ -215,11 +214,9 @@ private:
 	ros::Subscriber ekf_sub_;
 	ros::Subscriber slam_sub_;
 	ros::Subscriber lidar_sub_;
-	ros::Subscriber imu_sub_;
 	ros::Publisher rpy_pub_;
     ros::Subscriber flight_mode_sub_;
 
-	tf::StampedTransform Pan2BodyTransform_;
 
 	double saved_yaw_;
 
@@ -241,6 +238,17 @@ private:
 	ros::Time l_t_;
     uav_msgs::FlightModeStatus last_state_;
     std::string flt_mode_stat_topic_;
+
+    /// \name Height Estimation
+    ///@{
+    tf::StampedTransform m_T_body_vlaser;
+    ros::Time m_last_scan_analysis_time;
+    ros::Time m_prev_scan_time;
+    int m_num_scans_processed;
+    double m_filtered_z;
+    double m_prev_filtered_z;
+    ros::Publisher m_max_z_pub;
+    ///@}
 };
 
 #endif

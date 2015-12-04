@@ -6,12 +6,17 @@
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/PointCloud2.h>
 
-using namespace std;
-
 #define PRINT_VARIABLE(x) std::cout << #x << ": " << x << std::endl;
 
 UAVStatePublisher::UAVStatePublisher() :
-		tf_(ros::NodeHandle(), ros::Duration(10), true), z_fifo_(5), z_time_fifo_(5)
+	tf_(ros::NodeHandle(), ros::Duration(10), true),
+    z_fifo_(5),
+    z_time_fifo_(5),
+    m_last_scan_analysis_time(),
+    m_prev_scan_time(),
+    m_num_scans_processed(0),
+    m_filtered_z(0.0),
+    m_prev_filtered_z(0.0)
 {
 	ros::NodeHandle nh;
 	ros::NodeHandle ph("~");
@@ -35,7 +40,7 @@ UAVStatePublisher::UAVStatePublisher() :
     ph.param("height_filter_deviation_max", height_filter_deviation_max_, 0.2);
 
        //publish an odometry message (it's the only message with all the state variables we want)
- 
+
 	state_pub_ = nh.advertise<nav_msgs::Odometry>(state_pub_topic_, 1);
 	pointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_topic_, 1);
 	point_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_median_topic_, 1);
@@ -43,12 +48,12 @@ UAVStatePublisher::UAVStatePublisher() :
 	ac_pub_ = nh.advertise<geometry_msgs::PointStamped>("/acel_trans", 1);
 	slam_vel_pub_ = nh.advertise<geometry_msgs::PointStamped>("/slam_vel", 1);
 	rpy_pub_ = nh.advertise<geometry_msgs::PointStamped>(rpy_pub_topic_, 1);
+    m_max_z_pub = nh.advertise<std_msgs::Float32>("max_z", 10);
 
 	//subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
 	ekf_sub_ = nh.subscribe(position_sub_topic_, 3, &UAVStatePublisher::ekfCallback, this);
 	lidar_sub_ = nh.subscribe(vertical_laser_data_topic_, 3, &UAVStatePublisher::lidarCallback, this);
 	slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVStatePublisher::slamCallback, this);
-	//imu_sub_ = nh.subscribe(imu_topic_, 1, &UAVStatePublisher::rawImuCallback,this);
     flight_mode_sub_ = nh.subscribe(flt_mode_stat_topic_, 1, &UAVStatePublisher::flightModeCallback, this);
 
 	x_integrated_ = new integrated_accel(40);
@@ -130,7 +135,7 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
 
 }
 
-//on the order of 50Hz
+// on the order of 50Hz
 void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
 {
 	ros::Time start_ = ros::Time::now();
@@ -138,7 +143,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
 	x_velo_->add_value(p->twist.twist.linear.x);
 	y_velo_->add_value(p->twist.twist.linear.y);
 
-	//get angular velocities
+	// get angular velocities
 	state_.twist.twist.angular = p->twist.twist.angular;
 
 	//get the orientation
@@ -156,23 +161,25 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
 
 	state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
 
-	//get the x and y
-	// state_.pose.pose.position.x = p->pose.pose.position.x;
-	// state_.pose.pose.position.y = p->pose.pose.position.y;
-
-	//get the x and y velocities
+	// get the x and y velocities
 	state_.twist.twist.linear.x = p->twist.twist.linear.x;
 	state_.twist.twist.linear.y = p->twist.twist.linear.y;
 
-	//compute dx, dy, and dz
-	double dz = 0;
-	for (int i = 1; i < z_fifo_.size(); i++)
-	{
-		dz += (z_fifo_[i] - z_fifo_[i - 1]) / (z_time_fifo_[i] - z_time_fifo_[i - 1]);
-	}
-	dz /= z_fifo_.size();
+    if (z_fifo_.size() < 1) {
+        ROS_WARN_THROTTLE(1, "State is incomplete");
+        return;
+    }
+
+	// compute the z velocity
+	double dz = 0.0;
+    if (z_fifo_.size() > 0) {
+        for (int i = 1; i < z_fifo_.size(); i++) {
+            dz += (z_fifo_[i] - z_fifo_[i - 1]) / (z_time_fifo_[i] - z_time_fifo_[i - 1]);
+        }
+        dz /= z_fifo_.size();
+    }
 	state_.twist.twist.linear.z = dz;
-	//ROS_ERROR("publishing frames");
+
 	//publish the map to base_link transform
 	geometry_msgs::TransformStamped trans;
 	trans.header.stamp = p->header.stamp;
@@ -180,249 +187,304 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
 	trans.transform.translation.x = state_.pose.pose.position.x;
 	trans.transform.translation.y = state_.pose.pose.position.y;
 	trans.transform.translation.z = state_.pose.pose.position.z;
-	//ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!pose is %f %f %f\n", state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z);
 
-	trans.child_frame_id = body_map_aligned_topic_;
-	trans.transform.rotation = tf::createQuaternionMsgFromYaw(0);
-	tf_broadcaster.sendTransform(trans);
+    // publish the map -> odom transform
 
-	trans.child_frame_id = body_stabilized_topic_;
-	trans.transform.rotation = tf::createQuaternionMsgFromYaw(saved_yaw_);
-	tf_broadcaster.sendTransform(trans);
+    const tf::Transform T_odom_body(
+            tf::Quaternion(
+                    p->pose.pose.orientation.x,
+                    p->pose.pose.orientation.y,
+                    p->pose.pose.orientation.z,
+                    p->pose.pose.orientation.w),
+            tf::Vector3(
+                    p->pose.pose.position.x,
+                    p->pose.pose.position.y,
+                    p->pose.pose.position.z));
+    const tf::Transform T_map_body(
+            tf::Quaternion(
+                    state_.pose.pose.orientation.x,
+                    state_.pose.pose.orientation.y,
+                    state_.pose.pose.orientation.z,
+                    state_.pose.pose.orientation.w),
+            tf::Vector3(
+                state_.pose.pose.position.x,
+                state_.pose.pose.position.y,
+                state_.pose.pose.position.z));
+
+    const tf::Transform T_map_odom = T_map_body * T_odom_body.inverse();
+    tf::transformTFToMsg(T_map_odom, trans.transform);
 
 	//ROS_WARN("height is %f\n", trans.transform.translation.z);
-	trans.child_frame_id = body_topic_;
-	trans.transform.rotation = state_.pose.pose.orientation;
+	trans.child_frame_id = "odom"; // TODO: configurate frame name //body_topic_;
 	tf_broadcaster.sendTransform(trans);
-	//publish the state
+
+    // publish the map -> body_frame_map_aligned transform
+    trans.child_frame_id = body_map_aligned_topic_;
+    trans.transform.rotation.w = 1.0;
+    trans.transform.rotation.w = 0.0;
+    trans.transform.rotation.w = 0.0;
+    trans.transform.rotation.w = 0.0;
+    tf_broadcaster.sendTransform(trans);
+
+	// publish the state
 	state_.header.stamp = ros::Time::now();
 	state_pub_.publish(state_);
 	ros::Time stop_ = ros::Time::now();
 	ROS_DEBUG("[state_pub] ekf callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec() - start_.toSec());
-
 }
-
-ros::Time m_last_scan_analysis_time;
-int m_num_scans_processed;
 
 //on the order of 40Hz
 void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 {
     const ros::Time now = ros::Time::now();
-    if (m_last_scan_analysis_time.isZero()) {
-        // initialize timers on the first scan
-        m_last_scan_analysis_time = now; 
-        m_num_scans_processed = 0;
-    }
 
-    if (now > m_last_scan_analysis_time + ros::Duration(1.0)) {
-        // every 10 seconds
+    // log scan count over the last period
+    const ros::Duration scan_analysis_period(1.0);
+    if (now > m_last_scan_analysis_time + scan_analysis_period) {
+        // log how many scans we've processed in the last period
         const ros::Duration span = (now - m_last_scan_analysis_time);
         ROS_INFO("Processed %d scans in the last %0.3f seconds (%0.3f Hz)",
-                m_num_scans_processed, span.toSec(), (double)m_num_scans_processed / (span.toSec()));
+                m_num_scans_processed,
+                span.toSec(),
+                (double)m_num_scans_processed / (span.toSec()));
         m_num_scans_processed = 0;
         m_last_scan_analysis_time = now;
     }
 
     ++m_num_scans_processed;
+    const ros::Duration dt = now - m_prev_scan_time;
 
-    ros::Time start_ = ros::Time::now();
-    static ros::Time prev_time = ros::Time::now();
     double prev_height = state_.pose.pose.position.z;
-    double height_cut_off = 2.0;
-    static double filtered_z = 0;
-    static double prev_filtered_z = 0;
 
-    //transform the scan into the map frame (according to tf)
-    vector<double> zs;
-    int num_rays = scan->ranges.size();
-    zs.reserve(num_rays);
-    float ang = scan->angle_min;
-    int i;
-    vector<geometry_msgs::Point> voxels;
-    double max_z = 0;
+    /////////////////////////////////////////////////
+    // estimate initial height on first invocation //
+    /////////////////////////////////////////////////
 
-    //when height estimation is first called, estimate initial height
-    if (z_fifo_.size() < 1)
-    {
+    if (z_fifo_.size() < 1) {
         double est_height;
-        bool suc = estimateInitialHeight(scan,est_height);
-        if(!suc)
-        {
+        bool suc = estimateInitialHeight(scan, est_height);
+        if (!suc) {
             return;
         }
-        ROS_INFO("uav_state_publisher: estimated initial height is %f\n",est_height);
+        ROS_INFO("uav_state_publisher: estimated initial height is %f", est_height);
         state_.pose.pose.position.z = est_height;
-        filtered_z = est_height;
+        m_filtered_z = est_height;
     }
 
-    try
-    {
-        tf_.lookupTransform(body_topic_, vertical_laser_frame_topic_, ros::Time(0), Pan2BodyTransform_);
-    } catch (tf::TransformException ex)
-    {
-        ROS_ERROR("[UAV_state_pub] Save of partial transform failed....\n %s\n", ex.what());
+    //////////////////////////////////////////////////////////////////
+    // lookup transforms necessary for transforming points into the //
+    // body_stabilized frame                                        //
+    //////////////////////////////////////////////////////////////////
+
+    // need to be able to transform laser points into the body frame...
+    bool have_bodymapaligned_to_laser = false;
+    bool have_body_to_laser = false;
+    bool have_bodymapaligned_to_body = false;
+
+    tf::StampedTransform T_bodystable_vlaser;
+    // first try the master transform
+    try {
+        tf_.lookupTransform(
+                body_stabilized_topic_,
+                scan->header.frame_id,
+                ros::Time(0),
+                T_bodystable_vlaser);
+
+        have_bodymapaligned_to_laser = true;
+    }
+    catch (const tf::TransformException& ex) {
+        ROS_ERROR("Failed to lookup transform (%s)", ex.what());
     }
 
-    //Skip over rays that are less than the designated min angle
-    for (i = 0; i < num_rays; i++)
-    {
-        if (ang >= min_lidar_angle_)
-            break;
-        ang += scan->angle_increment;
+    // then try the two intermediate transforms
+    tf::StampedTransform T_bodymapaligned_body;
+    try {
+        tf_.lookupTransform(
+            body_stabilized_topic_,
+            body_topic_,
+            ros::Time(0),
+            T_bodymapaligned_body);
+
+        have_bodymapaligned_to_body = true;
+
+        tf_.lookupTransform(
+            body_topic_,
+            vertical_laser_frame_topic_,
+            ros::Time(0),
+            m_T_body_vlaser);
+
+        have_body_to_laser = true;
+    }
+    catch (tf::TransformException ex) {
+        ROS_ERROR("Look of partial transforms failed (%s)", ex.what());
     }
 
-    //For rays after the min angle
-    for (; i < num_rays; i++)
+    // ensure we can transform the laser scan into the map aligned frame
+    if (!have_bodymapaligned_to_laser &&
+        !(have_bodymapaligned_to_body && have_body_to_laser))
     {
+        ROS_ERROR("Failed to transform laser scan into z-aligned frame");
+        return;
+    }
 
-        //Leave when designated max angle reached
-        if (ang > max_lidar_angle_)
-            break;
+    std::vector<double> zs;
+    zs.reserve(scan->ranges.size());
+    std::vector<geometry_msgs::Point> voxels;
+    double max_z = 0;
 
-        //Skip ray if distance not within message provided thresholds
-        if (scan->ranges[i] < scan->range_min || scan->ranges[i] > scan->range_max)
-        {
-            ang += scan->angle_increment;
+    for (int i = 0; i < scan->ranges.size(); i++) {
+        const float ang = scan->angle_min + i * scan->angle_increment;
+
+        // skip rays below the min angle
+        if (ang < min_lidar_angle_) {
             continue;
         }
 
-        //Generate ray projection (a point) with respect to the laser frame
-        geometry_msgs::PointStamped p;
-        geometry_msgs::PointStamped pout;
-        p.header.stamp = ros::Time(0);
-        p.header.frame_id = scan->header.frame_id;
-        p.point.x = scan->ranges[i] * cos(ang);
-        p.point.y = scan->ranges[i] * sin(ang);
-        p.point.z = 0;
-
-        //Todo: this part here is very redundant since we are looking up the same transform for every ray of the scan
-        //if unable to get a panning to body frame map aligned transform, then use the stored panning to body and get a body to body frame map aligned transform
-        try
-        {
-            tf_.transformPoint(body_map_aligned_topic_, p, pout);
-        } catch (tf::TransformException ex)
-        {
-            ROS_ERROR("[UAV_state_pub] Failed transform %s \n", ex.what());
-            //}
-            //printf("Using point %f %f %f", pout.point.x, pout.point.y, pout.point.z);
-
-            tf::Point ptfout, ptf(p.point.x, p.point.y, p.point.z);
-            ptfout = Pan2BodyTransform_ * ptf;
-            p.point.x = ptfout.getX();
-            p.point.y = ptfout.getY();
-            p.point.z = ptfout.getZ();
-            p.header.frame_id = body_topic_;
-
-            try
-            {
-                tf_.transformPoint(body_map_aligned_topic_, p, pout);
-            } catch (tf::TransformException ex2)
-            {
-                ROS_ERROR("[UAV_state_pub] can't even get a partial transform! %s \n", ex2.what());
-            }
-            // printf("alt point %f %f %f\n", pout.point.x, pout.point.y, pout.point.z);
+        // Leave when designated max angle reached
+        if (ang > max_lidar_angle_) {
+            break;
         }
 
+        // Skip ray if distance not within message provided thresholds
+        if (scan->ranges[i] < scan->range_min ||
+            scan->ranges[i] > scan->range_max)
+        {
+            continue;
+        }
+
+        // Generate ray projection (a point) with respect in the laser frame
+        geometry_msgs::PointStamped pin;
+        pin.header.seq = 0;
+        pin.header.stamp = ros::Time(0);
+        pin.header.frame_id = scan->header.frame_id;
+        pin.point.x = scan->ranges[i] * cos(ang);
+        pin.point.y = scan->ranges[i] * sin(ang);
+        pin.point.z = 0;
+
+        // transform the point into the body_stabilized frame
+        geometry_msgs::PointStamped pout;
+        pout.header.seq = 0;
+        pout.header.stamp = ros::Time(0);
+        pout.header.frame_id = body_stabilized_topic_;
+
+        tf::Point ptf(pin.point.x, pin.point.y, pin.point.z);
+        if (have_bodymapaligned_to_laser) {
+            tf::Point ptfout(T_bodystable_vlaser * ptf);
+            pout.point.x = ptfout.getX();
+            pout.point.y = ptfout.getY();
+            pout.point.z = ptfout.getZ();
+        }
+        else if (have_bodymapaligned_to_body && have_body_to_laser) {
+            tf::Point ptfout(T_bodymapaligned_body * m_T_body_vlaser * ptf);
+            pout.point.x = ptfout.getX();
+            pout.point.y = ptfout.getY();
+            pout.point.z = ptfout.getZ();
+        }
+        else {
+            ROS_ERROR("Why am I here?");
+        }
+
+        // laser point in body stabilized frame -> body position in map frame
         pout.point.z = -pout.point.z;
 
-        // only calculate max_z using rays "directly under the hexacopter"
+        // update max_z; only calculate max_z using rays "directly under the
+        // hexacopter"
         if (fabs(ang - M_PI / 2) < (10.0 * M_PI / 180.0)) {
-            max_z = max(max_z,pout.point.z);
+            max_z = std::max(max_z, pout.point.z);
         }
 
         // only accept height estimates that are close to previous height
-        if (((pout.point.z < filtered_z + height_filter_deviation_max_)
-                && (pout.point.z > filtered_z - height_filter_deviation_max_)))
+        if ((pout.point.z < m_filtered_z + height_filter_deviation_max_) &&
+            (pout.point.z > m_filtered_z - height_filter_deviation_max_))
         {
             zs.push_back(pout.point.z);
             voxels.push_back(pout.point);
         }
-
-        ang += scan->angle_increment;
     }
 
+    const double height_cut_off = 2.0; // TODO: configurate
     max_z = std::min(max_z, height_cut_off);
 
-    ros::NodeHandle nh;
-    static ros::Publisher max_z_pub = nh.advertise<std_msgs::Float32>("max_z", 10);
+    // TODO: do something smarter that will filter out tables
+
+    // publish max_z for debugging
     std_msgs::Float32 max_z_msg;
     max_z_msg.data = max_z;
-    max_z_pub.publish(max_z_msg);
+    m_max_z_pub.publish(max_z_msg);
 
-    //TODO: do something smarter that will filter out tables
-
-    //get z by taking the median
+    // publish point cloud of considered ray points
     pcl::PointCloud<pcl::PointXYZ> pclCloud;
-    for (unsigned int i = 0; i < voxels.size(); i++)
+    for (size_t i = 0; i < voxels.size(); i++) {
         pclCloud.push_back(pcl::PointXYZ(voxels[i].x, voxels[i].y, voxels[i].z));
+    }
     sensor_msgs::PointCloud2 cloud;
     pcl::toROSMsg(pclCloud, cloud);
     cloud.header.frame_id = body_map_aligned_topic_;
     cloud.header.stamp = ros::Time::now();
     pointCloud_pub_.publish(cloud);
 
-
-    //Only estimate height afterwards when robot is in air
-    if( last_state_.mode != uav_msgs::FlightModeStatus::LANDED)
+    // Only estimate height afterwards when robot is in air
+    if (last_state_.mode != uav_msgs::FlightModeStatus::LANDED)
     {
-       //  ROS_INFO("size is %d median is %f \n", (int) zs.size(), zs[zs.size()/2] );
-       
-       //set height to previous filtered height
-       state_.pose.pose.position.z = prev_filtered_z;    
-
-       if (zs.size() > 6)
-       {
-          sort(zs.begin(), zs.end());
-          filtered_z = zs[zs.size() / 2];
-          state_.pose.pose.position.z = filtered_z;
-       }
-       else
-       {
-          //`printf("Failed\n");
-          //ROS_ERROR("could not calculate height as size of height points is %d\n", (int )zs.size());
-       }
-  
-       //take max of filtered and low bigger than cutout height 
-       if(height_cut_off <= max_z)
-       {
-//         state_.pose.pose.position.z = max( filtered_z , max_z);    
-            const double alpha = 0.9;
-            state_.pose.pose.position.z = alpha * filtered_z + (1.0 - alpha) * max_z;
-       }
-
-        //update filtered z with weighted average
-        double beta = 0.99;
-        if (max_z > 1.2) { // arbitrary number...possibly related to takeoff height...and something about .................
-            filtered_z = (beta * filtered_z) + (( 1-beta) * max_z);
+        // set height to previous filtered height
+        state_.pose.pose.position.z = m_prev_filtered_z;
+        
+        // get z by taking the median
+        if (zs.size() > 6) {
+            std::sort(zs.begin(), zs.end());
+            m_filtered_z = zs[zs.size() / 2];
+            state_.pose.pose.position.z = m_filtered_z;
         }
-        prev_filtered_z = filtered_z;
+
+        if (height_cut_off <= max_z) {
+            // take max of filtered and low bigger than cutout height
+            // state_.pose.pose.position.z = max(m_filtered_z, max_z);
+            const double alpha = 0.9;
+            state_.pose.pose.position.z = alpha * m_filtered_z + (1.0 - alpha) * max_z;
+        }
+
+        // update filtered z with weighted average
+        const double beta = 0.99;
+
+        // arbitrary number, possibly related to takeoff height, and something
+        // about
+        const double SOMETHING = 1.2;
+        if (max_z > SOMETHING) { 
+            m_filtered_z = (beta * m_filtered_z) + ((1.0 - beta) * max_z);
+        }
+        m_prev_filtered_z = m_filtered_z;
     }
-    else
-    {
-       ROS_DEBUG("landed\n");
+    else {
+        ROS_DEBUG("landed");
     }
 
     z_fifo_.insert(state_.pose.pose.position.z);
     z_time_fifo_.insert(scan->header.stamp.toSec());
 
+    // publish the position as a point cloud for visualization
     pcl::PointCloud<pcl::PointXYZ> pclmedianpt;
-    pclmedianpt.push_back(pcl::PointXYZ(state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z));
+    pclmedianpt.push_back(pcl::PointXYZ(
+            state_.pose.pose.position.x,
+            state_.pose.pose.position.y,
+            state_.pose.pose.position.z));
     sensor_msgs::PointCloud2 medianpt;
     pcl::toROSMsg(pclmedianpt, medianpt);
-
     medianpt.header.frame_id = map_topic_;
     medianpt.header.stamp = ros::Time::now();
-
     point_pub_.publish(medianpt);
-    
-    ros::Duration dt = start_ - prev_time;
-    double ds = abs(state_.pose.pose.position.z - prev_height); 
-    ROS_INFO_THROTTLE(0.5,"height at %f maxz %f filteredz %f with dt %f ds %f time %f", state_.pose.pose.position.z, max_z, filtered_z,  dt.toSec(), ds, start_.toSec());
 
-    prev_time = start_;
+    double ds = abs(state_.pose.pose.position.z - prev_height);
+    ROS_INFO_THROTTLE(1, "height: %0.3f, maxz: %0.3f filteredz %f with dt %f ds %f time %f",
+            state_.pose.pose.position.z,
+            max_z,
+            m_filtered_z,
+            dt.toSec(),
+            ds,
+            now.toSec());
+
+    m_prev_scan_time = now;
     ros::Time stop_ = ros::Time::now();
-    ROS_DEBUG("[state_pub] lidar callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec() - start_.toSec());
+    ROS_DEBUG("[state_pub] lidar callback %f %f = %f", now.toSec(), stop_.toSec(), stop_.toSec() - now.toSec());
 }
 
 int main(int argc, char **argv)
@@ -439,73 +501,66 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr scan, double & ret_height)
+bool UAVStatePublisher::estimateInitialHeight(
+    sensor_msgs::LaserScanConstPtr scan,
+    double& ret_height)
 {
-	std::vector<tf::Point> points;
-	points.reserve(scan->ranges.size());
-	float ang = scan->angle_min;
+    std::vector<tf::Point> points;
+    points.reserve(scan->ranges.size());
+    float ang = scan->angle_min;
 
-	//get points from lidar frame between desginated lidar angles and ranges
-	for (size_t i = 0; i < scan->ranges.size(); i++)
-	{
-		bool valid = true;
-		if (scan->ranges[i] < scan->range_min || scan->ranges[i] > scan->range_max)
-		{
-			valid = false;
-		}
+    // get points from lidar frame between desginated lidar angles and ranges
+    for (size_t i = 0; i < scan->ranges.size(); i++) {
+        bool valid = true;
+        if (scan->ranges[i] < scan->range_min || scan->ranges[i] > scan->range_max) {
+            valid = false;
+        }
+    
+        if (ang <= min_lidar_angle_ || ang >= max_lidar_angle_) {
+            valid = false;
+        }
+    
+        if (valid) {
+            tf::Point p(scan->ranges[i] * cos(ang), scan->ranges[i] * sin(ang), 0);
+            points.push_back(p);
+        }
 
-		if (ang <= min_lidar_angle_ || ang >= max_lidar_angle_)
-		{
-			valid = false;
-		}
+        ang += scan->angle_increment;
+    }
 
-		if(valid)
-		{
-		tf::Point p(scan->ranges[i] * cos(ang), scan->ranges[i] * sin(ang), 0);
-			points.push_back(p);
-		}
-		ang += scan->angle_increment;
-	}
+    // get transformation from body frame map aligned
+    tf::StampedTransform T_bodystable_vlaser;
+    try {
+        tf_.lookupTransform(
+                body_stabilized_topic_,
+                vertical_laser_frame_topic_,
+                ros::Time(0),
+                T_bodystable_vlaser);
+    }
+    catch (tf::TransformException& ex) {
+        ROS_ERROR_THROTTLE(1, "Failed to lookup transform (%s)", ex.what());
+        return false;
+    }
 
-	//get transformation from body frame map aligned
-	tf::StampedTransform Pan2BodyMapAligned;
-	double r,p,y;
-	try
-	{
-		tf_.lookupTransform(body_map_aligned_topic_, vertical_laser_frame_topic_, ros::Time(0), Pan2BodyMapAligned);
-	}
+    // transform all these points and store their heights
+    ROS_INFO("Points:");
+    std::vector<double> zs(points.size());
+    for (size_t i = 0; i < points.size(); i++) {
+        tf::Point& p = points.at(i);
+        p = T_bodystable_vlaser * p;
+        zs[i] = p.getZ();
+    }
 
-	catch (tf::TransformException& ex)
-	{
-		ROS_ERROR_THROTTLE(1,"UavStatePublisher: Unable to retrieve vertical laser to body_map_aligned transform: %s", ex.what());
-		return false;
-	}
-	Pan2BodyMapAligned.getBasis().getRPY(r,p,y);
+    // grab 10 of the smallest points and return the median of those as height
+    int range = std::min(10, (int)zs.size());
+    double smallest_z = 0;
+    if (!zs.empty()) {
+        std::sort(zs.begin(), zs.end());
+        std::vector<double> min_heights(range);
+        std::copy(zs.begin(), zs.begin() + range, min_heights.begin());
+        smallest_z = min_heights.at(range / 2);
+    }
 
-	//transform all these points and store their heights
-	vector<double> zs;
-	zs.reserve(points.size());
-	for (size_t i = 0; i < points.size(); i++)
-	{
-		tf::Point & p = points.at(i);
-		p = Pan2BodyMapAligned * p;
-		zs.push_back(p.getZ());
-	}
-
-
-	//grab 10 of the smallest points and return the median of those as height
-	int range = min(10, (int) zs.size());
-	double smallest_z = 0;
-	if (!zs.empty())
-	{
-		std::sort(zs.begin(), zs.end());
-		std::vector<double>min_heights(range);
-		std::copy(zs.begin(), zs.begin()+range, min_heights.begin());
-		smallest_z = min_heights.at(range/2);
-	}
-
-	ret_height = -smallest_z;
-	return true;
-
+    ret_height = -smallest_z;
+    return true;
 }
-
