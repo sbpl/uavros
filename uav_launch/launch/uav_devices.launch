@@ -1,8 +1,8 @@
 <launch>
-    <arg name="use_camera" value="true"/>
-    <arg name="use_fixed_laser" value="true"/>
-    <arg name="use_panning_laser" value="true"/>
-    <arg name="use_panning_servo" value="false"/>
+    <arg name="use_camera" default="true"/>
+    <arg name="use_fixed_laser" default="true"/>
+    <arg name="use_panning_laser" default="true"/>
+    <arg name="use_panning_servo" default="false"/>
 
     <!-- 1. Device Nodes -->
 

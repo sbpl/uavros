@@ -1,8 +1,8 @@
 <launch>
-    <arg name="use_camera" value="true"/>
-    <arg name="use_fixed_laser" value="true"/>
-    <arg name="use_panning_laser" value="true"/>
-    <arg name="use_panning_servo" value="false"/>
+    <arg name="use_camera" default="true"/>
+    <arg name="use_fixed_laser" default="true"/>
+    <arg name="use_panning_laser" default="true"/>
+    <arg name="use_panning_servo" default="false"/>
 
     <include file="$(find uav_launch)/launch/uav_devices.launch">
         <arg name="use_camera" value="$(arg use_camera)"/>
