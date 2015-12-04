@@ -3,7 +3,7 @@ scan_topic: fixed_laser
 sys_msg_topic: syscommand
 
 # Frame Names
-map_frame: slam_map
+map_frame: map
 base_frame: body_frame
 odom_frame: body_frame
 
