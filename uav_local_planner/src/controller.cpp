@@ -29,93 +29,98 @@ UAVController::~UAVController()
 {
 }
 
-
-
 void UAVController::InitializeGains()
-{//TODO:  ROS electric and earlier do not support params of type "float", so we have to add a hack to get them...  header changed to double for all
-  //robot parameters
-  while(!ros::param::has("/UAV/Mass")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Mass", CONT.mass)) {  ROS_ERROR("Missing Mass parameter, setting to 5kg\n"); CONT.mass = 5.0;}
-  //number of props
-  while(!ros::param::has("/UAV/NumProps")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/NumProps", CONT.numProps)) {  ROS_ERROR("Missing props parameter, setting to 6\n"); CONT.numProps = 6;}
+{
+    // TODO: ROS electric and earlier do not support params of type "float", so
+    // we have to add a hack to get them...  header changed to double for all
+    // robot parameters
 
-  // N based on 2 kg max force per blade
-  while(!ros::param::has("/UAV/MaxForce")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/MaxForce", CONT.maxF)) {  ROS_ERROR("Missing Max Force parameter, setting to 14N\n"); CONT.maxF = 14.0;}
+    waitForParam("/UAV/Mass");
+    readParam("/UAV/Mass", CONT.mass, 5.0, "kg");
 
-  // N for which which we really can't issue a control
-  while(!ros::param::has("/UAV/MinForce")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/MinForce", CONT.minF)) {  ROS_ERROR("Missing Min Force parameter, setting to 4N\n"); CONT.minF = 4.0;}
+    // number of props
+    waitForParam("/UAV/NumProps");
+    readParam("/UAV/NumProps", CONT.numProps, 6);
 
-  // Maximum allowable position error for position ctrl and alt ctrl
-  while(!ros::param::has("/UAV/MaxError")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/MaxError", CONT.maxError)) {  ROS_ERROR("Missing Max Error parameter, setting to 0.5m\n"); CONT.maxError = 0.5;}
+    // N based on 2 kg max force per blade
+    waitForParam("/UAV/MaxForce");
+    readParam("/UAV/MaxForce", CONT.maxF, 14.0, "N");
 
-  //TODO: load list for gravity vector
-  // Gravity Vector
-  // while(!ros::param::has("/UAV/NumProps")) {ros::Duration(0.1).sleep();}
-  CONT.g << 0, 0, -9.81;
-  //if (!ros::param::get("/UAV/Mass", CONT.mass)) {  ROS_ERROR("Missing Mass parameter, setting to 5kg\n"); CONT.mass = 5.0;}
+    // N for which which we really can't issue a control
+    waitForParam("/UAV/MinForce");
+    readParam("/UAV/MinForce", CONT.minF, 4.0, "N");
 
-  //Default thrust for hovering
-  while(!ros::param::has("/UAV/DefaultThrust")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/DefaultThrust", CONT.defaultThrust)) {  ROS_ERROR("Missing Default Thrust parameter, setting to 9.5N\n"); CONT.defaultThrust = 9.5;}
+    // Maximum allowable position error for position ctrl and alt ctrl
+    waitForParam("/UAV/MaxError");
+    readParam("/UAV/MaxError", CONT.maxError, 0.5, "m");
 
-  // Roll and Pitch Gains
-  while(!ros::param::has("/UAV/RPkp")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/RPkp", CONT.RPkp)) {  ROS_ERROR("Missing RPkp parameter, setting to 2\n");  CONT.RPkp = 2;}
-  while(!ros::param::has("/UAV/RPki")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/RPki", CONT.RPki)) {  ROS_ERROR("Missing RPki parameter, setting to 0\n"); CONT.RPki = 0;}
-  while(!ros::param::has("/UAV/RPkd")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/RPkd", CONT.RPkd)) {  ROS_ERROR("Missing RPkd parameter, setting to 0\n"); CONT.RPkd = 0;}
+    // Gravity Vector
+    //TODO: load list for gravity vector
+    CONT.g << 0, 0, -9.81;
 
-  // Yaw Gains
-  while(!ros::param::has("/UAV/Ykp")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Ykp", CONT.Ykp)) {  ROS_ERROR("Missing Ykp parameter, setting to 1\n"); CONT.Ykp = 1;}
-  while(!ros::param::has("/UAV/Yki")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Yki", CONT.Yki)) {  ROS_ERROR("Missing Yki parameter, setting to 0\n"); CONT.Yki = 0;}
-  while(!ros::param::has("/UAV/Ykd")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Ykd", CONT.Ykd)) {  ROS_ERROR("Missing Ykd parameter, setting to 0\n"); CONT.Ykd = 0;}
+    // Default thrust for hovering
+    waitForParam("/UAV/DefaultThrust");
+    readParam("/UAV/DefaultThrust", CONT.defaultThrust, 9.5, "N");
 
-  // Thrust Gains
-  while(!ros::param::has("/UAV/Tkp")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Tkp", CONT.Tkp)) {  ROS_ERROR("Missing Tkp parameter, setting to 2\n"); CONT.Tkp = 2;}
-  while(!ros::param::has("/UAV/Tki")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Tki", CONT.Tki)) {  ROS_ERROR("Missing Tki parameter, setting to 0.1\n");  CONT.Tki = 0.1;}
-  while(!ros::param::has("/UAV/Tkd")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Tkd", CONT.Tkd)) {  ROS_ERROR("Missing Tkd parameter, setting to 6\n");  CONT.Tkd = 6;}
+    // Roll and Pitch Gains
+    waitForParam("/UAV/RPkp");
+    readParam("/UAV/RPkp", CONT.RPkp, 2.0);
+    waitForParam("/UAV/RPki");
+    readParam("/UAV/RPki", CONT.RPki, 0.0);
+    waitForParam("/UAV/RPkd");
+    readParam("/UAV/RPkd", CONT.RPkd, 0.0);
 
-  //Roll and Pitch Gains for Position
+    // Yaw Gains
+    waitForParam("/UAV/Ykp");
+    readParam("/UAV/Ykp", CONT.Ykp, 1.0);
 
-  while(!ros::param::has("/UAV/Posekp")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Posekp", CONT.Posekp)) {  ROS_ERROR("Missing Posekp parameter, setting to 0.8\n"); CONT.Posekp = 0.8;}
+    waitForParam("/UAV/Yki");
+    readParam("/UAV/Yki", CONT.Yki, 0.0);
 
-  while(!ros::param::has("/UAV/Poseki")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/Poseki", CONT.Poseki)) {  ROS_ERROR("Missing Poseki parameter, setting to 0\n"); CONT.Poseki = 0;}
+    waitForParam("/UAV/Ykd");
+    readParam("/UAV/Ykd", CONT.Ykd, 0.0);
 
-  while(!ros::param::has("/UAV/Posekd")) {ros::Duration(0.1).sleep(); }
-  if (!ros::param::get("/UAV/Posekd", CONT.Posekd)) {  ROS_ERROR("Missing Posekd parameter, setting to 0\n"); CONT.Posekd = 0;}
+    // Thrust Gains
+    waitForParam("/UAV/Tkp");
+    readParam("/UAV/Tkp", CONT.Tkp, 2.0);
 
-  // Initialize the integral terms
-  CONT.RI = 0;
-  CONT.YI = 0;
-  CONT.PI = 0;
-  CONT.TI = 0;
+    waitForParam("/UAV/Tki");
+    readParam("/UAV/Tki", CONT.Tki, 0.1);
 
-  while(!ros::param::has("/UAV/RposeI")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/RposeI", CONT.RposeI)) {  ROS_ERROR("Missing RposeI parameter, setting to 0\n"); CONT.RposeI = 0;}
-  while(!ros::param::has("/UAV/PposeI")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/PposeI", CONT.PposeI)) {  ROS_ERROR("Missing PposeI parameter, setting to 0\n"); CONT.PposeI = 0;}
+    waitForParam("/UAV/Tkd");
+    readParam("/UAV/Tkd", CONT.Tkd, 6.0);
 
-  // Windup limits
-  while(!ros::param::has("/UAV/windupRP")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/windupRP", CONT.windupRP)) {  ROS_ERROR("Missing windupRP parameter, setting to 5\n"); CONT.windupRP = 5;}
-  while(!ros::param::has("/UAV/windupY"))  {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/windupY", CONT.windupY)) {  ROS_ERROR("Missing windupY parameter, setting to 5\n"); CONT.windupY = 5;}
-  while(!ros::param::has("/UAV/windupPose")) {ros::Duration(0.1).sleep();}
-  if (!ros::param::get("/UAV/windupPose", CONT.windupPose)) {  ROS_ERROR("Missing windupPose parameter, setting to 5\n"); CONT.windupPose = 5;}
+    // Roll and Pitch Gains for Position
+    waitForParam("/UAV/Posekp");
+    readParam("/UAV/Posekp", CONT.Posekp, 0.8);
 
+    waitForParam("/UAV/Poseki");
+    readParam("/UAV/Poseki", CONT.Poseki, 0.0);
+
+    waitForParam("/UAV/Posekd");
+    readParam("/UAV/Posekd", CONT.Posekd, 0.0);
+
+    // Initialize the integral terms
+    CONT.RI = 0;
+    CONT.YI = 0;
+    CONT.PI = 0;
+    CONT.TI = 0;
+
+    waitForParam("/UAV/RposeI");
+    readParam("/UAV/RposeI", CONT.RposeI, 0.0);
+
+    waitForParam("/UAV/PposeI");
+    readParam("/UAV/PposeI", CONT.PposeI, 0.0);
+
+    // Windup limits
+    waitForParam("/UAV/windupRP");
+    readParam("/UAV/windupRP", CONT.windupRP, 5.0);
+
+    waitForParam("/UAV/windupY");
+    readParam("/UAV/windupY", CONT.windupY, 5.0);
+
+    waitForParam("/UAV/windupPose");
+    readParam("/UAV/windupPose", CONT.windupPose, 5.0);
 }
 
 void UAVController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
@@ -417,7 +422,10 @@ float UAVController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
   //TODO: Error Logging
 }
 
-uav_msgs::ControllerCommand UAVController::Controller(const geometry_msgs::PoseStamped current_pose, const geometry_msgs::TwistStamped current_velocities, const geometry_msgs::PoseStamped goal_pose)
+uav_msgs::ControllerCommand UAVController::Controller(
+    const geometry_msgs::PoseStamped current_pose,
+    const geometry_msgs::TwistStamped current_velocities,
+    const geometry_msgs::PoseStamped goal_pose)
 {
   Eigen::VectorXf current_state, des_state;
   current_state = SetCurrState(current_pose, current_velocities);
@@ -454,4 +462,24 @@ uav_msgs::ControllerCommand UAVController::Controller(const geometry_msgs::PoseS
   ctrl_cmd.thrust = static_cast<float>(F[3]);
   //ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
   return ctrl_cmd;
+}
+
+void UAVController::waitForParam(const std::string& name) const
+{
+    while (!ros::param::has(name)) {
+        ros::Duration(0.1).sleep();
+    }
+}
+
+template <typename T>
+void UAVController::readParam(
+    const std::string& name,
+    T& value,
+    const T& errval,
+    const std::string& units)
+{
+    if (!ros::param::get("/UAV/Mass", value)) {
+        ROS_ERROR_STREAM("Missing '" << name << "' parameter, setting to " << errval << units);
+        value = errval;
+    }
 }

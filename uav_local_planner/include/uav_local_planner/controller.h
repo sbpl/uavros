@@ -148,4 +148,13 @@ private:
   ros::Publisher Pitch_p_gain ;
   ros::Publisher Roll_o_gain ;
   ros::Publisher Pitch_o_gain ;
+
+  void waitForParam(const std::string& name) const;
+
+  template <typename T>
+  void readParam(
+        const std::string& name,
+        T& value,
+        const T& errval,
+        const std::string& units = "");
 };
