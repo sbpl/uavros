@@ -1,125 +1,25 @@
 <launch>
-    <!-- the UAV specific files and the config params are loaded on system boot -->
-    <node pkg="usb_cam" type="usb_cam_node" name="hexa_cam" >
-        <param name="video_device" value="/dev/video0"/>
-    </node>
+    <arg name="use_camera" value="true"/>
+    <arg name="use_fixed_laser" value="true"/>
+    <arg name="use_panning_laser" value="true"/>
+    <arg name="use_panning_servo" value="false"/>
 
-    <!-- start recording this stuff -->
-    <!--<node pkg="rosbag" type="record" name="rosbag_record" args=" -a -x /hexa_cam/image_raw(.*) /hexa_cam -O /home/utacc/Bag/HexaData"/>  
+    <include file="$(find uav_launch)/launch/uav_devices.launch">
+        <arg name="use_camera" value="$(arg use_camera)"/>
+        <arg name="use_fixed_laser" value="$(arg use_fixed_laser)"/>
+        <arg name="use_panning_laser" value="$(arg use_panning_laser)"/>
+        <arg name="use_panning_servo" value="$(arg use_panning_servo)"/>
+    </include>
+
+    <!--
+    <include file="$(find uav_launch)/launch/uav_logging.launch"/>
     -->
-    <!-- Robot State Publisher  -->
-    <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" output="screen">
-        <param name="publish_frequency" value="50.0" />
-    </node>
 
-    <!-- Bring up the State Publisher -->
-    <!-- Subscribes to pan_scan, ekf_state and slam_out_pose. Publishes uav_state (Odometry msg) -->
-    <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher" output="screen" launch-prefix="nice --1">
-        <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
-    </node>
+    <include file="$(find uav_launch)/launch/uav_state_estimation.launch"/>
 
-    <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
+    <include file="$(find uav_launch)/launch/uav_controls.launch"/>
 
+    <include file="$(find uav_launch)/launch/uav_navigation.launch"/>
 
-    <!--<node pkg="uav_goal_interpolate" type="uav_goal_interpolate" name="uav_goal_interpolate" output="screen" >
-    <rosparam file="$(find uav_launch)/config/uav_goal_interpolate.yaml" command="load"/>
-    </node>-->
-
-    <!-- ....................sensor_msgs imu............................................................. -->
-    <!-- Bring up the hokuyos -->
-    <!-- Vertical hokuyo -->
-    <!-- if="$(arg use_tilt_laser_)"-->
-    <node name="panning_laser" pkg="hokuyo_node" type="hokuyo_node" launch-prefix="nice --5">
-        <param name="port" value="/dev/sensors/hokuyo_H0904026" />
-        <param name="frame_id" value="panning_laser_frame" />
-        <param name="min_ang" value="-0.7" />
-        <param name="max_ang" value="2.35" />
-        <remap from="/scan" to="panning_laser" />
-    </node>
-
-    <!-- Horizontal hokuyo -->
-    <node name="fixed_laser" pkg="hokuyo_node" type="hokuyo_node" launch-prefix="nice --5">
-        <param name="port" value="/dev/sensors/hokuyo_H0904931" />
-        <param name="frame_id" value="fixed_laser_frame" />
-        <param name="min_ang" value="-2.356" />
-        <param name="max_ang" value="2.356" />
-        <remap from="/scan" to="fixed_laser" />
-    </node>
-
-    <!-- Servos -->
-    <arg name="use_servos_" value="true" />
-    <node name="panning_servo" pkg="uav_servo_node" type="uav_servo_node" launch-prefix="nice --1" if="$(arg use_servos_)">
-        <param name="device_name" value="/dev/servo" />
-        <param name="servoID" value="1" />
-        <!-- for fixed -->
-        <param name="minAngle" value="-3" />
-        <param name="maxAngle" value="-3" />
-        <param name="velocity" value="100" />
-
-        <!-- for panning -->
-        <!--
-        <param name="minAngle" value="-24" />
-        <param name="maxAngle" value="36" />
-        <param name="velocity" value="100" />
-        -->
-    </node>
-
-    <!-- .................................................................................... -->
-    <!-- Hector Slam -->
-    <node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
-        <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
-    </node>
-
-    <!-- TODO: There is hector_geotiff node that can be brought up to save the trajectory of the UAV-->
-
-    <!-- ................................................................................ -->
-    <!-- Hector Localization -->
-    <!-- Subscribes to raw_imu, pressure_height, magnetic, fix (gps), fix_velocity (gps velocity), poseupdate     -->
-    <node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
-        <remap from="state" to="ekf_state"/>
-        <param name="with_covariances" value="false"/>
-        <param name="system/gyro_stddev" value="0.1" />
-        <param name="system/acceleration_stddev" value="1.0" />
-    </node>
-    <!--Only one param. No yaml file needed -->
-
-    <!-- ....................................................................... -->
-
-    <!-- Bring up the behavior planner/controller -->
-    <!--  <node pkg="behavior_controller" type="behavior_controller" name="behavior_controller" output="screen"> -->
-    <!--    <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/> -->
-    <!--    <remap from="goal" to="goal_pose"/> -->
-    <!--    <remap from="path" to="path" /> -->
-    <!-- Future use -->
-    <!--    <remap from="twist" to="uav_state"/> -->
-    <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Che/hector_localization/system/gyro_stddevck this. -->
-    <!--    <remap from="local_collision_map" to="local_collision_map"/> -->
-    <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
-
-    <!--    </node> -->
-
-    <!-- Bring up the UAV Local Planner -->
-    <node pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" output="screen" launch-prefix="nice --1">
-        <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
-        <remap from="goal" to="goal_pose"/>
-        <remap from="path" to="path" />
-        <!-- Future use -->
-        <remap from="twist" to="uav_state"/>
-        <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Che/hector_localization/system/gyro_stddevck this. -->
-        <remap from="local_collision_map" to="local_collision_map"/>
-        <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
-    </node>
-
-    <!-- Bring up the dynamic reconfigure GUI for controller gains-->
-    <!-- <node pkg="dynamic_reconfigure" type="reconfigure_gui" name="dynamic_reconfigure_gui"/>  -->
-
-    <!-- ............................................................................. -->
-    <!-- Bring up RVIZ -->
-    <!-- <node pkg="rviz" type="rviz" name="rviz"/> -->
-    <!-- Bring up the interactive marker goal setting node -->
-    <!-- Publishes on the flight_mode and goal_pose topics -->
-    <node pkg="uav_set_goal" type="uav_set_goal" name="uav_set_goal" output="screen" >
-        <rosparam file="$(find uav_launch)/config/uav_set_goal.yaml" command="load"/>
-    </node>
-    <!-- .................................................................................... -->
+    <include file="$(find uav_launch)/launch/uav_interface.launch"/>
 </launch>

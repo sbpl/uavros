@@ -1,0 +1,27 @@
+<launch>
+    <!-- Odometry -->
+    <node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
+        <remap from="state" to="ekf_state"/>
+        <param name="with_covariances" value="false"/>
+        <param name="system/gyro_stddev" value="0.1" />
+        <param name="system/acceleration_stddev" value="1.0" />
+        <param name="world_frame" value="map"/>
+        <param name="nav_frame" value="odom"/>
+        <param name="base_frame" value="body_frame"/>
+    </node>
+
+    <!-- SLAM -->
+    <node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
+        <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
+        <remap from="poseupdate" to="slam_poseupdate"/>
+    </node>
+
+    <!-- State Aggregation -->
+    <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher" launch-prefix="nice --1">
+        <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
+    </node>
+
+    <!--
+    <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
+    -->
+</launch>
