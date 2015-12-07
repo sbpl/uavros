@@ -478,7 +478,7 @@ void UAVController::readParam(
     const T& errval,
     const std::string& units)
 {
-    if (!ros::param::get("/UAV/Mass", value)) {
+    if (!ros::param::get(name, value)) {
         ROS_ERROR_STREAM("Missing '" << name << "' parameter, setting to " << errval << units);
         value = errval;
     }
