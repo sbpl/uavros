@@ -211,43 +211,48 @@ Eigen::VectorXf UAVController::SetCurrState(const geometry_msgs::PoseStamped cur
 }
 
 
-Eigen::Vector3f UAVController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
+Eigen::Vector3f UAVController::AttitudeCtrl(
+    Eigen::VectorXf X,
+    Eigen::VectorXf DesX)
 {
-  Eigen::Vector3f RPY;
-  // Limit integral windup
-  if(abs(CONT.RI)>CONT.windupRP)
-    CONT.RI = copysign(1,CONT.RI)*CONT.windupRP;
-  if(abs(CONT.PI)>CONT.windupRP)
-    CONT.PI = copysign(1,CONT.PI)*CONT.windupRP;
-  if(abs(CONT.YI)>CONT.windupY)
-    CONT.YI = copysign(1,CONT.YI)*CONT.windupY;
+    Eigen::Vector3f RPY;
 
-  // Calculate errors in angular velocity and angle
+    // Limit integral windup
+    if (abs(CONT.RI) > CONT.windupRP) {
+        CONT.RI = copysign(1, CONT.RI) * CONT.windupRP;
+    }
+    if (abs(CONT.PI) > CONT.windupRP) {
+        CONT.PI = copysign(1, CONT.PI) * CONT.windupRP;
+    }
+    if (abs(CONT.YI) > CONT.windupY) {
+        CONT.YI = copysign(1, CONT.YI) * CONT.windupY;
+    }
+
+    // Calculate errors in angular velocity and angle
     Eigen::VectorXf err;
     err.setZero(6);
     err.segment(0,3) = DesX.segment(3,3) - X.segment(3,3);
     err.segment(3,3) =  - X.segment(9,3);
 
-    for(int i=0;i<3;i++)
-    {
-      if(err[i] > M_PI)
-        err[i] -= 2*M_PI;
-      else if(err[i] < -M_PI)
-        err[i] += 2*M_PI;
+    for (int i = 0; i < 3; i++) {
+        if(err[i] > M_PI) {
+            err[i] -= 2 * M_PI;
+        }
+        else if (err[i] < -M_PI) {
+            err[i] += 2 * M_PI;
+        }
     }
 
-    if(err[2] > M_PI / 3)
-    {
-       err[2] = M_PI / 3;
+    if (err[2] > M_PI / 3) {
+        err[2] = M_PI / 3;
     }
-    if(err[2] < -M_PI /3)
-    {
-       err[2] = -M_PI /3;
+    if (err[2] < -M_PI /3) {
+        err[2] = -M_PI /3;
     }
 
-    RPY[0] = CONT.RPkp*err[0] + CONT.RPkd*err[3] + CONT.RI*CONT.RPki;
-    RPY[1] = CONT.RPkp*err[1] + CONT.RPkd*err[4] + CONT.PI*CONT.RPki;
-    RPY[2] = CONT.Ykp*err[2] + CONT.Ykd*err[5] + CONT.YI*CONT.Yki;
+    RPY[0] = CONT.RPkp * err[0] + CONT.RPkd * err[3] + CONT.RI * CONT.RPki;
+    RPY[1] = CONT.RPkp * err[1] + CONT.RPkd * err[4] + CONT.PI * CONT.RPki;
+    RPY[2] = CONT.Ykp * err[2] + CONT.Ykd * err[5] + CONT.YI * CONT.Yki;
 
     CONT.RI += err[0];
     CONT.PI += err[1];
@@ -273,7 +278,7 @@ Eigen::Vector3f UAVController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     Roll_o_g.point.y = CONT.RPkd*err[3];
     Roll_o_g.point.z = CONT.RI*CONT.RPki;
     Roll_o_gain.publish(Roll_o_g);
-
+    
     geometry_msgs::PointStamped Pitch_o_g;
     Pitch_o_g.header.stamp = ros::Time::now();
     Pitch_o_g.point.x = CONT.RPkp*err[1];
@@ -281,145 +286,154 @@ Eigen::Vector3f UAVController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     Pitch_o_g.point.z = CONT.PI*CONT.RPki;
     Pitch_o_gain.publish(Pitch_o_g);
 
-    return RPY;
     //TODO: Error Logging  --- meaning what????
+
+    return RPY;
 }
 
-Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
+Eigen::Vector2f UAVController::PositionCtrl(
+    Eigen::VectorXf X,
+    Eigen::VectorXf DesX)
 {
-
-  Eigen::Vector2f RP_Pose;
-  if(abs(CONT.RposeI)>CONT.windupPose)
-    CONT.RposeI = copysign(1,CONT.RposeI)*CONT.windupPose;
-  if(abs(CONT.PposeI)>CONT.windupPose)
-    CONT.PposeI = copysign(1,CONT.PposeI)*CONT.windupPose;
-
-  tf::StampedTransform transform;
-  this->tf_.lookupTransform("body_frame", "body_frame_map_aligned", ros::Time(0), transform);
-  tf::Point err_p, err_v, temp;
-
-  //position
-  temp.setX(DesX(0) - X(0));
-  temp.setY(DesX(1) - X(1));
-  temp.setZ(DesX(2) - X(2));
-
-  err_p = transform * temp;
-  for(int idx=0; idx<3; idx++) {
-    if (err_p[idx] > CONT.maxError){
-      err_p[idx] = CONT.maxError;
-      ROS_ERROR("Above max error %d\n", idx);
+    Eigen::Vector2f RP_Pose;
+    if (abs(CONT.RposeI) > CONT.windupPose) {
+        CONT.RposeI = copysign(1, CONT.RposeI) * CONT.windupPose;
     }
-    else if (err_p[idx] < -CONT.maxError) {
-      err_p[idx] = -CONT.maxError;
-      ROS_ERROR("Below -max error %d\n", idx);
+    if (abs(CONT.PposeI) > CONT.windupPose) {
+        CONT.PposeI = copysign(1, CONT.PposeI) * CONT.windupPose;
     }
-  }
 
-  //velocity
-  temp.setX(-X(6));
-  temp.setY(-X(7));
-  temp.setZ(-X(8));
+    tf::StampedTransform transform;
+    this->tf_.lookupTransform(
+            "body_frame", "body_frame_map_aligned", ros::Time(0), transform);
+    tf::Point err_p, err_v, temp;
 
-  err_v = transform * temp;
+    // position
+    temp.setX(DesX(0) - X(0));
+    temp.setY(DesX(1) - X(1));
+    temp.setZ(DesX(2) - X(2));
 
-  //roll
-  RP_Pose[0] = -err_p[1]*CONT.Posekp + -err_v[1]*CONT.Posekd + -CONT.RposeI*CONT.Poseki;
-  CONT.RposeI += err_p[1];
+    err_p = transform * temp;
+    for (int idx = 0; idx < 3; idx++) {
+        if (err_p[idx] > CONT.maxError){
+            err_p[idx] = CONT.maxError;
+            ROS_ERROR("Above max error %d\n", idx);
+        }
+        else if (err_p[idx] < -CONT.maxError) {
+            err_p[idx] = -CONT.maxError;
+            ROS_ERROR("Below -max error %d\n", idx);
+        }
+    }
 
-  //pitch
-  RP_Pose[1] = err_p[0]*CONT.Posekp + err_v[0]*CONT.Posekd + CONT.PposeI*CONT.Poseki;
-  CONT.PposeI += err_p[0];
+    // velocity
+    temp.setX(-X(6));
+    temp.setY(-X(7));
+    temp.setZ(-X(8));
 
-  //HACK REMOVE LATER
-  double pitch_limit = abs(0.15 / CONT.Poseki);
-  CONT.PposeI = std::max(-pitch_limit,min(pitch_limit,CONT.PposeI));
+    err_v = transform * temp;
 
-  geometry_msgs::PointStamped Pos_e;
-  Pos_e.header.stamp = ros::Time::now();
-  Pos_e.point.x = err_p[0];
-  Pos_e.point.y = err_p[1];
-  Pos_e.point.z = err_p[2];
-  Pos_err.publish(Pos_e);
+    // roll
+    RP_Pose[0] = -err_p[1] * CONT.Posekp + -err_v[1] * CONT.Posekd + -CONT.RposeI * CONT.Poseki;
+    CONT.RposeI += err_p[1];
 
-  geometry_msgs::PointStamped Vel_e;
-  Vel_e.header.stamp = ros::Time::now();
-  Vel_e.point.x = err_v[0];
-  Vel_e.point.y = err_v[1];
-  Vel_e.point.z = err_v[2];
-  Vel_err.publish(Vel_e);
+    // pitch
+    RP_Pose[1] = err_p[0] * CONT.Posekp + err_v[0] * CONT.Posekd + CONT.PposeI * CONT.Poseki;
+    CONT.PposeI += err_p[0];
 
-  geometry_msgs::PointStamped Roll_p_g;
-  Roll_p_g.header.stamp = ros::Time::now();
-  Roll_p_g.point.x = -err_p[1]*CONT.Posekp;
-  Roll_p_g.point.y = -err_v[1]*CONT.Posekd;
-  Roll_p_g.point.z = -CONT.RposeI*CONT.Poseki;
-  Roll_p_gain.publish(Roll_p_g);
+    // HACK REMOVE LATER
+    double pitch_limit = abs(0.15 / CONT.Poseki);
+    CONT.PposeI = std::max(-pitch_limit, min(pitch_limit, CONT.PposeI));
 
-  geometry_msgs::PointStamped Pitch_p_g;
-  Pitch_p_g.header.stamp = ros::Time::now();
-  Pitch_p_g.point.x = err_p[0]*CONT.Posekp;
-  Pitch_p_g.point.y = err_v[0]*CONT.Posekd;
-  Pitch_p_g.point.z = CONT.PposeI*CONT.Poseki;
-  Pitch_p_gain.publish(Pitch_p_g);
+    geometry_msgs::PointStamped Pos_e;
+    Pos_e.header.stamp = ros::Time::now();
+    Pos_e.point.x = err_p[0];
+    Pos_e.point.y = err_p[1];
+    Pos_e.point.z = err_p[2];
+    Pos_err.publish(Pos_e);
 
-  return  RP_Pose;
+    geometry_msgs::PointStamped Vel_e;
+    Vel_e.header.stamp = ros::Time::now();
+    Vel_e.point.x = err_v[0];
+    Vel_e.point.y = err_v[1];
+    Vel_e.point.z = err_v[2];
+    Vel_err.publish(Vel_e);
+
+    geometry_msgs::PointStamped Roll_p_g;
+    Roll_p_g.header.stamp = ros::Time::now();
+    Roll_p_g.point.x = -err_p[1]*CONT.Posekp;
+    Roll_p_g.point.y = -err_v[1]*CONT.Posekd;
+    Roll_p_g.point.z = -CONT.RposeI*CONT.Poseki;
+    Roll_p_gain.publish(Roll_p_g);
+
+    geometry_msgs::PointStamped Pitch_p_g;
+    Pitch_p_g.header.stamp = ros::Time::now();
+    Pitch_p_g.point.x = err_p[0]*CONT.Posekp;
+    Pitch_p_g.point.y = err_v[0]*CONT.Posekd;
+    Pitch_p_g.point.z = CONT.PposeI*CONT.Poseki;
+    Pitch_p_gain.publish(Pitch_p_g);
+
+    return RP_Pose;
 }
 
-float UAVController:: AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
+float UAVController::AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
-  float T;
-  // Limit Integral windup
-  if(abs(CONT.TI)>CONT.windupY)
-    CONT.TI = copysign(1,CONT.TI)*CONT.windupY;
+    float T;
 
-  Eigen::Vector2f err;
-  err[0] = DesX[2]-X[2];
-  err[1] = -X[8];
+    // Limit Integral windup
+    if (abs(CONT.TI) > CONT.windupY) {
+        CONT.TI = copysign(1, CONT.TI) * CONT.windupY;
+    }
 
-  // the hope is that this is in meters
-  // todo: make 'something' a parameter
-  const double something = 3.0;
-  if (err[1] >= something) {
-    err[1] = something;
-  }
-  else if (err[1] <= -something) {
-    err[1] = -something;
-  }
+    Eigen::Vector2f err;
+    err[0] = DesX[2] - X[2];
+    err[1] = -X[8];
 
-  if (err[0] > CONT.maxError) {
-    err[0] = CONT.maxError;
-    ROS_ERROR("Above max error thrust\n");
-  }
-  else if (err[0] < -CONT.maxError) {
-    err[0] = -CONT.maxError;
-    ROS_ERROR("Below -max error thrust\n");
-  }
+    // the hope is that this is in meters
+    // todo: make 'something' a parameter
+    const double something = 3.0;
+    if (err[1] >= something) {
+        err[1] = something;
+    }
+    else if (err[1] <= -something) {
+        err[1] = -something;
+    }
 
-  tf::StampedTransform transform;
-  this->tf_.lookupTransform("body_frame", "body_frame_stabilized", ros::Time(0), transform);
+    if (err[0] > CONT.maxError) {
+        err[0] = CONT.maxError;
+        ROS_ERROR("Above max error thrust\n");
+    }
+    else if (err[0] < -CONT.maxError) {
+        err[0] = -CONT.maxError;
+        ROS_ERROR("Below -max error thrust\n");
+    }
 
-  tf::Matrix3x3 rot;
-  rot = transform.getBasis();
-  double rot22;
-  rot22 = rot[2].getZ();
+    tf::StampedTransform transform;
+    // TODO: configurate frame names
+    this->tf_.lookupTransform(
+            "body_frame", "base_stabilized", ros::Time(0), transform);
 
-  // This accounts for gravity, should also account for other controls
-  float FF = -CONT.g[2]*CONT.mass/(rot22*CONT.numProps);
-  FF = min(FF,CONT.maxF);
-  T = err[0]*CONT.Tkp + err[1]*CONT.Tkd + CONT.TI*CONT.Tki + CONT.defaultThrust;
+    tf::Matrix3x3 rot;
+    rot = transform.getBasis();
+    double rot22;
+    rot22 = rot[2].getZ();
 
-  CONT.TI += err[0];
+    // This accounts for gravity, should also account for other controls
+    float FF = -CONT.g[2] * CONT.mass / (rot22 * CONT.numProps);
+    FF = min(FF, CONT.maxF);
+    T = err[0] * CONT.Tkp + err[1] * CONT.Tkd + CONT.TI * CONT.Tki + CONT.defaultThrust;
+    
+    CONT.TI += err[0];
+    
+    geometry_msgs::PointStamped PID_pt;
+    PID_pt.header.stamp = ros::Time::now();
+    PID_pt.point.x = err[0] * CONT.Tkp;
+    PID_pt.point.y = CONT.TI * CONT.Tki;
+    PID_pt.point.z = err[1] * CONT.Tkd;
+    PID_pub_.publish(PID_pt);
+    
+    //TODO: Error Logging
 
-  geometry_msgs::PointStamped PID_pt;
-  PID_pt.header.stamp = ros::Time::now();
-  PID_pt.point.x = err[0]*CONT.Tkp;
-  PID_pt.point.y = CONT.TI*CONT.Tki;
-  PID_pt.point.z = err[1]*CONT.Tkd;
-  PID_pub_.publish(PID_pt);
-
-  return T;
-
-  //TODO: Error Logging
+    return T;
 }
 
 uav_msgs::ControllerCommand UAVController::Controller(
@@ -467,6 +481,7 @@ uav_msgs::ControllerCommand UAVController::Controller(
 void UAVController::waitForParam(const std::string& name) const
 {
     while (!ros::param::has(name)) {
+        ROS_INFO_THROTTLE(1.0, "Waiting for param '%s'", name.c_str());
         ros::Duration(0.1).sleep();
     }
 }
