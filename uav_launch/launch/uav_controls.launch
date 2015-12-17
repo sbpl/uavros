@@ -1,4 +1,6 @@
 <launch>
+    <rosparam command="load" file="$(find uav_launch)/config/UAV.yaml" ns="UAV"/>
+
     <node pkg="uav_local_planner" type="uav_local_planner"
             name="uav_local_planner" launch-prefix="nice --1">
         <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
