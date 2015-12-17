@@ -39,7 +39,8 @@ UAVStatePublisher::UAVStatePublisher() :
     ph.param("max_lidar_angle", max_lidar_angle_, 3.14159);
     ph.param("height_filter_deviation_max", height_filter_deviation_max_, 0.2);
 
-       //publish an odometry message (it's the only message with all the state variables we want)
+    //publish an odometry message (it's the only message with all the state
+    //variables we want)
 
 	state_pub_ = nh.advertise<nav_msgs::Odometry>(state_pub_topic_, 1);
 	pointCloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>(z_laser_topic_, 1);
