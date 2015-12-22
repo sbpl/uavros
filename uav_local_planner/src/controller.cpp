@@ -125,7 +125,12 @@ void UAVController::InitializeGains()
 
 void UAVController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
 {
-  ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", config.RPkp, config.RPkd, config.RPki, config.Ykp, config.Ykd, config.Yki, config.Tkp, config.Tkd, config.Tki, config.Posekp, config.Posekd, config.Poseki, config.HovT);
+  ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+        config.RPkp, config.RPkd, config.RPki,
+        config.Ykp, config.Ykd, config.Yki,
+        config.Tkp, config.Tkd, config.Tki,
+        config.Posekp, config.Posekd, config.Poseki,
+        config.HovT);
 
   CONT.defaultThrust = config.HovT;
 
@@ -278,7 +283,7 @@ Eigen::Vector3f UAVController::AttitudeCtrl(
     Roll_o_g.point.y = CONT.RPkd*err[3];
     Roll_o_g.point.z = CONT.RI*CONT.RPki;
     Roll_o_gain.publish(Roll_o_g);
-    
+
     geometry_msgs::PointStamped Pitch_o_g;
     Pitch_o_g.header.stamp = ros::Time::now();
     Pitch_o_g.point.x = CONT.RPkp*err[1];
@@ -421,16 +426,16 @@ float UAVController::AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
     float FF = -CONT.g[2] * CONT.mass / (rot22 * CONT.numProps);
     FF = min(FF, CONT.maxF);
     T = err[0] * CONT.Tkp + err[1] * CONT.Tkd + CONT.TI * CONT.Tki + CONT.defaultThrust;
-    
+
     CONT.TI += err[0];
-    
+
     geometry_msgs::PointStamped PID_pt;
     PID_pt.header.stamp = ros::Time::now();
     PID_pt.point.x = err[0] * CONT.Tkp;
     PID_pt.point.y = CONT.TI * CONT.Tki;
     PID_pt.point.z = err[1] * CONT.Tkd;
     PID_pub_.publish(PID_pt);
-    
+
     //TODO: Error Logging
 
     return T;

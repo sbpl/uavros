@@ -222,9 +222,9 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     // publish the map -> body_frame_map_aligned transform
     trans.child_frame_id = body_map_aligned_topic_;
     trans.transform.rotation.w = 1.0;
-    trans.transform.rotation.w = 0.0;
-    trans.transform.rotation.w = 0.0;
-    trans.transform.rotation.w = 0.0;
+    trans.transform.rotation.x = 0.0;
+    trans.transform.rotation.y = 0.0;
+    trans.transform.rotation.z = 0.0;
     tf_broadcaster.sendTransform(trans);
 
 	// publish the state
@@ -244,7 +244,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     if (now > m_last_scan_analysis_time + scan_analysis_period) {
         // log how many scans we've processed in the last period
         const ros::Duration span = (now - m_last_scan_analysis_time);
-        ROS_INFO("Processed %d scans in the last %0.3f seconds (%0.3f Hz)",
+        ROS_DEBUG("Processed %d scans in the last %0.3f seconds (%0.3f Hz)",
                 m_num_scans_processed,
                 span.toSec(),
                 (double)m_num_scans_processed / (span.toSec()));
@@ -429,7 +429,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     {
         // set height to previous filtered height
         state_.pose.pose.position.z = m_prev_filtered_z;
-        
+
         // get z by taking the median
         if (zs.size() > 6) {
             std::sort(zs.begin(), zs.end());
@@ -450,7 +450,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         // arbitrary number, possibly related to takeoff height, and something
         // about
         const double SOMETHING = 1.2;
-        if (max_z > SOMETHING) { 
+        if (max_z > SOMETHING) {
             m_filtered_z = (beta * m_filtered_z) + ((1.0 - beta) * max_z);
         }
         m_prev_filtered_z = m_filtered_z;
@@ -516,11 +516,11 @@ bool UAVStatePublisher::estimateInitialHeight(
         if (scan->ranges[i] < scan->range_min || scan->ranges[i] > scan->range_max) {
             valid = false;
         }
-    
+
         if (ang <= min_lidar_angle_ || ang >= max_lidar_angle_) {
             valid = false;
         }
-    
+
         if (valid) {
             tf::Point p(scan->ranges[i] * cos(ang), scan->ranges[i] * sin(ang), 0);
             points.push_back(p);
