@@ -3,6 +3,8 @@ project(uav_local_planner)
 
 set(CMAKE_BUILD_TYPE Release)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
 find_package(catkin REQUIRED
     COMPONENTS
         cmake_modules 
@@ -26,3 +28,8 @@ include_directories(include)
 add_executable(uav_local_planner src/local_planner.cpp src/controller.cpp)
 target_link_libraries(uav_local_planner ${catkin_LIBRARIES})
 add_dependencies(uav_local_planner ${uav_local_planner_EXPORTED_TARGETS})
+
+add_executable(twist_local_planner src/twist_local_planner.cpp)
+target_link_libraries(twist_local_planner ${catkin_LIBRARIES})
+add_dependencies(twist_local_planner ${uav_local_planner_EXPORTED_TARGETS})
+
