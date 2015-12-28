@@ -475,7 +475,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     point_pub_.publish(medianpt);
 
     double ds = abs(state_.pose.pose.position.z - prev_height);
-    ROS_INFO_THROTTLE(1, "height: %0.3f, maxz: %0.3f filteredz %f with dt %f ds %f time %f",
+    ROS_DEBUG_THROTTLE(1, "height: %0.3f, maxz: %0.3f filteredz %f with dt %f ds %f time %f",
             state_.pose.pose.position.z,
             max_z,
             m_filtered_z,
