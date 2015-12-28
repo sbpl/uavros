@@ -32,7 +32,7 @@ private:
         geometry_msgs::TwistStamped vel;
 
         // indicate whether a new path was swapped into the controller path
-        bool new_path; 
+        bool new_path;
 
         uav_msgs::FlightModeRequest flight_mode_request;
 
@@ -48,10 +48,12 @@ private:
 
     struct State
     {
-        typedef void (TwistLocalPlanner::*EnterStateCallback)(int8_t);
-        typedef void (TwistLocalPlanner::*ExitStateCallback)(int8_t);
+        typedef void (TwistLocalPlanner::*EnterStateCallback)(
+            const TrackingContext&, int8_t);
+        typedef void (TwistLocalPlanner::*ExitStateCallback)(
+            const TrackingContext&, int8_t);
         typedef int8_t (TwistLocalPlanner::*OnStateCallback)(
-            const TrackingContext&, uav_msgs::ControllerCommand&);
+            const TrackingContext&, geometry_msgs::Twist&);
 
         EnterStateCallback enter;
         OnStateCallback on;
@@ -92,7 +94,7 @@ private:
 
     bool m_new_path; // set to true if a path is received this iteration
     // set to non-none if a flight mode request is received this iteration
-    uav_msgs::FlightModeRequest m_flight_mode; 
+    uav_msgs::FlightModeRequest m_flight_mode;
 
     unsigned int m_path_idx;
 
@@ -102,9 +104,9 @@ private:
 
     std::unordered_map<int, State> m_states; // state machine
 
-    uav_msgs::ControllerCommand m_prev_cmd;
+    geometry_msgs::Twist m_prev_cmd;
 
-    uav_msgs::ControllerCommand fakeCommand(
+    geometry_msgs::Twist control(
         const geometry_msgs::Pose& pose,
         const geometry_msgs::Twist& vel,
         const geometry_msgs::Pose& target);
@@ -120,35 +122,55 @@ private:
         geometry_msgs::PoseStamped& pose,
         geometry_msgs::TwistStamped& vel);
 
-    void onEnter_Landed(int8_t prev_status);
+    void onEnter_Landed(
+        const TrackingContext& context,
+        int8_t prev_status);
     int8_t on_Landed(
         const TrackingContext& context,
-        uav_msgs::ControllerCommand& cmd);
-    void onExit_Landed(int8_t next_status);
+        geometry_msgs::Twist& cmd);
+    void onExit_Landed(
+        const TrackingContext& context,
+        int8_t next_status);
 
-    void onEnter_Landing(int8_t prev_status);
+    void onEnter_Landing(
+        const TrackingContext& context,
+        int8_t prev_status);
     int8_t on_Landing(
         const TrackingContext& context,
-        uav_msgs::ControllerCommand& cmd);
-    void onExit_Landing(int8_t next_status);
+        geometry_msgs::Twist& cmd);
+    void onExit_Landing(
+        const TrackingContext& context,
+        int8_t next_status);
 
-    void onEnter_TakeOff(int8_t prev_status);
+    void onEnter_TakeOff(
+        const TrackingContext& context,
+        int8_t prev_status);
     int8_t on_TakeOff(
         const TrackingContext& context,
-        uav_msgs::ControllerCommand& cmd);
-    void onExit_TakeOff(int8_t next_status);
+        geometry_msgs::Twist& cmd);
+    void onExit_TakeOff(
+        const TrackingContext& context,
+        int8_t next_status);
 
-    void onEnter_Hover(int8_t prev_status);
+    void onEnter_Hover(
+        const TrackingContext& context,
+        int8_t prev_status);
     int8_t on_Hover(
         const TrackingContext& context,
-        uav_msgs::ControllerCommand& cmd);
-    void onExit_Hover(int8_t next_status);
+        geometry_msgs::Twist& cmd);
+    void onExit_Hover(
+        const TrackingContext& context,
+        int8_t next_status);
 
-    void onEnter_Following(int8_t prev_status);
+    void onEnter_Following(
+        const TrackingContext& context,
+        int8_t prev_status);
     int8_t on_Following(
         const TrackingContext& context,
-        uav_msgs::ControllerCommand& cmd);
-    void onExit_Following(int8_t next_status);
+        geometry_msgs::Twist& cmd);
+    void onExit_Following(
+        const TrackingContext& context,
+        int8_t next_status);
 };
 
 } // nanmespace uav_local_planner

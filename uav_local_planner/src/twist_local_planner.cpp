@@ -2,6 +2,9 @@
 
 #include <ostream>
 
+#include <Eigen/Dense>
+#include <angles/angles.h>
+#include <tf/transform_datatypes.h>
 #include <uav_msgs/ControllerCommand.h>
 #include <visualization_msgs/Marker.h>
 
@@ -65,13 +68,13 @@ TwistLocalPlanner::TwistLocalPlanner() :
     m_path_idx(0)
 {
     m_ph.param("controller_frequency", m_controller_frequency, 50.0);
-    m_nh.param("landing_height", m_landing_height, 0.4);
-    m_nh.param("nominal_height", m_nominal_height, 0.6);
-    m_nh.param("nominal_linear_velocity", m_nominal_linear_velocity, 0.3);
-    m_nh.param("nominal_angular_velocity", m_nominal_angular_velocity, M_PI / 2.0);
+    m_ph.param("landing_height", m_landing_height, 0.4);
+    m_ph.param("nominal_height", m_nominal_height, 0.6);
+    m_ph.param("nominal_linear_velocity", m_nominal_linear_velocity, 0.3);
+    m_ph.param("nominal_angular_velocity", m_nominal_angular_velocity, M_PI / 2.0);
 
     m_waypoint_vis_pub = m_nh.advertise<visualization_msgs::Marker>("controller/next_waypoint", 1);
-    m_command_pub = m_nh.advertise<uav_msgs::ControllerCommand>("high_level_controller_cmd", 1);
+    m_command_pub = m_nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
     m_goal_pub = m_nh.advertise<geometry_msgs::PoseStamped>("goal", 1);
     m_status_pub = m_nh.advertise<uav_msgs::FlightModeStatus>("flight_mode_status", 1);
 
@@ -127,7 +130,7 @@ int TwistLocalPlanner::run()
     uint32_t cmd_seqno = 0;
     ros::Rate loop_rate(m_controller_frequency);
 
-    uav_msgs::ControllerCommand curr_cmd;
+    geometry_msgs::Twist curr_cmd;
 
     TrackingContext context;
     while (ros::ok()) {
@@ -163,7 +166,7 @@ int TwistLocalPlanner::run()
         // enter the current state
         if (m_curr_state.mode != m_prev_state.mode) {
             ROS_INFO("State Changed (%s -> %s)", to_string(m_prev_state).c_str(), to_string(m_curr_state).c_str());
-            (this->*(m_states[m_curr_state.mode].enter))(m_prev_state.mode);
+            (this->*(m_states[m_curr_state.mode].enter))(context, m_prev_state.mode);
         }
 
         // spin the current state
@@ -171,29 +174,75 @@ int TwistLocalPlanner::run()
 
         // exit the current state
         if (m_next_state.mode != m_curr_state.mode) {
-            (this->*(m_states[m_curr_state.mode].exit))(m_next_state.mode);
+            (this->*(m_states[m_curr_state.mode].exit))(context, m_next_state.mode);
         }
 
         m_prev_state = m_curr_state;
         m_curr_state = m_next_state;
 
-        curr_cmd.header.stamp = ros::Time::now();
-        curr_cmd.header.frame_id = "";
-        curr_cmd.header.seq = cmd_seqno++;
+//        curr_cmd.header.stamp = ros::Time::now();
+//        curr_cmd.header.frame_id = "";
+//        curr_cmd.header.seq = cmd_seqno++;
         m_command_pub.publish(curr_cmd);
         m_prev_cmd = curr_cmd;
+
+        m_status_pub.publish(m_curr_state);
 
         loop_rate.sleep();
     }
     return 0;
 }
 
-uav_msgs::ControllerCommand TwistLocalPlanner::fakeCommand(
+geometry_msgs::Twist TwistLocalPlanner::control(
     const geometry_msgs::Pose& pose,
     const geometry_msgs::Twist& vel,
     const geometry_msgs::Pose& target)
 {
-    return uav_msgs::ControllerCommand();
+    Eigen::Vector2d planar_vel;
+    planar_vel.x() = target.position.x - pose.position.x;
+    planar_vel.y() = target.position.y - pose.position.y;
+
+    if (planar_vel.squaredNorm() >
+            m_nominal_linear_velocity * m_nominal_linear_velocity)
+    {
+        // normalize to m_nominal_linear_velocity
+        planar_vel.normalize();
+        planar_vel *= m_nominal_linear_velocity;
+    }
+
+    double z_vel = target.position.z - pose.position.z;
+
+    if (fabs(z_vel) > m_nominal_linear_velocity) {
+        // normalize z velocity
+        z_vel = (z_vel < 0) ? -m_nominal_linear_velocity : m_nominal_linear_velocity;
+    }
+
+    Eigen::Vector3d lvel(planar_vel.x(), planar_vel.y(), z_vel);
+
+    double curr_roll, curr_pitch, curr_yaw;
+    tf::Quaternion curr_quat;
+    tf::quaternionMsgToTF(pose.orientation, curr_quat);
+    tf::Matrix3x3(curr_quat).getRPY(curr_roll, curr_pitch, curr_yaw);
+
+    double dest_roll, dest_pitch, dest_yaw;
+    tf::Quaternion dest_quat;
+    tf::quaternionMsgToTF(target.orientation, dest_quat);
+    tf::Matrix3x3(dest_quat).getRPY(dest_roll, dest_pitch, dest_yaw);
+
+    double dyaw = angles::shortest_angular_distance(curr_yaw, dest_yaw);
+
+    if (fabs(dyaw) > m_nominal_angular_velocity) {
+        dyaw = (dyaw < 0) ? -m_nominal_angular_velocity : m_nominal_angular_velocity;
+    }
+
+    geometry_msgs::Twist cmd;
+    cmd.linear.x = lvel.x();
+    cmd.linear.y = lvel.y();
+    cmd.linear.z = lvel.z();
+    cmd.angular.x = 0.0;
+    cmd.angular.y = 0.0;
+    cmd.angular.z = dyaw;
+    return cmd;
 }
 
 void TwistLocalPlanner::pathCallback(
@@ -231,7 +280,7 @@ bool TwistLocalPlanner::updatePath()
         m_new_path = false;
         return true;
     }
-    
+
     return false;
 }
 
@@ -258,14 +307,16 @@ bool TwistLocalPlanner::getRobotPose(
     }
 }
 
-void TwistLocalPlanner::onEnter_Landed(int8_t prev_status)
+void TwistLocalPlanner::onEnter_Landed(
+    const TrackingContext& context,
+    int8_t prev_status)
 {
 
 }
 
 int8_t TwistLocalPlanner::on_Landed(
     const TrackingContext& context,
-    uav_msgs::ControllerCommand& cmd)
+    geometry_msgs::Twist& cmd)
 {
     switch (context.flight_mode_request.mode) {
     case uav_msgs::FlightModeRequest::LAND:
@@ -283,26 +334,32 @@ int8_t TwistLocalPlanner::on_Landed(
         break;
     }
 
-    cmd.roll = 0.0;
-    cmd.pitch = 0.0;
-    cmd.yaw = 0.0;
-    cmd.thrust = 0.0;
+    cmd.linear.x = 0.0;
+    cmd.linear.y = 0.0;
+    cmd.linear.z = 0.0;
+    cmd.angular.x = 0.0;
+    cmd.angular.y = 0.0;
+    cmd.angular.z = 0.0;
     return uav_msgs::FlightModeStatus::LANDED;
 }
 
-void TwistLocalPlanner::onExit_Landed(int8_t next_status)
+void TwistLocalPlanner::onExit_Landed(
+    const TrackingContext& context,
+    int8_t next_status)
 {
 
 }
 
-void TwistLocalPlanner::onEnter_Landing(int8_t prev_status)
+void TwistLocalPlanner::onEnter_Landing(
+    const TrackingContext& context,
+    int8_t prev_status)
 {
 
 }
 
 int8_t TwistLocalPlanner::on_Landing(
     const TrackingContext& context,
-    uav_msgs::ControllerCommand& cmd)
+    geometry_msgs::Twist& cmd)
 {
     switch (context.flight_mode_request.mode) {
     case uav_msgs::FlightModeRequest::LAND:
@@ -321,16 +378,13 @@ int8_t TwistLocalPlanner::on_Landing(
     }
 
     if (context.pose.pose.position.z <= m_landing_height) {
-        cmd = m_prev_cmd;
-        cmd.roll = 0.0;
-        cmd.pitch = 0.0;
-        cmd.yaw = 0.0;
-        if (cmd.thrust <= 3.0) {
-            return uav_msgs::FlightModeStatus::LANDED;
-        }
-        else {
-            cmd.thrust -= 0.2;
-        }
+        cmd.linear.x = 0.0;
+        cmd.linear.y = 0.0;
+        cmd.linear.z = 0.0;
+        cmd.angular.x = 0.0;
+        cmd.angular.y = 0.0;
+        cmd.angular.z = 0.0;
+        return uav_msgs::FlightModeStatus::LANDED;
     }
     else {
         geometry_msgs::PoseStamped target = m_hover_pose;
@@ -338,25 +392,36 @@ int8_t TwistLocalPlanner::on_Landing(
             m_landing_z -= 0.003;
         }
         target.pose.position.z = m_landing_z;
-        cmd = fakeCommand(context.pose.pose, context.vel.twist, target.pose);
+        cmd = control(context.pose.pose, context.vel.twist, target.pose);
     }
 
     return uav_msgs::FlightModeStatus::LANDING;
 }
 
-void TwistLocalPlanner::onExit_Landing(int8_t next_status)
+void TwistLocalPlanner::onExit_Landing(
+    const TrackingContext& context,
+    int8_t next_status)
 {
 
 }
 
-void TwistLocalPlanner::onEnter_TakeOff(int8_t prev_status)
+void TwistLocalPlanner::onEnter_TakeOff(
+    const TrackingContext& context,
+    int8_t prev_status)
 {
-
+    switch (prev_status) {
+    case uav_msgs::FlightModeStatus::LANDED:
+        m_hover_pose = context.pose;
+        m_hover_pose.pose.position.z = m_nominal_height;
+        break;
+    default:
+        break;
+    }
 }
 
 int8_t TwistLocalPlanner::on_TakeOff(
     const TrackingContext& context,
-    uav_msgs::ControllerCommand& cmd)
+    geometry_msgs::Twist& cmd)
 {
     switch (context.flight_mode_request.mode) {
     case uav_msgs::FlightModeRequest::LAND:
@@ -381,23 +446,26 @@ int8_t TwistLocalPlanner::on_TakeOff(
 
     geometry_msgs::PoseStamped target_pose = m_hover_pose;
     target_pose.pose.position.z = context.pose.pose.position.z + 0.2;
-    cmd = fakeCommand(context.pose.pose, context.vel.twist, target_pose.pose);
+    cmd = control(context.pose.pose, context.vel.twist, target_pose.pose);
     return uav_msgs::FlightModeStatus::TAKE_OFF;
 }
 
-void TwistLocalPlanner::onExit_TakeOff(int8_t next_status)
+void TwistLocalPlanner::onExit_TakeOff(
+    const TrackingContext& context,
+    int8_t next_status)
 {
 
 }
 
-void TwistLocalPlanner::onEnter_Hover(int8_t prev_status)
+void TwistLocalPlanner::onEnter_Hover(
+    const TrackingContext& context,
+    int8_t prev_status)
 {
-
 }
 
 int8_t TwistLocalPlanner::on_Hover(
     const TrackingContext& context,
-    uav_msgs::ControllerCommand& cmd)
+    geometry_msgs::Twist& cmd)
 {
     switch (context.flight_mode_request.mode) {
     case uav_msgs::FlightModeRequest::LAND:
@@ -420,23 +488,27 @@ int8_t TwistLocalPlanner::on_Hover(
         return uav_msgs::FlightModeStatus::FOLLOWING;
     }
 
-    cmd = fakeCommand(context.pose.pose, context.vel.twist, m_hover_pose.pose);
+    cmd = control(context.pose.pose, context.vel.twist, m_hover_pose.pose);
     return uav_msgs::FlightModeStatus::HOVER;
 }
 
-void TwistLocalPlanner::onExit_Hover(int8_t next_status)
+void TwistLocalPlanner::onExit_Hover(
+    const TrackingContext& context,
+    int8_t next_status)
 {
 
 }
 
-void TwistLocalPlanner::onEnter_Following(int8_t prev_status)
+void TwistLocalPlanner::onEnter_Following(
+    const TrackingContext& context,
+    int8_t prev_status)
 {
 
 }
 
 int8_t TwistLocalPlanner::on_Following(
     const TrackingContext& context,
-    uav_msgs::ControllerCommand& cmd)
+    geometry_msgs::Twist& cmd)
 {
     switch (context.flight_mode_request.mode) {
     case uav_msgs::FlightModeRequest::LAND:
@@ -487,17 +559,18 @@ int8_t TwistLocalPlanner::on_Following(
 
     m_path_idx = i - 1;
     bool hover = false;
-    if (3 >= ((int)(m_controller_path->poses.size()) - ((int)i))) {
+    if (m_controller_path->poses.size() - i < 3) {
         hover = true;
-        m_hover_pose = m_controller_path->poses[m_controller_path->poses.size() - 1];
-        i = m_controller_path->poses.size() - 1;  
+        m_hover_pose = m_controller_path->poses.back();
+        i = m_controller_path->poses.size() - 1;
     }
 
     ROS_DEBUG("point index is %d", i);
 
-    if (m_controller_path->poses[i].pose.position.z < 0.6) {
+    const double m_minimum_height = 0.6;
+    if (m_controller_path->poses[i].pose.position.z < m_minimum_height) {
         ROS_DEBUG("Target height was %f, Setting it to 0.6", m_controller_path->poses[i].pose.position.z);
-        m_controller_path->poses[i].pose.position.z = 0.6;
+        m_controller_path->poses[i].pose.position.z = m_minimum_height;
     }
 
     // TODO: verify that i is never out of bounds
@@ -507,7 +580,7 @@ int8_t TwistLocalPlanner::on_Following(
 
     geometry_msgs::PoseStamped target = m_controller_path->poses[i];
     ROS_DEBUG("next target is %f %f %f", target.pose.position.x, target.pose.position.y, target.pose.position.z);
-    cmd = fakeCommand(context.pose.pose, context.vel.twist, target.pose);
+    cmd = control(context.pose.pose, context.vel.twist, target.pose);
 
     // TODO: collision check the controls for some very short period of time
 
@@ -518,7 +591,9 @@ int8_t TwistLocalPlanner::on_Following(
     return uav_msgs::FlightModeStatus::FOLLOWING;
 }
 
-void TwistLocalPlanner::onExit_Following(int8_t next_status)
+void TwistLocalPlanner::onExit_Following(
+    const TrackingContext& context,
+    int8_t next_status)
 {
 
 }
@@ -527,6 +602,8 @@ void TwistLocalPlanner::onExit_Following(int8_t next_status)
 
 int main(int argc, char* argv[])
 {
+    ros::init(argc, argv, "twist_local_planner");
+
     uav_local_planner::TwistLocalPlanner lp;
     if (!lp.init()) {
         return 1;
