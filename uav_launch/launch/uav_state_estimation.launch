@@ -1,6 +1,8 @@
 <launch>
     <!-- Odometry -->
-    <node pkg="hector_pose_estimation" type="pose_estimation" name="hector_localization">
+    <node name="hector_localization"
+            pkg="hector_pose_estimation"
+            type="pose_estimation">
         <remap from="state" to="ekf_state"/>
         <param name="with_covariances" value="false"/>
         <param name="system/gyro_stddev" value="0.1" />
@@ -11,13 +13,16 @@
     </node>
 
     <!-- SLAM -->
-    <node pkg="hector_mapping" type="hector_mapping" name="hector_slam">
+    <node name="hector_slam" pkg="hector_mapping" type="hector_mapping">
         <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
         <remap from="poseupdate" to="slam_poseupdate"/>
     </node>
 
     <!-- State Aggregation -->
-    <node pkg="uav_state_publisher" type="uav_state_publisher" name="uav_state_publisher" launch-prefix="nice --1">
+    <node name="uav_state_publisher"
+            pkg="uav_state_publisher"
+            type="uav_state_publisher"
+            launch-prefix="nice --1">
         <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
     </node>
 

@@ -1,7 +1,9 @@
 <launch>
+    <arg name="sim" default="false"/>
+
     <rosparam command="load" file="$(find uav_launch)/config/UAV.yaml" ns="UAV"/>
 
-    <node pkg="uav_local_planner" type="uav_local_planner"
+    <node unless="$(arg sim)" pkg="uav_local_planner" type="uav_local_planner"
             name="uav_local_planner" launch-prefix="nice --1">
         <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
         <remap from="goal" to="goal_pose"/>
@@ -11,5 +13,11 @@
         <!-- TODO:  Odometry msgs are published on the uav_state_topic. Not twist !! Che/hector_localization/system/gyro_stddevck this. -->
         <remap from="local_collision_map" to="local_collision_map"/>
         <!-- TODO: I am not sure about this. Should this be the map published by hector_slam ? -->
+    </node>
+
+    <node if="$(arg sim)" pkg="uav_local_planner" type="twist_local_planner"
+            name="uav_local_planner">
+        <rosparam file="$(find uav_launch)/config/uav_local_planner_sim.yaml" command="load"/>
+        <remap from="goal" to="goal_pose"/>
     </node>
 </launch>

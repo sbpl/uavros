@@ -1,0 +1,23 @@
+size_x: 4.0
+size_y: 4.0
+size_z: 4.0
+resolution: 0.1
+controller_frequency: 40.0
+collision_map_tolerance: 0.5
+pose_tolerance: 0.3
+landing_height: 0.4
+nominal_height: 1.65
+nominal_linear_velocity: 0.3
+nominal_angular_velocity: 1.57079633  #PI/2
+
+flt_mode_req_topic: 'flight_mode_request'
+flt_mode_stat_topic: 'flight_mode_status'
+high_level_controller_cmd: 'high_level_controller_cmd'
+ctrl_cmd_topic: 'controller_cmd'
+goal_pub_topic: 'goal'
+goal_sub_topic: 'goal'
+next_waypoint_topic: 'controller/next_waypoint'
+local_collision_topic: 'local_collision_map'
+uav_state_topic: 'uav_state'
+path_topic: MoveBase3D/FlyPlan #'/MoveBase3D/ActionPlan'
+laser_topic: 'fixed_laser'

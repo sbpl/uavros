@@ -19,7 +19,9 @@
 
     <include file="$(find uav_launch)/launch/uav_state_estimation.launch"/>
 
-    <include file="$(find uav_launch)/launch/uav_controls.launch"/>
+    <include file="$(find uav_launch)/launch/uav_controls.launch">
+        <arg name="sim" value="$(arg sim)"/>
+    </include>
 
     <include file="$(find uav_launch)/launch/uav_navigation.launch"/>
 
