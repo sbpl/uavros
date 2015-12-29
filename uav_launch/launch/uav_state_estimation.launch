@@ -1,4 +1,6 @@
 <launch>
+    <arg name="use_slam" default="true"/>
+
     <!-- Odometry -->
     <node name="hector_localization"
             pkg="hector_pose_estimation"
@@ -13,7 +15,8 @@
     </node>
 
     <!-- SLAM -->
-    <node name="hector_slam" pkg="hector_mapping" type="hector_mapping">
+    <node if="$(arg use_slam)" name="hector_slam"
+            pkg="hector_mapping" type="hector_mapping">
         <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
         <remap from="poseupdate" to="slam_poseupdate"/>
     </node>

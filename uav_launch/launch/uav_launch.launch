@@ -1,5 +1,6 @@
 <launch>
     <arg name="sim" default="false"/>
+    <arg name="use_slam" default="true"/>
 
     <arg name="use_camera" default="true"/>
     <arg name="use_fixed_laser" default="true"/>
@@ -17,7 +18,9 @@
     <include file="$(find uav_launch)/launch/uav_logging.launch"/>
     -->
 
-    <include file="$(find uav_launch)/launch/uav_state_estimation.launch"/>
+    <include file="$(find uav_launch)/launch/uav_state_estimation.launch">
+        <arg name="use_slam" value="$(arg use_slam)"/>
+    </include>
 
     <include file="$(find uav_launch)/launch/uav_controls.launch">
         <arg name="sim" value="$(arg sim)"/>
