@@ -4,6 +4,7 @@
 
 #include <Eigen/Dense>
 #include <angles/angles.h>
+#include <eigen_conversions/eigen_msg.h>
 #include <tf/transform_datatypes.h>
 #include <uav_msgs/ControllerCommand.h>
 #include <visualization_msgs/Marker.h>
@@ -36,6 +37,35 @@ std::string to_string(uav_msgs::FlightModeStatus status)
 {
     std::stringstream ss;
     ss << status;
+    return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& o, uav_msgs::FlightModeRequest request)
+{
+    switch (request.mode) {
+    case uav_msgs::FlightModeRequest::NONE:
+        o << "NONE";
+        break;
+    case uav_msgs::FlightModeRequest::LAND:
+        o << "LAND";
+        break;
+    case uav_msgs::FlightModeRequest::TAKE_OFF:
+        o << "TAKE_OFF";
+        break;
+    case uav_msgs::FlightModeRequest::HOVER:
+        o << "HOVER";
+        break;
+    case uav_msgs::FlightModeRequest::FOLLOW:
+        o << "FOLLOW";
+        break;
+    }
+    return o;
+}
+
+std::string to_string(uav_msgs::FlightModeRequest request)
+{
+    std::stringstream ss;
+    ss << request;
     return ss.str();
 }
 
@@ -153,6 +183,7 @@ int TwistLocalPlanner::run()
             // failed to get tracking context, maintain path and request vars...
             // TODO: security measures here...additional checking to make sure
             // pose is sane and recovery/safety behaviors
+            ROS_WARN("Failed to get robot pose");
             context.new_path = old_new_path;
             context.flight_mode_request = old_flight_mode_request;
             loop_rate.sleep();
@@ -214,7 +245,9 @@ geometry_msgs::Twist TwistLocalPlanner::control(
 
     if (fabs(z_vel) > m_nominal_linear_velocity) {
         // normalize z velocity
-        z_vel = (z_vel < 0) ? -m_nominal_linear_velocity : m_nominal_linear_velocity;
+        z_vel = (z_vel < 0) ?
+                -m_nominal_linear_velocity :
+                m_nominal_linear_velocity;
     }
 
     Eigen::Vector3d lvel(planar_vel.x(), planar_vel.y(), z_vel);
@@ -232,8 +265,17 @@ geometry_msgs::Twist TwistLocalPlanner::control(
     double dyaw = angles::shortest_angular_distance(curr_yaw, dest_yaw);
 
     if (fabs(dyaw) > m_nominal_angular_velocity) {
-        dyaw = (dyaw < 0) ? -m_nominal_angular_velocity : m_nominal_angular_velocity;
+        dyaw = (dyaw < 0) ?
+                -m_nominal_angular_velocity :
+                m_nominal_angular_velocity;
     }
+
+    // TODO: transform into the body frame
+    Eigen::Quaterniond body_rot;
+    tf::quaternionMsgToEigen(pose.orientation, body_rot);
+    Eigen::Affine3d T_world_body(body_rot);
+
+    lvel = T_world_body.inverse() * lvel;
 
     geometry_msgs::Twist cmd;
     cmd.linear.x = lvel.x();
@@ -275,7 +317,7 @@ bool TwistLocalPlanner::updatePath()
 {
     // if there is a new path in latest then swap into the controller path
     if (m_new_path) {
-        ROS_ERROR("Received new path");
+        ROS_INFO("Received new path");
         std::swap(m_latest_path, m_controller_path);
         m_new_path = false;
         return true;
@@ -286,6 +328,9 @@ bool TwistLocalPlanner::updatePath()
 
 uav_msgs::FlightModeRequest TwistLocalPlanner::getFlightMode()
 {
+    if (m_flight_mode.mode != uav_msgs::FlightModeRequest::NONE) {
+        ROS_INFO("Received new flight mode request '%s'", to_string(m_flight_mode).c_str());
+    }
     uav_msgs::FlightModeRequest flightMode = m_flight_mode;
     m_flight_mode.mode = uav_msgs::FlightModeRequest::NONE;
     return flightMode;
@@ -496,7 +541,13 @@ void TwistLocalPlanner::onExit_Hover(
     const TrackingContext& context,
     int8_t next_status)
 {
-
+    switch (next_status) {
+    case uav_msgs::FlightModeRequest::FOLLOW:
+        if (context.new_path) {
+            m_path_idx = 0;
+        }
+        break;
+    }
 }
 
 void TwistLocalPlanner::onEnter_Following(
@@ -537,35 +588,44 @@ int8_t TwistLocalPlanner::on_Following(
     }
 
     if (context.new_path) {
+        ROS_INFO("Following a new path");
         m_path_idx = 0;
     }
     ROS_WARN("size is %zu ", m_controller_path->poses.size());
 
-    double dx = context.pose.pose.position.x - m_controller_path->poses[m_path_idx].pose.position.x;
-    double dy = context.pose.pose.position.y - m_controller_path->poses[m_path_idx].pose.position.y;
-    double dz = context.pose.pose.position.z - m_controller_path->poses[m_path_idx].pose.position.z;
+    const geometry_msgs::Pose& curr_pose = context.pose.pose;
+    const geometry_msgs::Pose& curr_path_pose = m_controller_path->poses[m_path_idx].pose;
+
+    const double track_thresh = 0.3;
+    // find the next pose on the path that's at least thresh away
+    double dx = curr_pose.position.x - curr_path_pose.position.x;
+    double dy = curr_pose.position.y - curr_path_pose.position.y;
+    double dz = curr_pose.position.z - curr_path_pose.position.z;
     double dist = sqrt(dx*dx + dy*dy + dz*dz);
-    unsigned int i;
+    size_t i;
     for (i = m_path_idx + 1; i < m_controller_path->poses.size(); i++) {
-        dx = context.pose.pose.position.x - m_controller_path->poses[i].pose.position.x;
-        dy = context.pose.pose.position.y - m_controller_path->poses[i].pose.position.y;
-        dz = context.pose.pose.position.z - m_controller_path->poses[i].pose.position.z;
+        const geometry_msgs::Pose& path_pose = m_controller_path->poses[i].pose;
+        dx = curr_pose.position.x - path_pose.position.x;
+        dy = curr_pose.position.y - path_pose.position.y;
+        dz = curr_pose.position.z - path_pose.position.z;
         double temp = sqrt(dx*dx + dy*dy + dz*dz);
-        if (temp > dist && temp > 0.3) {
+        if (temp > dist && temp > track_thresh) {
             break;
         }
         dist = temp;
     }
 
     m_path_idx = i - 1;
+    ROS_INFO("Path Progress: %u/%zu (%0.3f%%)", m_path_idx, m_controller_path->poses.size(), (double)m_path_idx / (double)m_controller_path->poses.size());
+
+    // transition to hover if path is completed
     bool hover = false;
     if (m_controller_path->poses.size() - i < 3) {
         hover = true;
         m_hover_pose = m_controller_path->poses.back();
         i = m_controller_path->poses.size() - 1;
+        ROS_INFO("Path following completed");
     }
-
-    ROS_DEBUG("point index is %d", i);
 
     const double m_minimum_height = 0.6;
     if (m_controller_path->poses[i].pose.position.z < m_minimum_height) {
@@ -578,9 +638,9 @@ int8_t TwistLocalPlanner::on_Following(
     // TODO: collision check the path from our pose to the target pose (just check the straight line)
     // TODO: collision check the path from the target to the next few points (use a time horizon)
 
-    geometry_msgs::PoseStamped target = m_controller_path->poses[i];
-    ROS_DEBUG("next target is %f %f %f", target.pose.position.x, target.pose.position.y, target.pose.position.z);
-    cmd = control(context.pose.pose, context.vel.twist, target.pose);
+    const geometry_msgs::Pose& target = m_controller_path->poses[i].pose;
+    ROS_DEBUG("Target: (%0.3f, %0.3f, %0.3f)", target.position.x, target.position.y, target.position.z);
+    cmd = control(context.pose.pose, context.vel.twist, target);
 
     // TODO: collision check the controls for some very short period of time
 
@@ -595,7 +655,6 @@ void TwistLocalPlanner::onExit_Following(
     const TrackingContext& context,
     int8_t next_status)
 {
-
 }
 
 } // namespace uav_local_planner
