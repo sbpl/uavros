@@ -19,5 +19,7 @@
             name="uav_local_planner">
         <rosparam file="$(find uav_launch)/config/uav_local_planner_sim.yaml" command="load"/>
         <remap from="goal" to="goal_pose"/>
+        <remap from="state" to="uav_state"/>
+        <remap from="path" to="MoveBase3D/FlyPlan"/>
     </node>
 </launch>
