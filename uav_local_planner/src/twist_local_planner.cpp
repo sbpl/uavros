@@ -90,6 +90,7 @@ TwistLocalPlanner::TwistLocalPlanner() :
     m_flight_mode(),
     m_latest_goal(),
     m_latest_state(),
+    m_landing_z(0.0),
     m_controller_frequency(0.0),
     m_landing_height(0.0),
     m_nominal_height(0.0),
@@ -110,7 +111,7 @@ TwistLocalPlanner::TwistLocalPlanner() :
 
     m_path_sub = m_nh.subscribe("path", 1, &TwistLocalPlanner::pathCallback, this);
     m_goal_sub = m_nh.subscribe("goal", 1, &TwistLocalPlanner::goalCallback, this);
-    m_state_sub = m_nh.subscribe("uav_state", 1, &TwistLocalPlanner::stateCallback, this);
+    m_state_sub = m_nh.subscribe("state", 1, &TwistLocalPlanner::stateCallback, this);
     m_flight_mode_sub = m_nh.subscribe("flight_mode_request", 1, &TwistLocalPlanner::flightModeCallback, this);
 
     m_controller_path = new nav_msgs::Path;
