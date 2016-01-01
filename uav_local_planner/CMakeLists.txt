@@ -18,7 +18,7 @@ find_package(catkin REQUIRED
 
 find_package(Eigen REQUIRED)
 
-generate_dynamic_reconfigure_options(cfg/uav_local_planner.cfg)
+generate_dynamic_reconfigure_options(cfg/UAVController.cfg)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
 
@@ -28,9 +28,8 @@ include_directories(include)
 
 add_executable(uav_local_planner src/local_planner.cpp src/controller.cpp)
 target_link_libraries(uav_local_planner ${catkin_LIBRARIES})
-add_dependencies(uav_local_planner ${uav_local_planner_EXPORTED_TARGETS})
+add_dependencies(uav_local_planner ${PROJECT_NAME}_gencfg ${uav_local_planner_EXPORTED_TARGETS})
 
 add_executable(twist_local_planner src/twist_local_planner.cpp)
 target_link_libraries(twist_local_planner ${catkin_LIBRARIES})
 add_dependencies(twist_local_planner ${uav_local_planner_EXPORTED_TARGETS})
-

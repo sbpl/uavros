@@ -19,5 +19,5 @@ build
 CMakeCache.txt
 cmake_install*
 install_manifest.txt
-*/cfg/*
 */docs/*
+
