@@ -20,3 +20,7 @@ include_directories(include)
 
 add_executable(uav_debug src/uav_debug.cpp)
 target_link_libraries(uav_debug ${catkin_LIBRARIES})
+
+install(
+    TARGETS uav_debug
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

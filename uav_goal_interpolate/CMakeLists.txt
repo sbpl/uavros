@@ -10,3 +10,7 @@ catkin_package()
 
 add_executable(uav_goal_interpolate src/uav_goal_interpolate.cpp)
 target_link_libraries(uav_goal_interpolate ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+
+install(
+    TARGETS uav_goal_interpolate
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

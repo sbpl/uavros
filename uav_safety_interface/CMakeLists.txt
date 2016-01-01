@@ -4,12 +4,12 @@ project(uav_safety_interface)
 set(CMAKE_BUILD_TYPE Release)
 
 find_package(catkin REQUIRED
-    COMPONENTS 
-        geometry_msgs 
-        laser_geometry 
-        sensor_msgs 
-        tf 
-        uav_msgs 
+    COMPONENTS
+        geometry_msgs
+        laser_geometry
+        sensor_msgs
+        tf
+        uav_msgs
         visualization_msgs)
 
 catkin_package()
@@ -24,3 +24,7 @@ add_dependencies(uavSafetyInterface ${catkin_EXPORTED_TARGETS})
 add_executable(testController src/TestController.cpp)
 target_link_libraries(testController ${catkin_LIBRARIES})
 add_dependencies(testController ${catkin_EXPORTED_TARGETS})
+
+install(
+    TARGETS uavSafetyInterface testController
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

@@ -7,12 +7,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 find_package(catkin REQUIRED
     COMPONENTS
-        cmake_modules 
-        dynamic_reconfigure 
+        cmake_modules
+        dynamic_reconfigure
         eigen_conversions
-        geometry_msgs 
-        nav_msgs 
-        roscpp 
+        geometry_msgs
+        nav_msgs
+        roscpp
         tf
         uav_msgs)
 
@@ -33,3 +33,10 @@ add_dependencies(uav_local_planner ${PROJECT_NAME}_gencfg ${uav_local_planner_EX
 add_executable(twist_local_planner src/twist_local_planner.cpp)
 target_link_libraries(twist_local_planner ${catkin_LIBRARIES})
 add_dependencies(twist_local_planner ${uav_local_planner_EXPORTED_TARGETS})
+
+install(
+    TARGETS uav_local_planner twist_local_planner
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+install(DIRECTORY config DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

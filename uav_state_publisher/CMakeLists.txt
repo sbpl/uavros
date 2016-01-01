@@ -6,12 +6,12 @@ set(CMAKE_BUILD_TYPE Release)
 find_package(PCL REQUIRED)
 
 find_package(catkin REQUIRED
-    COMPONENTS 
-        geometry_msgs 
-        nav_msgs 
+    COMPONENTS
+        geometry_msgs
+        nav_msgs
         pcl_conversions
-        sensor_msgs 
-        tf 
+        sensor_msgs
+        tf
         uav_msgs)
 
 catkin_package()
@@ -23,3 +23,7 @@ include_directories(include)
 add_executable(uav_state_publisher src/uav_state_publisher.cpp)
 target_link_libraries(uav_state_publisher ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(uav_state_publisher ${catkin_EXPORTED_TARGETS})
+
+install(
+    TARGETS uav_state_publisher
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

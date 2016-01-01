@@ -11,9 +11,13 @@ include_directories(${catkin_INCLUDE_DIRS})
 include_directories(include)
 
 add_executable(
-    uav_servo_node 
-    src/Dynamixel.cpp 
-    src/ErrorMessage.cpp 
-    src/SerialDevice.cpp 
+    uav_servo_node
+    src/Dynamixel.cpp
+    src/ErrorMessage.cpp
+    src/SerialDevice.cpp
     src/servo_node.cpp)
 target_link_libraries(uav_servo_node ${catkin_LIBRARIES})
+
+install(
+    TARGETS uav_servo_node
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

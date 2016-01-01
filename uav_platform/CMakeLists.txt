@@ -21,3 +21,8 @@ add_dependencies(align_mode ${catkin_EXPORTED_TARGETS})
 add_executable(nav_markers src/nav_markers.cpp)
 target_link_libraries(nav_markers ${catkin_LIBRARIES})
 add_dependencies(nav_markers ${catkin_EXPORTED_TARGETS})
+
+install(
+    TARGETS pose_filter align_mode nav_markers
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(DIRECTORY launch DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

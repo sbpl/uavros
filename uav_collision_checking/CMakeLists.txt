@@ -6,3 +6,5 @@ set(CMAKE_BUILD_TYPE Release)
 find_package(catkin REQUIRED)
 
 catkin_package()
+
+install(DIRECTORY config DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
