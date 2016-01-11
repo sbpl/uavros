@@ -1,4 +1,3 @@
-
 #ifndef UAV_LOCAL_PLANNER_H
 #define UAV_LOCAL_PLANNER_H
 
@@ -23,20 +22,32 @@
 //   FOLLOWING
 // };
 
-class UAVLocalPlanner{
-  public:
+class UAVLocalPlanner
+{
+public:
+
     UAVLocalPlanner();
     ~UAVLocalPlanner();
 
     void controllerThread();
 
-    uav_msgs::ControllerCommand land(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus&);
-    uav_msgs::ControllerCommand takeOff(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus&);
+    uav_msgs::ControllerCommand land(
+        geometry_msgs::PoseStamped,
+        geometry_msgs::TwistStamped,
+        uav_msgs::FlightModeStatus&);
+    uav_msgs::ControllerCommand takeOff(
+        geometry_msgs::PoseStamped,
+        geometry_msgs::TwistStamped,
+        uav_msgs::FlightModeStatus&);
     uav_msgs::ControllerCommand hover(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped);
-    uav_msgs::ControllerCommand followPath(geometry_msgs::PoseStamped, geometry_msgs::TwistStamped, uav_msgs::FlightModeStatus&, bool isNewPath);
+    uav_msgs::ControllerCommand followPath(
+        geometry_msgs::PoseStamped,
+        geometry_msgs::TwistStamped,
+        uav_msgs::FlightModeStatus&,
+        bool isNewPath);
 
+private:
 
-  private:
     bool updateCollisionMap();
     bool updatePath(uav_msgs::FlightModeStatus&);
     void getFlightMode(uav_msgs::FlightModeStatus &state);
@@ -52,7 +63,8 @@ class UAVLocalPlanner{
     dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> dynamic_reconfigure_server_;
 
     double sizex_, sizey_, sizez_, resolution_;
-    std::string flt_mode_req_topic_, flt_mode_stat_topic_, ctrl_cmd_topic_, goal_pub_topic_, goal_sub_topic_, next_waypoint_topic_, local_collision_topic_, uav_state_topic_, path_topic_;
+    std::string flt_mode_req_topic_, flt_mode_stat_topic_, ctrl_cmd_topic_, goal_pub_topic_, goal_sub_topic_,
+            next_waypoint_topic_, local_collision_topic_, uav_state_topic_, path_topic_;
 
     ros::Publisher waypoint_vis_pub_;
     ros::Publisher command_pub_;
@@ -87,7 +99,6 @@ class UAVLocalPlanner{
     double controller_frequency_;
     double collision_map_tolerance_, pose_tolerance_;
     double landing_height_, nominal_height_, nominal_linear_velocity_, nominal_angular_velocity_, landing_z_;
-
 
     uav_msgs::ControllerCommand last_u_;
     geometry_msgs::PoseStamped hover_pose_;
