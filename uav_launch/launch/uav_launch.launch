@@ -7,7 +7,7 @@
     <arg name="use_panning_laser" default="true"/>
     <arg name="use_panning_servo" default="false"/>
 
-    <include file="$(find uav_launch)/launch/uav_devices.launch" unless="$(arg sim)">
+    <include unless="$(arg sim)" file="$(find uav_launch)/launch/uav_devices.launch">
         <arg name="use_camera" value="$(arg use_camera)"/>
         <arg name="use_fixed_laser" value="$(arg use_fixed_laser)"/>
         <arg name="use_panning_laser" value="$(arg use_panning_laser)"/>
