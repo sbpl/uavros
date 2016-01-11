@@ -1,5 +1,2 @@
-goal_pub_topic: 'goal_pose'
-flt_mode_req_topic: 'flight_mode_request'
-flt_mode_stat_topic: 'flight_mode_status'
 map_topic: 'map'
 goal_marker_name: 'UAV Goal Marker'

@@ -14,37 +14,39 @@
 #define MENU_ENTRY_SQUARE_TEST 5
 #define MENU_ENTRY_AUTO_FLIGHT 6
 
-
-class UAV_SET_GOAL_C {
+class UAV_SET_GOAL_C
+{
 public:
-  interactive_markers::MenuHandler menu_handler;
-  visualization_msgs::InteractiveMarkerControl box_control, control, menu_control;
 
-  visualization_msgs::InteractiveMarker int_marker;
-  visualization_msgs::Marker box_marker;
+    interactive_markers::MenuHandler menu_handler;
+    visualization_msgs::InteractiveMarkerControl box_control, control, menu_control;
 
-  interactive_markers::InteractiveMarkerServer server;
+    visualization_msgs::InteractiveMarker int_marker;
+    visualization_msgs::Marker box_marker;
 
-  ros::Publisher goal_pose_pub;
-  ros::Publisher flight_request_pub;
-  ros::Subscriber flight_status_sub;
+    interactive_markers::InteractiveMarkerServer server;
 
-  UAV_SET_GOAL_C();
-  ~UAV_SET_GOAL_C();
+    ros::Publisher goal_pose_pub;
+    ros::Publisher flight_request_pub;
+    ros::Subscriber flight_status_sub;
 
-  bool SquareTest;
-  bool AutoFlight;
-  int SqTPt;
-  int AutoFlightRealm;
+    UAV_SET_GOAL_C();
+    ~UAV_SET_GOAL_C();
 
-  geometry_msgs::PoseStamped goal_pose;
+    bool SquareTest;
+    bool AutoFlight;
+    int SqTPt;
+    int AutoFlightRealm;
+
+    geometry_msgs::PoseStamped goal_pose;
 
 private:
-  ros::Time lastTime;
-  std::string goal_pub_topic_, flt_mode_req_topic_, flt_mode_stat_topic_, map_topic_, goal_marker_name_;
 
-  void procFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
+    ros::Time lastTime;
+    std::string goal_pub_topic_, flt_mode_req_topic_, flt_mode_stat_topic_, map_topic_, goal_marker_name_;
 
-  void FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr status);
+    void procFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+
+    void FlightModeStatusCallback(uav_msgs::FlightModeStatusConstPtr status);
 
 };

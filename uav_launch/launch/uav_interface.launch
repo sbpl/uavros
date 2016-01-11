@@ -6,7 +6,7 @@
 
     <!-- Bring up the interactive marker goal setting node -->
     <!-- Publishes on the flight_mode and goal_pose topics -->
-    <node pkg="uav_set_goal" type="uav_set_goal" name="uav_set_goal" output="screen" >
-        <rosparam file="$(find uav_launch)/config/uav_set_goal.yaml" command="load"/>
+    <node pkg="uav_set_goal" type="uav_set_goal" name="uav_set_goal" output="screen">
+        <rosparam command="load" file="$(find uav_launch)/config/uav_set_goal.yaml"/>
     </node>
 </launch>
