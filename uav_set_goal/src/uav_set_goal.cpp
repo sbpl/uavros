@@ -3,10 +3,10 @@
 UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   ros::NodeHandle nh;
 
-  nh.param<std::string>("goal_pub_topic",goal_pub_topic_,"/goal_pose");
+  nh.param<std::string>("goal_pub_topic",goal_pub_topic_,"goal_pose");
   nh.param<std::string>("flt_mode_req_topic",flt_mode_req_topic_,"flight_mode_request");
   nh.param<std::string>("flt_mode_stat_topic",flt_mode_stat_topic_,"flight_mode_status");
-  nh.param<std::string>("map_topic",map_topic_,"/map");
+  nh.param<std::string>("map_topic",map_topic_,"map");
   nh.param<std::string>("goal_marker_name",goal_marker_name_,"UAV Goal Marker");
 
   goal_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(goal_pub_topic_,1);
@@ -93,7 +93,7 @@ UAV_SET_GOAL_C::UAV_SET_GOAL_C():server("uav_set_goal") {
   mode_msg.mode = uav_msgs::FlightModeRequest::LAND;
   flight_request_pub.publish(mode_msg);
   SquareTest = false;
-  
+
   AutoFlight = 0;
 }
 

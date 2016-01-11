@@ -2,10 +2,10 @@
 
 UAVGoalInterpolate::UAVGoalInterpolate() {
   ros::NodeHandle nh;
-  nh.param<std::string>("goal_sub_topic",goal_sub_topic_,"/goal_pose");
+  nh.param<std::string>("goal_sub_topic",goal_sub_topic_,"goal_pose");
   nh.param<std::string>("pose_sub_topic",pose_sub_topic_,"uav_state");
-  nh.param<std::string>("path_pub_topic",path_pub_topic_,"/path");
-  nh.param<std::string>("map_frame_topic",map_frame_topic_,"/map");
+  nh.param<std::string>("path_pub_topic",path_pub_topic_,"path");
+  nh.param<std::string>("map_frame_topic",map_frame_topic_,"map");
   nh.param("Size_of_divisions",DivSize_,0.1);
 
   path_pub_ = nh.advertise<nav_msgs::Path>(path_pub_topic_, 1);
