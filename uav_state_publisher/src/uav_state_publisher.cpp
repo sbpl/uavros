@@ -21,20 +21,28 @@ UAVStatePublisher::UAVStatePublisher() :
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
 
-    ph.param<std::string>("state_pub_topic", state_pub_topic_, "uav_state");
-    ph.param<std::string>("Z_laser_topic", z_laser_topic_, "HeightLaser");
-    ph.param<std::string>("Z_laser_median_topic", z_laser_median_topic_, "HeightLaserMedian");
-    ph.param<std::string>("position_sub_topic", position_sub_topic_, "ekf_state");
-    ph.param<std::string>("vertical_laser_data_topic", vertical_laser_data_topic_, "panning_laser");
+    state_pub_topic_ = "uav_state";
+    z_laser_topic_ = "HeightLaser";
+    z_laser_median_topic_ = "HeightLaserMedian";
+    position_sub_topic_ = "ekf_state";
+    vertical_laser_data_topic_ = "panning_laser";
+    slam_topic_ = "slam_out_pose";
+    imu_topic_ = "raw_imu";
+    rpy_pub_topic_ = "rpy_with_acc4";
+    flt_mode_stat_topic_ = "flight_mode_status";
+
+    vertical_laser_frame_topic_ = "panning_laser_frame";
+    map_topic_ = "map";
+    body_topic_ = "body_frame";
+    body_map_aligned_topic_ = "body_frame_map_aligned";
+    body_stabilized_topic_ = "body_frame_stabilized";
+
     ph.param<std::string>("vertical_laser_frame_topic", vertical_laser_frame_topic_, "panning_laser_frame");
-    ph.param<std::string>("slam_topic", slam_topic_, "slam_out_pose");
     ph.param<std::string>("map_topic", map_topic_, "map");
     ph.param<std::string>("body_topic", body_topic_, "body_frame");
     ph.param<std::string>("body_map_aligned_topic", body_map_aligned_topic_, "body_frame_map_aligned");
     ph.param<std::string>("body_stabilized_topic", body_stabilized_topic_, "body_frame_stabilized");
-    ph.param<std::string>("imu_topic", imu_topic_, "raw_imu");
-    ph.param<std::string>("rpy_pub_topic", rpy_pub_topic_, "rpy_with_acc4");
-    ph.param<std::string>("flt_mode_stat_topic", flt_mode_stat_topic_, "flight_mode_status");
+
     ph.param("min_lidar_angle", min_lidar_angle_, -3.14159);
     ph.param("max_lidar_angle", max_lidar_angle_, 3.14159);
     ph.param("height_filter_deviation_max", height_filter_deviation_max_, 0.2);
