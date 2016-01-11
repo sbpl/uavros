@@ -21,22 +21,23 @@ UAVLocalPlanner::UAVLocalPlanner()
     ph.param("nominal_linear_velocity", nominal_linear_velocity_, 0.3);
     ph.param("nominal_angular_velocity", nominal_angular_velocity_, M_PI / 2);
 
-    ph.param<std::string>("flt_mode_req_topic", flt_mode_req_topic_, "flight_mode_request");
-    ph.param<std::string>("flt_mode_stat_topic", flt_mode_stat_topic_, "/flight_mode_status");
-    ph.param<std::string>("ctrl_cmd_topic", ctrl_cmd_topic_, "/high_level_controller_cmd");
-    ph.param<std::string>("goal_pub_topic", goal_pub_topic_, "/goal");
-    ph.param<std::string>("goal_sub_topic", goal_sub_topic_, "goal");
-    ph.param<std::string>("next_waypoint_topic", next_waypoint_topic_, "/controller/next_waypoint");
-    ph.param<std::string>("local_collision_topic", local_collision_topic_, "local_collision_map");
-    ph.param<std::string>("uav_state_topic", uav_state_topic_, "uav_state");
-    ph.param<std::string>("path_topic", path_topic_, "/path");
+    flt_mode_req_topic_ = "flight_mode_request";
+    flt_mode_stat_topic_ = "flight_mode_status";
+    ctrl_cmd_topic_ = "controller_cmd";
+    goal_pub_topic_ = "goal";
+    goal_sub_topic_ = "goal";
+    next_waypoint_topic_ = "controller/next_waypoint";
+    local_collision_topic_ = "local_collision_map";
+    uav_state_topic_ = "uav_state";
+    path_topic_ = "path";
+
     ROS_ERROR("[local_planner] done getting params");
     path_idx_ = 0;
 
     //publish UAV commands and goals (in case we detect a collision up ahead we publish the same goal state to engage the planner)
     waypoint_vis_pub_ = nh.advertise<visualization_msgs::Marker>(next_waypoint_topic_, 1);
     command_pub_ = nh.advertise<uav_msgs::ControllerCommand>(ctrl_cmd_topic_, 1);
-    RPYT_pub_ = nh.advertise<uav_msgs::ControllerCommand>("/RPYT_cmd", 1);
+    RPYT_pub_ = nh.advertise<uav_msgs::ControllerCommand>("RPYT_cmd", 1);
     goal_pub_ = nh.advertise<geometry_msgs::PoseStamped>(goal_pub_topic_, 1);
 
     status_pub_ = nh.advertise<uav_msgs::FlightModeStatus>(flt_mode_stat_topic_, 1);
@@ -390,7 +391,7 @@ void UAVLocalPlanner::getRobotPose(geometry_msgs::PoseStamped& pose, geometry_ms
 //   //compute distance field and load it into the callback occupancy grid
 //   callback_grid_->updateFromCollisionMap(*cm);
 //   callback_grid_->visualize();
-// 
+//
 //   //take the grid mutex and swap into the latest occupancy grid
 //   boost::unique_lock<boost::mutex> lock(path_mutex_);
 // //   OccupancyGrid* temp = latest_grid_;
