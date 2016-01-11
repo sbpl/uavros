@@ -3,25 +3,23 @@
 
 #define min(a,b) a < b ? a : b
 
-
 // Constructor
 UAVController::UAVController() : tf_(ros::NodeHandle(), ros::Duration(10), true)
 {
-  ros::NodeHandle nh("~");
-  UAVController::InitializeGains();
-  Pos_err = nh.advertise<geometry_msgs::PointStamped>("Pos_error",1);
-  Or_err = nh.advertise<geometry_msgs::PointStamped>("Or_error",1);
-  Vel_err = nh.advertise<geometry_msgs::PointStamped>("Vel_error",1);
-  A_Vel_err = nh.advertise<geometry_msgs::PointStamped>("A_Vel_error",1);
-  Roll_p_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Pos_Gains",1);
-  Pitch_p_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Pos_Gains",1);
-  Roll_o_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Or_Gains",1);
-  Pitch_o_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Or_Gains",1);
+    ros::NodeHandle nh("~");
+    UAVController::InitializeGains();
+    Pos_err = nh.advertise<geometry_msgs::PointStamped>("Pos_error", 1);
+    Or_err = nh.advertise<geometry_msgs::PointStamped>("Or_error", 1);
+    Vel_err = nh.advertise<geometry_msgs::PointStamped>("Vel_error", 1);
+    A_Vel_err = nh.advertise<geometry_msgs::PointStamped>("A_Vel_error", 1);
+    Roll_p_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Pos_Gains", 1);
+    Pitch_p_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Pos_Gains", 1);
+    Roll_o_gain = nh.advertise<geometry_msgs::PointStamped>("Roll_Or_Gains", 1);
+    Pitch_o_gain = nh.advertise<geometry_msgs::PointStamped>("Pitch_Or_Gains", 1);
 
-  PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_altitude", 1);
+    PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_altitude", 1);
 
-  ROS_WARN("[controller] did I get here end?");
-
+    ROS_WARN("[controller] did I get here end?");
 }
 
 // Destructor
@@ -125,100 +123,93 @@ void UAVController::InitializeGains()
 
 void UAVController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
 {
-  ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-        config.RPkp, config.RPkd, config.RPki,
-        config.Ykp, config.Ykd, config.Yki,
-        config.Tkp, config.Tkd, config.Tki,
-        config.Posekp, config.Posekd, config.Poseki,
-        config.HovT);
+    ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", config.RPkp, config.RPkd,
+            config.RPki, config.Ykp, config.Ykd, config.Yki, config.Tkp, config.Tkd, config.Tki, config.Posekp,
+            config.Posekd, config.Poseki, config.HovT);
 
-  CONT.defaultThrust = config.HovT;
+    CONT.defaultThrust = config.HovT;
 
-  CONT.RPkp = config.RPkp;
-  CONT.RPkd = config.RPkd;
-  CONT.RPki = config.RPki;
+    CONT.RPkp = config.RPkp;
+    CONT.RPkd = config.RPkd;
+    CONT.RPki = config.RPki;
 
-  CONT.Ykp = config.Ykp;
-  CONT.Ykd = config.Ykd;
-  CONT.Yki = config.Yki;
+    CONT.Ykp = config.Ykp;
+    CONT.Ykd = config.Ykd;
+    CONT.Yki = config.Yki;
 
-  CONT.Tkp = config.Tkp;
-  CONT.Tkd = config.Tkd;
-  CONT.Tki = config.Tki;
+    CONT.Tkp = config.Tkp;
+    CONT.Tkd = config.Tkd;
+    CONT.Tki = config.Tki;
 
-  CONT.Posekp = config.Posekp;
-  CONT.Posekd = config.Posekd;
-  CONT.Poseki = config.Poseki;
+    CONT.Posekp = config.Posekp;
+    CONT.Posekd = config.Posekd;
+    CONT.Poseki = config.Poseki;
 
-  //CONT.mass = config.mass;
- // CONT.maxF = config.maxF;
- //CONT.minF = config.minF;
- // CONT.maxError = config.maxError;
-  //TODO:  Make node for broadcast params (mass, etc) then each affected node subscribe to broadcast param topic/service
-
+    //CONT.mass = config.mass;
+    // CONT.maxF = config.maxF;
+    //CONT.minF = config.minF;
+    // CONT.maxError = config.maxError;
+    //TODO:  Make node for broadcast params (mass, etc) then each affected node subscribe to broadcast param topic/service
 }
 
 Eigen::VectorXf UAVController::SetDesState(const geometry_msgs::PoseStamped goal_pose)
 {
+    Eigen::VectorXf des_state;
+    des_state.setZero(12);
+    // X,Y,Z in world frame
+    des_state[0] = goal_pose.pose.position.x;
+    des_state[1] = goal_pose.pose.position.y;
+    des_state[2] = goal_pose.pose.position.z;
 
-  Eigen::VectorXf des_state;
-  des_state.setZero(12);
-  // X,Y,Z in world frame
-  des_state[0] = goal_pose.pose.position.x;
-  des_state[1] = goal_pose.pose.position.y;
-  des_state[2] = goal_pose.pose.position.z;
+    double roll, pitch, yaw;
+    tf::Quaternion q;
+    tf::quaternionMsgToTF(goal_pose.pose.orientation, q);
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    // ROS_INFO("Roll, Pitch, Yaw from Quaternion:  %f %f %f",roll,pitch,yaw);
 
-
-  double roll, pitch, yaw;
-  tf::Quaternion q;
-  tf::quaternionMsgToTF(goal_pose.pose.orientation, q);
-  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
-  // ROS_INFO("Roll, Pitch, Yaw from Quaternion:  %f %f %f",roll,pitch,yaw);
-
-  // Roll, Pitch, Yaw in world frame
-  des_state[3] = roll;
-  des_state[4] = pitch;
-  des_state[5] = yaw;
-  //  printf("$$$$$$$$ des yaw %f\n", yaw);
-  return des_state;
+    // Roll, Pitch, Yaw in world frame
+    des_state[3] = roll;
+    des_state[4] = pitch;
+    des_state[5] = yaw;
+    //  printf("$$$$$$$$ des yaw %f\n", yaw);
+    return des_state;
 }
 
-Eigen::VectorXf UAVController::SetCurrState(const geometry_msgs::PoseStamped current_pose, const geometry_msgs::TwistStamped current_velocities)
+Eigen::VectorXf UAVController::SetCurrState(
+    const geometry_msgs::PoseStamped current_pose,
+    const geometry_msgs::TwistStamped current_velocities)
 {
-  Eigen::VectorXf current_state;
-  current_state.setZero(12);
-  // X,Y,Z in world frame
-  current_state[0] = current_pose.pose.position.x;
-  current_state[1] = current_pose.pose.position.y;
-  current_state[2] = current_pose.pose.position.z;
+    Eigen::VectorXf current_state;
+    current_state.setZero(12);
+    // X,Y,Z in world frame
+    current_state[0] = current_pose.pose.position.x;
+    current_state[1] = current_pose.pose.position.y;
+    current_state[2] = current_pose.pose.position.z;
 
-  double roll, pitch, yaw;
-  tf::Quaternion q;
-  tf::quaternionMsgToTF(current_pose.pose.orientation, q);
-  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+    double roll, pitch, yaw;
+    tf::Quaternion q;
+    tf::quaternionMsgToTF(current_pose.pose.orientation, q);
+    tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
-  // Roll, Pitch, Yaw in world frame
-  current_state[3] = roll;
-  current_state[4] = pitch;
-  current_state[5] = yaw;
-  // printf("$$$$$$$$ cur yaw %f\n", yaw);
+    // Roll, Pitch, Yaw in world frame
+    current_state[3] = roll;
+    current_state[4] = pitch;
+    current_state[5] = yaw;
+    // printf("$$$$$$$$ cur yaw %f\n", yaw);
 
-  // Linear velocities in world frame
-  current_state[6] = current_velocities.twist.linear.x;
-  current_state[7] = current_velocities.twist.linear.y;
-  current_state[8] = current_velocities.twist.linear.z;
+    // Linear velocities in world frame
+    current_state[6] = current_velocities.twist.linear.x;
+    current_state[7] = current_velocities.twist.linear.y;
+    current_state[8] = current_velocities.twist.linear.z;
 
-  // Angular velocities in the body frame
-  current_state[9] = current_velocities.twist.angular.x;
-  current_state[10] = current_velocities.twist.angular.y;
-  current_state[11] = current_velocities.twist.angular.z;
-  return current_state;
+    // Angular velocities in the body frame
+    current_state[9] = current_velocities.twist.angular.x;
+    current_state[10] = current_velocities.twist.angular.y;
+    current_state[11] = current_velocities.twist.angular.z;
+    return current_state;
 }
 
-
-Eigen::Vector3f UAVController::AttitudeCtrl(
-    Eigen::VectorXf X,
-    Eigen::VectorXf DesX)
+Eigen::Vector3f UAVController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
     Eigen::Vector3f RPY;
 
@@ -236,11 +227,11 @@ Eigen::Vector3f UAVController::AttitudeCtrl(
     // Calculate errors in angular velocity and angle
     Eigen::VectorXf err;
     err.setZero(6);
-    err.segment(0,3) = DesX.segment(3,3) - X.segment(3,3);
-    err.segment(3,3) =  - X.segment(9,3);
+    err.segment(0, 3) = DesX.segment(3, 3) - X.segment(3, 3);
+    err.segment(3, 3) = -X.segment(9, 3);
 
     for (int i = 0; i < 3; i++) {
-        if(err[i] > M_PI) {
+        if (err[i] > M_PI) {
             err[i] -= 2 * M_PI;
         }
         else if (err[i] < -M_PI) {
@@ -251,8 +242,8 @@ Eigen::Vector3f UAVController::AttitudeCtrl(
     if (err[2] > M_PI / 3) {
         err[2] = M_PI / 3;
     }
-    if (err[2] < -M_PI /3) {
-        err[2] = -M_PI /3;
+    if (err[2] < -M_PI / 3) {
+        err[2] = -M_PI / 3;
     }
 
     RPY[0] = CONT.RPkp * err[0] + CONT.RPkd * err[3] + CONT.RI * CONT.RPki;
@@ -279,16 +270,16 @@ Eigen::Vector3f UAVController::AttitudeCtrl(
 
     geometry_msgs::PointStamped Roll_o_g;
     Roll_o_g.header.stamp = ros::Time::now();
-    Roll_o_g.point.x = CONT.RPkp*err[0];
-    Roll_o_g.point.y = CONT.RPkd*err[3];
-    Roll_o_g.point.z = CONT.RI*CONT.RPki;
+    Roll_o_g.point.x = CONT.RPkp * err[0];
+    Roll_o_g.point.y = CONT.RPkd * err[3];
+    Roll_o_g.point.z = CONT.RI * CONT.RPki;
     Roll_o_gain.publish(Roll_o_g);
 
     geometry_msgs::PointStamped Pitch_o_g;
     Pitch_o_g.header.stamp = ros::Time::now();
-    Pitch_o_g.point.x = CONT.RPkp*err[1];
-    Pitch_o_g.point.y = CONT.RPkd*err[4];
-    Pitch_o_g.point.z = CONT.PI*CONT.RPki;
+    Pitch_o_g.point.x = CONT.RPkp * err[1];
+    Pitch_o_g.point.y = CONT.RPkd * err[4];
+    Pitch_o_g.point.z = CONT.PI * CONT.RPki;
     Pitch_o_gain.publish(Pitch_o_g);
 
     //TODO: Error Logging  --- meaning what????
@@ -296,9 +287,7 @@ Eigen::Vector3f UAVController::AttitudeCtrl(
     return RPY;
 }
 
-Eigen::Vector2f UAVController::PositionCtrl(
-    Eigen::VectorXf X,
-    Eigen::VectorXf DesX)
+Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 {
     Eigen::Vector2f RP_Pose;
     if (abs(CONT.RposeI) > CONT.windupPose) {
@@ -309,8 +298,7 @@ Eigen::Vector2f UAVController::PositionCtrl(
     }
 
     tf::StampedTransform transform;
-    this->tf_.lookupTransform(
-            "body_frame", "body_frame_map_aligned", ros::Time(0), transform);
+    this->tf_.lookupTransform("body_frame", "body_frame_map_aligned", ros::Time(0), transform);
     tf::Point err_p, err_v, temp;
 
     // position
@@ -320,7 +308,7 @@ Eigen::Vector2f UAVController::PositionCtrl(
 
     err_p = transform * temp;
     for (int idx = 0; idx < 3; idx++) {
-        if (err_p[idx] > CONT.maxError){
+        if (err_p[idx] > CONT.maxError) {
             err_p[idx] = CONT.maxError;
             ROS_ERROR("Above max error %d\n", idx);
         }
@@ -365,16 +353,16 @@ Eigen::Vector2f UAVController::PositionCtrl(
 
     geometry_msgs::PointStamped Roll_p_g;
     Roll_p_g.header.stamp = ros::Time::now();
-    Roll_p_g.point.x = -err_p[1]*CONT.Posekp;
-    Roll_p_g.point.y = -err_v[1]*CONT.Posekd;
-    Roll_p_g.point.z = -CONT.RposeI*CONT.Poseki;
+    Roll_p_g.point.x = -err_p[1] * CONT.Posekp;
+    Roll_p_g.point.y = -err_v[1] * CONT.Posekd;
+    Roll_p_g.point.z = -CONT.RposeI * CONT.Poseki;
     Roll_p_gain.publish(Roll_p_g);
 
     geometry_msgs::PointStamped Pitch_p_g;
     Pitch_p_g.header.stamp = ros::Time::now();
-    Pitch_p_g.point.x = err_p[0]*CONT.Posekp;
-    Pitch_p_g.point.y = err_v[0]*CONT.Posekd;
-    Pitch_p_g.point.z = CONT.PposeI*CONT.Poseki;
+    Pitch_p_g.point.x = err_p[0] * CONT.Posekp;
+    Pitch_p_g.point.y = err_v[0] * CONT.Posekd;
+    Pitch_p_g.point.z = CONT.PposeI * CONT.Poseki;
     Pitch_p_gain.publish(Pitch_p_g);
 
     return RP_Pose;
@@ -414,8 +402,7 @@ float UAVController::AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 
     tf::StampedTransform transform;
     // TODO: configurate frame names
-    this->tf_.lookupTransform(
-            "body_frame", "base_stabilized", ros::Time(0), transform);
+    this->tf_.lookupTransform("body_frame", "base_stabilized", ros::Time(0), transform);
 
     tf::Matrix3x3 rot;
     rot = transform.getBasis();
@@ -446,41 +433,41 @@ uav_msgs::ControllerCommand UAVController::Controller(
     const geometry_msgs::TwistStamped current_velocities,
     const geometry_msgs::PoseStamped goal_pose)
 {
-  Eigen::VectorXf current_state, des_state;
-  current_state = SetCurrState(current_pose, current_velocities);
-  des_state = SetDesState(goal_pose);
+    Eigen::VectorXf current_state, des_state;
+    current_state = SetCurrState(current_pose, current_velocities);
+    des_state = SetDesState(goal_pose);
 
-  Eigen::Vector4f F;
-  Eigen::Vector3f RPY_f;
-  Eigen::Vector2f Pose_f;
-  float T_f;
+    Eigen::Vector4f F;
+    Eigen::Vector3f RPY_f;
+    Eigen::Vector2f Pose_f;
+    float T_f;
 
-  RPY_f = AttitudeCtrl(current_state, des_state);
-  Pose_f = PositionCtrl(current_state, des_state);
-  T_f = AltitudeCtrl(current_state, des_state);
+    RPY_f = AttitudeCtrl(current_state, des_state);
+    Pose_f = PositionCtrl(current_state, des_state);
+    T_f = AltitudeCtrl(current_state, des_state);
 
-  F[0] = Pose_f[0] + RPY_f[0];
-  F[1] = Pose_f[1] + RPY_f[1];
-  F[2] = RPY_f[2];
-  F[3] = T_f;
+    F[0] = Pose_f[0] + RPY_f[0];
+    F[1] = Pose_f[1] + RPY_f[1];
+    F[2] = RPY_f[2];
+    F[3] = T_f;
 
-  if (F[3] > CONT.maxF) {
-    ROS_ERROR("Thrust force above allowable value!!\n");
-    F[3] = CONT.maxF;
-  }
-  else if (F[3] < CONT.minF) {
-    ROS_ERROR("Thrust force below minimum value!!\n");
-    F[3] = CONT.minF;
-  }
+    if (F[3] > CONT.maxF) {
+        ROS_ERROR("Thrust force above allowable value!!\n");
+        F[3] = CONT.maxF;
+    }
+    else if (F[3] < CONT.minF) {
+        ROS_ERROR("Thrust force below minimum value!!\n");
+        F[3] = CONT.minF;
+    }
 
-  uav_msgs::ControllerCommand ctrl_cmd;
-  ctrl_cmd.header.stamp = ros::Time::now();
-  ctrl_cmd.roll = static_cast<float>(F[0]);
-  ctrl_cmd.pitch = static_cast<float>(F[1]);
-  ctrl_cmd.yaw = static_cast<float>(F[2]);
-  ctrl_cmd.thrust = static_cast<float>(F[3]);
-  //ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
-  return ctrl_cmd;
+    uav_msgs::ControllerCommand ctrl_cmd;
+    ctrl_cmd.header.stamp = ros::Time::now();
+    ctrl_cmd.roll = static_cast<float>(F[0]);
+    ctrl_cmd.pitch = static_cast<float>(F[1]);
+    ctrl_cmd.yaw = static_cast<float>(F[2]);
+    ctrl_cmd.thrust = static_cast<float>(F[3]);
+    //ROS_INFO("Controller Command RPYT: %f %f %f %f", ctrl_cmd.roll, ctrl_cmd.pitch, ctrl_cmd.yaw, ctrl_cmd.thrust);
+    return ctrl_cmd;
 }
 
 void UAVController::waitForParam(const std::string& name) const
@@ -491,12 +478,8 @@ void UAVController::waitForParam(const std::string& name) const
     }
 }
 
-template <typename T>
-void UAVController::readParam(
-    const std::string& name,
-    T& value,
-    const T& errval,
-    const std::string& units)
+template<typename T>
+void UAVController::readParam(const std::string& name, T& value, const T& errval, const std::string& units)
 {
     if (!ros::param::get(name, value)) {
         ROS_ERROR_STREAM("Missing '" << name << "' parameter, setting to " << errval << units);
