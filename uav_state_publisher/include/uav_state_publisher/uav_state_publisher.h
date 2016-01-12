@@ -201,8 +201,24 @@ private:
 	bool estimateInitialHeight(sensor_msgs::LaserScanConstPtr  scan, double& ret_height);
     void flightModeCallback( uav_msgs::FlightModeStatusConstPtr msg);
 
-	std::string state_pub_topic_, z_laser_topic_, z_laser_median_topic_, position_sub_topic_, vertical_laser_data_topic_, vertical_laser_frame_topic_,
-			slam_topic_, map_topic_, body_topic_, body_map_aligned_topic_, body_stabilized_topic_, imu_topic_, rpy_pub_topic_;
+    // topic names
+	std::string state_pub_topic_;
+    std::string z_laser_topic_;
+    std::string z_laser_median_topic_;
+    std::string position_sub_topic_;
+    std::string vertical_laser_data_topic_;
+    std::string slam_topic_;
+    std::string imu_topic_;
+    std::string rpy_pub_topic_;
+
+    // tf frame names
+    std::string tf_prefix_;
+    std::string vertical_laser_frame_topic_;
+    std::string map_topic_;
+    std::string odom_topic_;
+    std::string body_topic_;
+    std::string body_map_aligned_topic_;
+    std::string body_stabilized_topic_;
 
 	nav_msgs::Odometry state_;
 	ros::Publisher state_pub_;

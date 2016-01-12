@@ -2,10 +2,9 @@
 scan_topic: fixed_laser
 sys_msg_topic: syscommand
 
-# Frame Names
-map_frame: map
-base_frame: body_frame
-odom_frame: body_frame
+# NOTE: frame name parameters moved to launch files to support tf prefixing. tf
+# prefixing is implemented by the hector_pose_estimation node but not the
+# hector_mapping node
 
 # TF Use
 use_tf_scan_transformation: true

@@ -6,8 +6,6 @@
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/PointCloud2.h>
 
-#define PRINT_VARIABLE(x) std::cout << #x << ": " << x << std::endl;
-
 UAVStatePublisher::UAVStatePublisher() :
     tf_(ros::NodeHandle(), ros::Duration(10), true),
     z_fifo_(5),
@@ -31,17 +29,31 @@ UAVStatePublisher::UAVStatePublisher() :
     rpy_pub_topic_ = "rpy_with_acc4";
     flt_mode_stat_topic_ = "flight_mode_status";
 
+    tf_prefix_ = tf::getPrefixParam(ph);
+    if (!tf_prefix_.empty()) {
+        ROS_INFO("Using tf_prefix '%s'", tf_prefix_.c_str());
+    }
+
     vertical_laser_frame_topic_ = "panning_laser_frame";
     map_topic_ = "map";
+    odom_topic_ = "odom";
     body_topic_ = "body_frame";
     body_map_aligned_topic_ = "body_frame_map_aligned";
     body_stabilized_topic_ = "body_frame_stabilized";
 
     ph.param<std::string>("vertical_laser_frame_topic", vertical_laser_frame_topic_, "panning_laser_frame");
     ph.param<std::string>("map_topic", map_topic_, "map");
+    ph.param<std::string>("odom_topic", odom_topic_, "odom");
     ph.param<std::string>("body_topic", body_topic_, "body_frame");
     ph.param<std::string>("body_map_aligned_topic", body_map_aligned_topic_, "body_frame_map_aligned");
     ph.param<std::string>("body_stabilized_topic", body_stabilized_topic_, "body_frame_stabilized");
+
+    vertical_laser_frame_topic_ = tf::resolve(tf_prefix_, vertical_laser_frame_topic_);
+    map_topic_ = tf::resolve(tf_prefix_, map_topic_);
+    odom_topic_ = tf::resolve(tf_prefix_, odom_topic_);
+    body_topic_ = tf::resolve(tf_prefix_, body_topic_);
+    body_map_aligned_topic_ = tf::resolve(tf_prefix_, body_map_aligned_topic_);
+    body_stabilized_topic_ = tf::resolve(tf_prefix_, body_stabilized_topic_);
 
     ph.param("min_lidar_angle", min_lidar_angle_, -3.14159);
     ph.param("max_lidar_angle", max_lidar_angle_, 3.14159);
@@ -212,7 +224,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     tf::transformTFToMsg(T_map_odom, trans.transform);
 
     //ROS_WARN("height is %f\n", trans.transform.translation.z);
-    trans.child_frame_id = "odom"; // TODO: configurate frame name //body_topic_;
+    trans.child_frame_id = odom_topic_;
     tf_broadcaster.sendTransform(trans);
 
     // publish the map -> body_frame_map_aligned transform
