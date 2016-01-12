@@ -1,4 +1,5 @@
 <launch>
+    <arg name="ns" default="false"/>
     <arg name="use_slam" default="true"/>
 
     <!-- Odometry -->
@@ -15,11 +16,31 @@
     </node>
 
     <!-- SLAM -->
-    <node if="$(arg use_slam)" name="hector_slam"
-            pkg="hector_mapping" type="hector_mapping">
-        <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
-        <remap from="poseupdate" to="slam_poseupdate"/>
-    </node>
+    <group if="$(arg use_slam)">
+        <!-- common frame names regardless of namespacing -->
+        <arg name="map_frame" value="slam_map"/>
+        <arg name="body_frame" value="body_frame"/>
+        <arg name="odom_frame" value="odom_frame"/>
+
+        <group if="$(arg ns)">
+            <node name="hector_slam" pkg="hector_mapping" type="hector_mapping">
+                <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
+                <remap from="poseupdate" to="slam_poseupdate"/>
+                <param name="map_frame" value="hexacopter/$(arg map_frame)"/>
+                <param name="base_frame" value="hexacopter/$(arg body_frame)"/>
+                <param name="odom_frame" value="hexacopter/$(arg odom_frame)"/>
+            </node>
+        </group>
+        <group unless="$(arg ns)">
+            <node name="hector_slam" pkg="hector_mapping" type="hector_mapping">
+                <rosparam file="$(find uav_launch)/config/hector_slam.yaml" command="load"/>
+                <remap from="poseupdate" to="slam_poseupdate"/>
+                <param name="map_frame" value="hexacopter/$(arg map_frame)"/>
+                <param name="base_frame" value="hexacopter/$(arg body_frame)"/>
+                <param name="odom_frame" value="hexacopter/$(arg odom_frame)"/>
+            </node>
+        </group>
+    </group>
 
     <!-- State Aggregation -->
     <node name="uav_state_publisher"

@@ -1,4 +1,5 @@
 <launch>
+    <arg name="ns"  default="false"/>
     <arg name="sim" default="false"/>
 
     <arg name="use_slam" default="true"/>
@@ -20,6 +21,7 @@
     -->
 
     <include file="$(find uav_launch)/launch/uav_state_estimation.launch">
+        <arg name="ns" value="$(arg ns)"/>
         <arg name="use_slam" value="$(arg use_slam)"/>
     </include>
 
