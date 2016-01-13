@@ -1,5 +1,5 @@
 <launch>
-    <arg name="use_ns" default="false"/>
+    <arg name="ns" default="false"/>
 
     <arg name="sim" default="false"/>
 
@@ -10,27 +10,29 @@
     <arg name="use_panning_laser" default="true"/>
     <arg name="use_panning_servo" default="false"/>
 
-    <group if="$(arg use_ns)" ns="hexacopter">
+    <group if="$(arg ns)" ns="hexacopter">
         <param name="tf_prefix" value="hexacopter"/>
 
         <include file="$(find uav_launch)/launch/uav.launch">
-            <arg name="sim" default="$(arg sim)"/>
-            <arg name="use_slam" default="$(arg use_slam)"/>
-            <arg name="use_camera" default="$(arg use_camera)"/>
-            <arg name="use_fixed_laser" default="$(arg use_fixed_laser)"/>
-            <arg name="use_panning_laser" default="$(arg use_panning_laser)"/>
-            <arg name="use_panning_servo" default="$(arg use_panning_servo)"/>
+            <arg name="ns" value="$(arg ns)"/>
+            <arg name="sim" value="$(arg sim)"/>
+            <arg name="use_slam" value="$(arg use_slam)"/>
+            <arg name="use_camera" value="$(arg use_camera)"/>
+            <arg name="use_fixed_laser" value="$(arg use_fixed_laser)"/>
+            <arg name="use_panning_laser" value="$(arg use_panning_laser)"/>
+            <arg name="use_panning_servo" value="$(arg use_panning_servo)"/>
         </include>
     </group>
 
-    <group unless="$(arg use_ns)">
+    <group unless="$(arg ns)">
         <include file="$(find uav_launch)/launch/uav.launch">
-            <arg name="sim" default="$(arg sim)"/>
-            <arg name="use_slam" default="$(arg use_slam)"/>
-            <arg name="use_camera" default="$(arg use_camera)"/>
-            <arg name="use_fixed_laser" default="$(arg use_fixed_laser)"/>
-            <arg name="use_panning_laser" default="$(arg use_panning_laser)"/>
-            <arg name="use_panning_servo" default="$(arg use_panning_servo)"/>
+            <arg name="ns"  value="$(arg ns)"/>
+            <arg name="sim" value="$(arg sim)"/>
+            <arg name="use_slam" value="$(arg use_slam)"/>
+            <arg name="use_camera" value="$(arg use_camera)"/>
+            <arg name="use_fixed_laser" value="$(arg use_fixed_laser)"/>
+            <arg name="use_panning_laser" value="$(arg use_panning_laser)"/>
+            <arg name="use_panning_servo" value="$(arg use_panning_servo)"/>
         </include>
     </group>
 </launch>
