@@ -18,8 +18,16 @@ class UAV_SET_GOAL_C
 {
 public:
 
+    UAV_SET_GOAL_C();
+    ~UAV_SET_GOAL_C();
+
+private:
+
     interactive_markers::MenuHandler menu_handler;
-    visualization_msgs::InteractiveMarkerControl box_control, control, menu_control;
+
+    visualization_msgs::InteractiveMarkerControl box_control;
+    visualization_msgs::InteractiveMarkerControl control;
+    visualization_msgs::InteractiveMarkerControl menu_control;
 
     visualization_msgs::InteractiveMarker int_marker;
     visualization_msgs::Marker box_marker;
@@ -30,9 +38,6 @@ public:
     ros::Publisher flight_request_pub;
     ros::Subscriber flight_status_sub;
 
-    UAV_SET_GOAL_C();
-    ~UAV_SET_GOAL_C();
-
     bool SquareTest;
     bool AutoFlight;
     int SqTPt;
@@ -40,10 +45,14 @@ public:
 
     geometry_msgs::PoseStamped goal_pose;
 
-private:
-
     ros::Time lastTime;
-    std::string goal_pub_topic_, flt_mode_req_topic_, flt_mode_stat_topic_, map_topic_, goal_marker_name_;
+    std::string goal_pub_topic_;
+    std::string flt_mode_req_topic_;
+    std::string flt_mode_stat_topic_;
+    std::string map_topic_;
+    std::string goal_marker_name_;
+
+    std::string tf_prefix_;
 
     void procFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
 

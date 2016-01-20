@@ -1,6 +1,30 @@
 #include "uav_set_goal.h"
 
-UAV_SET_GOAL_C::UAV_SET_GOAL_C() : server("uav_set_goal")
+#include <tf/transform_listener.h>
+
+UAV_SET_GOAL_C::UAV_SET_GOAL_C() :
+    menu_handler(),
+    box_control(),
+    control(),
+    menu_control(),
+    int_marker(),
+    box_marker(),
+    server("uav_set_goal"),
+    goal_pose_pub(),
+    flight_request_pub(),
+    flight_status_sub(),
+    SquareTest(false),
+    AutoFlight(false),
+    SqTPt(0),
+    AutoFlightRealm(0),
+    goal_pose(),
+    lastTime(),
+    goal_pub_topic_(),
+    flt_mode_req_topic_(),
+    flt_mode_stat_topic_(),
+    map_topic_(),
+    goal_marker_name_(),
+    tf_prefix_()
 {
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
@@ -12,9 +36,16 @@ UAV_SET_GOAL_C::UAV_SET_GOAL_C() : server("uav_set_goal")
     map_topic_ = "map";
     goal_marker_name_ = "UAV Goal Marker";
 
+    tf_prefix_ = tf::getPrefixParam(ph);
+    if (!tf_prefix_.empty()) {
+        ROS_INFO("Using tf_prefix '%s'", tf_prefix_.c_str());
+    }
+
     // TODO: rename this, since it's a frame name and not a topic
     ph.param<std::string>("map_topic", map_topic_, "map");
     ph.param<std::string>("goal_marker_name", goal_marker_name_, "UAV Goal Marker");
+
+    map_topic_ = tf::resolve(tf_prefix_, map_topic_);
 
     goal_pose_pub = nh.advertise<geometry_msgs::PoseStamped>(goal_pub_topic_, 1);
     flight_request_pub = nh.advertise<uav_msgs::FlightModeRequest>(flt_mode_req_topic_, 1);
