@@ -3,9 +3,7 @@
     <arg name="use_slam" default="true"/>
 
     <!-- Odometry -->
-    <node name="hector_localization"
-            pkg="hector_pose_estimation"
-            type="pose_estimation">
+    <node name="hector_localization" pkg="hector_pose_estimation" type="pose_estimation">
         <remap from="state" to="ekf_state"/>
         <param name="with_covariances" value="false"/>
         <param name="system/gyro_stddev" value="0.1" />
@@ -18,7 +16,7 @@
     <!-- SLAM -->
     <group if="$(arg use_slam)">
         <!-- common frame names regardless of namespacing -->
-        <arg name="map_frame" value="slam_map"/>
+        <arg name="map_frame" value="map"/>
         <arg name="body_frame" value="body_frame"/>
         <arg name="odom_frame" value="odom_frame"/>
 
