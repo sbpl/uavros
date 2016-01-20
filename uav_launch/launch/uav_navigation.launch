@@ -2,4 +2,6 @@
     <node pkg="uav_goal_interpolate" type="uav_goal_interpolate" name="uav_goal_interpolate">
         <rosparam file="$(find uav_launch)/config/uav_goal_interpolate.yaml" command="load"/>
     </node>
+
+    <include file="$(find move_base_3d)/launch/move_base_3d.launch"/>
 </launch>
