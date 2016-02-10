@@ -251,7 +251,9 @@ geometry_msgs::Twist TwistLocalPlanner::control(
                 m_nominal_linear_velocity;
     }
 
-    Eigen::Vector3d lvel(planar_vel.x(), planar_vel.y(), z_vel);
+    Eigen::Vector3d tlvel(planar_vel.x(), planar_vel.y(), z_vel);
+    Eigen::Vector3d slvel(vel.linear.x, vel.linear.y, vel.linear.z);
+    Eigen::Vector3d lvel = slvel + 0.9 * (tlvel - slvel);
 
     double curr_roll, curr_pitch, curr_yaw;
     tf::Quaternion curr_quat;
@@ -271,7 +273,7 @@ geometry_msgs::Twist TwistLocalPlanner::control(
                 m_nominal_angular_velocity;
     }
 
-    // TODO: transform into the body frame
+    // transform into the body frame
     Eigen::Quaterniond body_rot;
     tf::quaternionMsgToEigen(pose.orientation, body_rot);
     Eigen::Affine3d T_world_body(body_rot);

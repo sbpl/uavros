@@ -6,9 +6,9 @@ controller_frequency: 40.0
 collision_map_tolerance: 0.5
 pose_tolerance: 0.3
 landing_height: 0.4
-nominal_height: 1.65
+nominal_height: 1.4
 nominal_linear_velocity: 0.3
-nominal_angular_velocity: 1.57079633  #PI/2
+nominal_angular_velocity: 0.785  #PI/4
 
 flt_mode_req_topic: 'flight_mode_request'
 flt_mode_stat_topic: 'flight_mode_status'
