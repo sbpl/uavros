@@ -2,7 +2,7 @@
 //
 //Aleksandr Kushleyev
 //University of Pennsylvania
-//August 2009 
+//August 2009
 //akushley@seas.upenn.edu
 
 #include <uav_servo_node/Dynamixel.h>
@@ -68,7 +68,7 @@ int Dynamixel::Connect(string device, int baudRate, int moduleId)
     return -1;
   }
 
-  //create instance of serial device 
+  //create instance of serial device
   this->sd = new SerialDevice();
 
   if (!this->sd)
@@ -112,7 +112,7 @@ unsigned char Dynamixel::CalcCheckSum(unsigned char * buf, bool writeToBuf)
 {
   unsigned char length   = buf[3];
   unsigned char sum      = buf[2] + buf[3];  //id + length
-  unsigned char * ptr    = buf + 4;  
+  unsigned char * ptr    = buf + 4;
   unsigned char lenCheck = length - 1;
 
   for (unsigned int ii=0; ii<lenCheck; ii++)
@@ -122,13 +122,13 @@ unsigned char Dynamixel::CalcCheckSum(unsigned char * buf, bool writeToBuf)
 
   if (writeToBuf)
     *ptr = sum;
-  
+
   return sum;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // pack up the data for shipping out to the device (adds header, length, checksum)
-int Dynamixel::CreateOutgoingPacket(void * payload, unsigned int length, 
+int Dynamixel::CreateOutgoingPacket(void * payload, unsigned int length,
                                        char * packet, unsigned int maxLength)
 {
 
@@ -154,7 +154,7 @@ int Dynamixel::CreateOutgoingPacket(void * payload, unsigned int length,
   packet[1] = 0xFF;
   packet[2] = this->moduleId;
   packet[3] = (unsigned char)length+1;  //including the checksum
-  
+
   //copy payload
   memcpy( (packet + DYNAMIXEL_PACKET_HEADER_LENGTH), payload, length );
 
@@ -180,7 +180,7 @@ int Dynamixel::ReadPacket(char * packet, unsigned int maxLength, unsigned int ti
     PRINT_ERROR("not connected!\n");
     return -1;
   }
-  
+
   //read the header
   unsigned int n = this->sd->ReadChars(packet,4,timeoutUs);
 
@@ -230,7 +230,7 @@ int Dynamixel::ReadPacket(char * packet, unsigned int maxLength, unsigned int ti
     this->lastDriverError = DYNAMIXEL_ERROR_BAD_CHECKSUM;
     return -1;
   }
-  
+
   return n+4;
 }
 
@@ -263,7 +263,7 @@ void Dynamixel::PrintPacket(char * buf, int length)
   for (int ii=0; ii<length; ii++)
     PRINT_INFO_RAW((unsigned char)buf[ii]<<" ");
   PRINT_INFO_RAW("\n");
-  
+
   resetiosflags (ios_base::basefield);
   resetiosflags (ios_base::showbase);
 }
@@ -369,7 +369,7 @@ int Dynamixel::VelocityVal2VelocityDeg(uint16_t val, float &velocity)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Send a command to request motion to a position using provided velocity 
+// Send a command to request motion to a position using provided velocity
 // and stored acceleration
 int Dynamixel::MoveToPos(float position, float velocity)
 {
@@ -377,7 +377,7 @@ int Dynamixel::MoveToPos(float position, float velocity)
   char outBuffer[DYNAMIXEL_DEF_BUFFER_LENGTH];
   //char inputBuffer[DYNAMIXEL_DEF_BUFFER_LENGTH];
   const char cmdLength=6;
-  
+
   //allocated and partially fill in data
   char cmd[cmdLength] = { DYNAMIXEL_WRITE_DATA_INSTRUCTION,
                           DYNAMIXEL_GOAL_POSITION_ADDRESS,
@@ -435,7 +435,7 @@ int Dynamixel::MoveToPos(float position, float velocity)
 #endif
     return -1;
   }
-  
+
   return 0;
 }
 
@@ -457,7 +457,7 @@ int Dynamixel::GetCmdConfirmation(uint16_t &status)
   }
 
   status = *(unsigned char*)(inputBuffer+4);
-  
+
   if (status == DYNAMIXEL_RESPONSE_NO_ERROR)
     return 0;
   else
@@ -528,9 +528,9 @@ int Dynamixel::GetDeviceInfo(string & info)
     return -1;
   }
 */
-#ifdef DYNAMIXEL_DEBUG  
+#ifdef DYNAMIXEL_DEBUG
   this->PrintPacket(inputBuffer,packetLength);
-  PRINT_INFO(("Device Information: "<<*(unsigned char*)(inputBuffer+5)<<endl);
+  PRINT_INFO("Device Information: "<<*(unsigned char*)(inputBuffer+5)<<endl);
 #endif
   info = string(inputBuffer+5);
   return 0;
@@ -569,7 +569,7 @@ int Dynamixel::StartDevice()
     return -1;
   }
 
-  bool sensorAlive = false;  
+  bool sensorAlive = false;
 
   for (int ii=0; ii<DYNAMIXEL_STARTUP_RETRIES; ii++)
   {
@@ -597,7 +597,7 @@ int Dynamixel::StartDevice()
 #endif
       }
     }
-   
+
     else
     {
       sensorAlive = true;
