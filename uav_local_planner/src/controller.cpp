@@ -33,70 +33,70 @@ void UAVController::InitializeGains()
     // we have to add a hack to get them...  header changed to double for all
     // robot parameters
 
-    waitForParam("/UAV/Mass");
-    readParam("/UAV/Mass", CONT.mass, 5.0, "kg");
+    waitForParam("UAV/Mass");
+    readParam("UAV/Mass", CONT.mass, 5.0, "kg");
 
     // number of props
-    waitForParam("/UAV/NumProps");
-    readParam("/UAV/NumProps", CONT.numProps, 6);
+    waitForParam("UAV/NumProps");
+    readParam("UAV/NumProps", CONT.numProps, 6);
 
     // N based on 2 kg max force per blade
-    waitForParam("/UAV/MaxForce");
-    readParam("/UAV/MaxForce", CONT.maxF, 14.0, "N");
+    waitForParam("UAV/MaxForce");
+    readParam("UAV/MaxForce", CONT.maxF, 14.0, "N");
 
     // N for which which we really can't issue a control
-    waitForParam("/UAV/MinForce");
-    readParam("/UAV/MinForce", CONT.minF, 4.0, "N");
+    waitForParam("UAV/MinForce");
+    readParam("UAV/MinForce", CONT.minF, 4.0, "N");
 
     // Maximum allowable position error for position ctrl and alt ctrl
-    waitForParam("/UAV/MaxError");
-    readParam("/UAV/MaxError", CONT.maxError, 0.5, "m");
+    waitForParam("UAV/MaxError");
+    readParam("UAV/MaxError", CONT.maxError, 0.5, "m");
 
     // Gravity Vector
     //TODO: load list for gravity vector
     CONT.g << 0, 0, -9.81;
 
     // Default thrust for hovering
-    waitForParam("/UAV/DefaultThrust");
-    readParam("/UAV/DefaultThrust", CONT.defaultThrust, 9.5, "N");
+    waitForParam("UAV/DefaultThrust");
+    readParam("UAV/DefaultThrust", CONT.defaultThrust, 9.5, "N");
 
     // Roll and Pitch Gains
-    waitForParam("/UAV/RPkp");
-    readParam("/UAV/RPkp", CONT.RPkp, 2.0);
-    waitForParam("/UAV/RPki");
-    readParam("/UAV/RPki", CONT.RPki, 0.0);
-    waitForParam("/UAV/RPkd");
-    readParam("/UAV/RPkd", CONT.RPkd, 0.0);
+    waitForParam("UAV/RPkp");
+    readParam("UAV/RPkp", CONT.RPkp, 2.0);
+    waitForParam("UAV/RPki");
+    readParam("UAV/RPki", CONT.RPki, 0.0);
+    waitForParam("UAV/RPkd");
+    readParam("UAV/RPkd", CONT.RPkd, 0.0);
 
     // Yaw Gains
-    waitForParam("/UAV/Ykp");
-    readParam("/UAV/Ykp", CONT.Ykp, 1.0);
+    waitForParam("UAV/Ykp");
+    readParam("UAV/Ykp", CONT.Ykp, 1.0);
 
-    waitForParam("/UAV/Yki");
-    readParam("/UAV/Yki", CONT.Yki, 0.0);
+    waitForParam("UAV/Yki");
+    readParam("UAV/Yki", CONT.Yki, 0.0);
 
-    waitForParam("/UAV/Ykd");
-    readParam("/UAV/Ykd", CONT.Ykd, 0.0);
+    waitForParam("UAV/Ykd");
+    readParam("UAV/Ykd", CONT.Ykd, 0.0);
 
     // Thrust Gains
-    waitForParam("/UAV/Tkp");
-    readParam("/UAV/Tkp", CONT.Tkp, 2.0);
+    waitForParam("UAV/Tkp");
+    readParam("UAV/Tkp", CONT.Tkp, 2.0);
 
-    waitForParam("/UAV/Tki");
-    readParam("/UAV/Tki", CONT.Tki, 0.1);
+    waitForParam("UAV/Tki");
+    readParam("UAV/Tki", CONT.Tki, 0.1);
 
-    waitForParam("/UAV/Tkd");
-    readParam("/UAV/Tkd", CONT.Tkd, 6.0);
+    waitForParam("UAV/Tkd");
+    readParam("UAV/Tkd", CONT.Tkd, 6.0);
 
     // Roll and Pitch Gains for Position
-    waitForParam("/UAV/Posekp");
-    readParam("/UAV/Posekp", CONT.Posekp, 0.8);
+    waitForParam("UAV/Posekp");
+    readParam("UAV/Posekp", CONT.Posekp, 0.8);
 
-    waitForParam("/UAV/Poseki");
-    readParam("/UAV/Poseki", CONT.Poseki, 0.0);
+    waitForParam("UAV/Poseki");
+    readParam("UAV/Poseki", CONT.Poseki, 0.0);
 
-    waitForParam("/UAV/Posekd");
-    readParam("/UAV/Posekd", CONT.Posekd, 0.0);
+    waitForParam("UAV/Posekd");
+    readParam("UAV/Posekd", CONT.Posekd, 0.0);
 
     // Initialize the integral terms
     CONT.RI = 0;
@@ -104,21 +104,21 @@ void UAVController::InitializeGains()
     CONT.PI = 0;
     CONT.TI = 0;
 
-    waitForParam("/UAV/RposeI");
-    readParam("/UAV/RposeI", CONT.RposeI, 0.0);
+    waitForParam("UAV/RposeI");
+    readParam("UAV/RposeI", CONT.RposeI, 0.0);
 
-    waitForParam("/UAV/PposeI");
-    readParam("/UAV/PposeI", CONT.PposeI, 0.0);
+    waitForParam("UAV/PposeI");
+    readParam("UAV/PposeI", CONT.PposeI, 0.0);
 
     // Windup limits
-    waitForParam("/UAV/windupRP");
-    readParam("/UAV/windupRP", CONT.windupRP, 5.0);
+    waitForParam("UAV/windupRP");
+    readParam("UAV/windupRP", CONT.windupRP, 5.0);
 
-    waitForParam("/UAV/windupY");
-    readParam("/UAV/windupY", CONT.windupY, 5.0);
+    waitForParam("UAV/windupY");
+    readParam("UAV/windupY", CONT.windupY, 5.0);
 
-    waitForParam("/UAV/windupPose");
-    readParam("/UAV/windupPose", CONT.windupPose, 5.0);
+    waitForParam("UAV/windupPose");
+    readParam("UAV/windupPose", CONT.windupPose, 5.0);
 }
 
 void UAVController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
