@@ -123,9 +123,12 @@ void UAVController::InitializeGains()
 
 void UAVController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
 {
-    ROS_INFO("Reconfigure Request: %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", config.RPkp, config.RPkd,
-            config.RPki, config.Ykp, config.Ykd, config.Yki, config.Tkp, config.Tkd, config.Tki, config.Posekp,
-            config.Posekd, config.Poseki, config.HovT);
+    ROS_INFO("Reconfigure Request");
+    ROS_INFO("    RP: { P: %lf, D: %lf, I: %lf }", config.RPkp, config.RPkd, config.RPki);
+    ROS_INFO("    Y: { P: %lf, D: %lf, I: %lf }", config.Ykp, config.Ykd, config.Yki);
+    ROS_INFO("    T: { P: %lf, D: %lf, I: %lf }", config.Tkp, config.Tkd, config.Tki);
+    ROS_INFO("    Pose: { P: %lf, D: %lf, I: %lf }", config.Posekp, config.Posekd, config.Poseki);
+    ROS_INFO("    Hover Thrust: %lf", config.HovT);
 
     CONT.defaultThrust = config.HovT;
 
