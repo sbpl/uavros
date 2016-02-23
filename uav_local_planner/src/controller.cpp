@@ -313,11 +313,11 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     for (int idx = 0; idx < 3; idx++) {
         if (err_p[idx] > CONT.maxError) {
             err_p[idx] = CONT.maxError;
-            ROS_ERROR("Above max error %d\n", idx);
+            ROS_ERROR("Above max error %d", idx);
         }
         else if (err_p[idx] < -CONT.maxError) {
             err_p[idx] = -CONT.maxError;
-            ROS_ERROR("Below -max error %d\n", idx);
+            ROS_ERROR("Below -max error %d", idx);
         }
     }
 
@@ -396,11 +396,11 @@ float UAVController::AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
 
     if (err[0] > CONT.maxError) {
         err[0] = CONT.maxError;
-        ROS_ERROR("Above max error thrust\n");
+        ROS_ERROR("Above max error thrust");
     }
     else if (err[0] < -CONT.maxError) {
         err[0] = -CONT.maxError;
-        ROS_ERROR("Below -max error thrust\n");
+        ROS_ERROR("Below -max error thrust");
     }
 
     tf::StampedTransform transform;
@@ -455,11 +455,11 @@ uav_msgs::ControllerCommand UAVController::Controller(
     F[3] = T_f;
 
     if (F[3] > CONT.maxF) {
-        ROS_ERROR("Thrust force above allowable value!!\n");
+        ROS_ERROR("Thrust force above allowable value!!");
         F[3] = CONT.maxF;
     }
     else if (F[3] < CONT.minF) {
-        ROS_ERROR("Thrust force below minimum value!!\n");
+        ROS_ERROR("Thrust force below minimum value!!");
         F[3] = CONT.minF;
     }
 
