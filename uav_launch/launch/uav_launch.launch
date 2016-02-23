@@ -8,7 +8,7 @@
     <arg name="use_camera" default="true"/>
     <arg name="use_fixed_laser" default="true"/>
     <arg name="use_panning_laser" default="true"/>
-    <arg name="use_panning_servo" default="false"/>
+    <arg name="use_panning_servo" default="true"/>
 
     <group if="$(arg ns)" ns="hexacopter">
         <param name="tf_prefix" value="hexacopter"/>
