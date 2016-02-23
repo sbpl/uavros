@@ -4,6 +4,12 @@
     <rosparam command="load" file="$(find uav_launch)/config/UAV.yaml" ns="UAV"/>
 
     <node unless="$(arg sim)" pkg="uav_local_planner" type="uav_local_planner" name="uav_local_planner" launch-prefix="nice --1">
+
+        <!-- NOTE: need to load the UAV parameters into uav_local_planner's private namespace here so that
+        dynamic_reconfigure will correctly override the default parameters specified in the .cfg file -->
+
+        <rosparam file="$(find uav_launch)/config/UAV.yaml"/>
+
         <rosparam file="$(find uav_launch)/config/uav_local_planner.yaml" command="load"/>
         <remap from="goal" to="goal_pose"/>
         <remap from="path" to="MoveBase3D/FlyPlan"/>
