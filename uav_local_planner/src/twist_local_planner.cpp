@@ -592,9 +592,9 @@ int8_t TwistLocalPlanner::on_Following(
 
     if (context.new_path) {
         ROS_INFO("Following a new path");
+        ROS_WARN("size is %zu ", m_controller_path->poses.size());
         m_path_idx = 0;
     }
-    ROS_WARN("size is %zu ", m_controller_path->poses.size());
 
     const geometry_msgs::Pose& curr_pose = context.pose.pose;
     const geometry_msgs::Pose& curr_path_pose = m_controller_path->poses[m_path_idx].pose;
@@ -619,7 +619,7 @@ int8_t TwistLocalPlanner::on_Following(
     }
 
     m_path_idx = i - 1;
-    ROS_INFO("Path Progress: %u/%zu (%0.3f%%)", m_path_idx, m_controller_path->poses.size(), (double)m_path_idx / (double)m_controller_path->poses.size());
+    ROS_INFO("Path Progress: %u/%zu (%0.3f%%)", m_path_idx, m_controller_path->poses.size(), 100.0 * (double)m_path_idx / (double)m_controller_path->poses.size());
 
     // transition to hover if path is completed
     bool hover = false;
