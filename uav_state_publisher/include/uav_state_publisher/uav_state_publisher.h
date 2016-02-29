@@ -20,186 +20,97 @@
 
 class UAVStatePublisher
 {
-
 public:
+
 	UAVStatePublisher();
-	~UAVStatePublisher()
-	{
-	}
-	;
+	~UAVStatePublisher() { }
 
 private:
+
 	class FIFO
 	{
 	public:
-		FIFO(int s)
-		{
-			size_ = s;
-			head_ = 0;
-			tail_ = 0;
-			elements_ = 0;
-			q_ = new double[s];
-		}
 
-		~FIFO()
-		{
-			delete[] q_;
-		}
+		FIFO(int s);
+		~FIFO();
 
-		void insert(double x)
-		{
-			*(q_ + head_) = x;
-			head_++;
-			if (head_ == size_)
-				head_ = 0;
-			if (elements_ < size_)
-				elements_++;
-		}
+		void insert(double x);
 
-		double operator[](int i)
-		{
-			int j = tail_ + i;
-			if (j >= size_)
-				j -= size_;
-			return *(q_ + j);
-		}
+		double operator[](int i);
 
-		int size()
-		{
-			return elements_;
-		}
+		int size() { return elements_; }
 
 	private:
+
 		int size_, head_, tail_, elements_;
 		double* q_;
 	};
 
 	class velo_list
 	{
-
 	public:
 
-		velo_list(int s)
-		{
-			count = 0;
-			size = s;
-		}
+		velo_list(int s);
 
-		~velo_list()
-		{
-		}
+		void add_value(double val);
 
-		void add_value(double val)
-		{
-			if (count == size)
-			{
-				my_list.pop_front();
-			}
-			else
-			{
-				count++;
-			}
-			my_list.push_back(val);
-		}
-		double get_last()
-		{
-			return my_list.front();
-		}
+		double get_last() { return my_list.front(); }
 
 	private:
+
 		std::list<double> my_list;
 		int count;
 		int size;
 	};
 
-	struct reading
-	{
-
-		double value;
-		ros::Time time;
-
-	};
-
 	class integrated_accel
 	{
-
 	public:
 
-		integrated_accel(int s)
-		{
-			size = s;
-			count = 0;
-			offset_set = false;
-			offset = 0;
-			sum = 0;
-		}
+        /// \param s maximum length of buffer
+		integrated_accel(int s);
 
-		~integrated_accel()
-		{
-		}
+        /// \param val
+		void set_value(double val, ros::Time time);
 
-		void set_value(double val, ros::Time time)
-		{
-			if (!offset_set)
-			{
-				offset_set = true;
-				offset = val;
-			}
+        /// \return the number of seconds spanned by the buffered readings
+        double get_timespan() const;
 
-			if (count == size)
-			{
-				my_list.pop_front();
-			}
-			else
-			{
-				count++;
-			}
-			reading r;
-			r.value = val - offset;
-			r.time = time;
-			my_list.push_back(r);
-		}
+		double get_integrated();
 
-		double get_total_sum()
-		{
-			return sum;
-		}
-
-		double get_list_sum()
-		{
-			double s = 0;
-			int index = 0;
-			reading pr;
-			for (std::list<reading>::iterator it = my_list.begin(); it != my_list.end(); ++it)
-			{
-				if (index != 0)
-				{
-					reading r = *it;
-					ros::Duration dt = r.time - pr.time;
-					double val = (pr.value + r.value) / 2;
-					s += (val * dt.toSec());
-					ROS_ERROR("index %d ds %f dt %f d %f sum %f", index, val, dt.toSec(), val * dt.toSec(), s);
-				}
-				pr = *it;
-				index++;
-			}
-			return s;
-		}
+        int size() const { return m_count; }
+        int max_size() const { return m_size; }
 
 	private:
-		std::list<reading> my_list;
-		int count;
-		int size;
-		double sum;
-		bool offset_set;
-		double offset;
+
+        struct reading
+        {
+            double value;
+            ros::Time time;
+        };
+
+		std::list<reading> m_list;   // reading buffer
+
+        // number of readings in the buffer
+		int m_count;
+
+        // maximum length of reading buffer
+		int m_size;
+
+        // flag indicating whether an initial reading has been received to use
+        // as an offset
+		bool m_offset_set;
+
+        // the stored offset from the initial reading
+		double m_offset;
 	};
 
 	void ekfCallback(nav_msgs::OdometryConstPtr p);
 	void lidarCallback(sensor_msgs::LaserScanConstPtr scan);
 	void slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg);
 	bool estimateInitialHeight(sensor_msgs::LaserScanConstPtr  scan, double& ret_height);
-    void flightModeCallback( uav_msgs::FlightModeStatusConstPtr msg);
+    void flightModeCallback(uav_msgs::FlightModeStatusConstPtr msg);
+    void imuCallback(const sensor_msgs::Imu::ConstPtr& msg);
 
     // topic names
 	std::string state_pub_topic_;
@@ -232,7 +143,7 @@ private:
 	ros::Subscriber lidar_sub_;
 	ros::Publisher rpy_pub_;
     ros::Subscriber flight_mode_sub_;
-
+    ros::Subscriber m_imu_sub;
 
 	double saved_yaw_;
 
@@ -246,6 +157,7 @@ private:
 	FIFO z_fifo_;
 	FIFO z_time_fifo_;
 
+    sensor_msgs::Imu m_last_imu;
 	integrated_accel* x_integrated_;
 	integrated_accel* y_integrated_;
 	velo_list* x_velo_;

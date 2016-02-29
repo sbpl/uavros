@@ -8,6 +8,7 @@
 
 UAVStatePublisher::UAVStatePublisher() :
     tf_(ros::NodeHandle(), ros::Duration(10), true),
+    m_last_imu(),
     z_fifo_(5),
     z_time_fifo_(5),
     m_last_scan_analysis_time(),
@@ -59,6 +60,9 @@ UAVStatePublisher::UAVStatePublisher() :
     ph.param("max_lidar_angle", max_lidar_angle_, 3.14159);
     ph.param("height_filter_deviation_max", height_filter_deviation_max_, 0.2);
 
+    // clear last imu state (invalid anyway)
+    m_last_imu.orientation.w = 1.0;
+
     //publish an odometry message (it's the only message with all the state
     //variables we want)
 
@@ -76,65 +80,76 @@ UAVStatePublisher::UAVStatePublisher() :
     lidar_sub_ = nh.subscribe(vertical_laser_data_topic_, 3, &UAVStatePublisher::lidarCallback, this);
     slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVStatePublisher::slamCallback, this);
     flight_mode_sub_ = nh.subscribe(flt_mode_stat_topic_, 1, &UAVStatePublisher::flightModeCallback, this);
+    m_imu_sub = nh.subscribe(imu_topic_, 10, &UAVStatePublisher::imuCallback, this);
 
     x_integrated_ = new integrated_accel(40);
     y_integrated_ = new integrated_accel(40);
     x_velo_ = new velo_list(41);
     y_velo_ = new velo_list(41);
     saved_yaw_ = 0;
-
 }
 
-/*void UAVStatePublisher::rawImuCallback(sensor_msgs::Imu imu)
- {
- ros::Time start_ = ros::Time::now();
+void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
+{
+    ros::Time start_ = ros::Time::now();
 
- //determine gravity compensated accelerations
- tf::Point p(imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
- tf::StampedTransform transform;
+    // determine gravity compensated accelerations
 
- try {
- tf_.lookupTransform( body_map_aligned_topic_, body_topic_, ros::Time(0), transform);
- }
- catch (tf::TransformException ex){
- return;
- }
+    // input accelerations are generally in the body frame;
+    // transform imu acceleration into the map frame
+    tf::Point p(
+            msg->linear_acceleration.x,
+            msg->linear_acceleration.y,
+            msg->linear_acceleration.z);
 
- tf::Point pout = transform * p;
- double accel_x = pout[0];
- double accel_y = pout[1];
- double accel_z = pout[2];
+    tf::StampedTransform transform;
+    try {
+        tf_.lookupTransform(body_map_aligned_topic_, msg->header.frame_id, ros::Time(0), transform);
+    }
+    catch (const tf::TransformException& ex) {
+        ROS_ERROR("Failed to transform IMU data (%s)", ex.what());
+        return;
+    }
 
- ROS_ERROR("BEFORE %f %f %f", p[0], p[1], p[2]);
- ROS_ERROR("AFTER %f %f %f\n", pout[0],pout[1],pout[2]);
+    tf::Point pout = transform * p;
+    double accel_x = pout[0];
+    double accel_y = pout[1];
+    double accel_z = pout[2];
 
- x_integrated_->set_value(accel_x,imu.header.stamp);
- double total_sum_x = x_integrated_->get_total_sum();
- double part_sum_x = x_integrated_->get_list_sum() + x_velo_->get_last();
+    ROS_DEBUG("accel_body %f %f %f -> accel_world %f %f %f",
+            p[0], p[1], p[2], pout[0], pout[1], pout[2]);
 
- y_integrated_->set_value(accel_y,imu.header.stamp);
- double total_sum_y = y_integrated_->get_total_sum();
- double part_sum_y = y_integrated_->get_list_sum() + y_velo_->get_last();
+    // add world-aligned acceleration reading
+    x_integrated_->set_value(accel_x, msg->header.stamp);
+    y_integrated_->set_value(accel_y, msg->header.stamp);
 
- ROS_ERROR("VALUES X %f Y %f", imu.linear_acceleration.x, imu.linear_acceleration.y);
- ROS_ERROR("TOTAL X_SUM %f Y_SUM %f ", total_sum_x, total_sum_y);
- ROS_ERROR("PARTIAL X_SUM %f Y_SUM %f", part_sum_x, part_sum_y);
- ROS_ERROR("VELO X %f Y %f\n", x_velo_->get_last(), y_velo_->get_last());
+    if (x_integrated_->size() < 2 || y_integrated_->size() < 2) {
+        return;
+    }
 
- geometry_msgs::PointStamped accel_int;
- accel_int.header.stamp = start_;
- accel_int.point.x = part_sum_x;
- accel_int.point.y = part_sum_y;
- vel_pub_.publish(accel_int);
+    ROS_DEBUG("velocity (imu) = (%f, %f)",
+            x_integrated_->get_integrated(),
+            y_integrated_->get_integrated());
+    ROS_DEBUG("velocity (etc) = (%f, %f)",
+            x_velo_->get_last(),
+            y_velo_->get_last());
 
- geometry_msgs::PointStamped acc_trans;
- acc_trans.header.stamp = start_;
- acc_trans.point.x = accel_x/40;
- acc_trans.point.y = accel_y/40;
- acc_trans.point.z = accel_z/40;
- ac_pub_.publish(acc_trans);
+    double part_sum_x = x_integrated_->get_integrated() + x_velo_->get_last();
+    double part_sum_y = y_integrated_->get_integrated() + y_velo_->get_last();
 
- }*/
+    geometry_msgs::PointStamped accel_int;
+    accel_int.header.stamp = start_;
+    accel_int.point.x = part_sum_x;
+    accel_int.point.y = part_sum_y;
+    vel_pub_.publish(accel_int);
+
+    geometry_msgs::PointStamped acc_trans;
+    acc_trans.header.stamp = start_;
+    acc_trans.point.x = accel_x / 40;
+    acc_trans.point.y = accel_y / 40;
+    acc_trans.point.z = accel_z / 40;
+    ac_pub_.publish(acc_trans);
+}
 
 void UAVStatePublisher::flightModeCallback(uav_msgs::FlightModeStatusConstPtr msg)
 {
@@ -153,7 +168,6 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
     // printf("############################################got the slam stuff....\n");
     ros::Time stop_ = ros::Time::now();
     ROS_DEBUG("[state_pub] slam callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec() - start_.toSec());
-
 }
 
 // on the order of 50Hz
@@ -161,8 +175,32 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
 {
     ros::Time start_ = ros::Time::now();
 
-    x_velo_->add_value(p->twist.twist.linear.x);
-    y_velo_->add_value(p->twist.twist.linear.y);
+    try {
+        tf::Point vel_odom(
+                p->twist.twist.linear.x,
+                p->twist.twist.linear.y,
+                p->twist.twist.linear.z);
+
+        tf::StampedTransform T_map_odom;
+        tf_.lookupTransform(
+                body_map_aligned_topic_,
+                p->header.frame_id,
+                ros::Time(0),
+                T_map_odom);
+
+        tf::Point vel_map = T_map_odom * vel_odom;
+
+        x_velo_->add_value(vel_map.x());
+        y_velo_->add_value(vel_map.y());
+    }
+    catch (const tf::TransformException& ex) {
+        ROS_ERROR("Failed to transform EKF velocity (%s)", ex.what());
+    }
+
+    if (x_integrated_->size() > 1 && y_integrated_->size() > 1) {
+        // TODO: combine integrated accelerations and ekf velocities to form
+        // world frame velocity
+    }
 
     // get angular velocities
     state_.twist.twist.angular = p->twist.twist.angular;
@@ -468,19 +506,6 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     ROS_DEBUG("[state_pub] lidar callback %f %f = %f", now.toSec(), stop_.toSec(), stop_.toSec() - now.toSec());
 }
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "uav_state_publisher");
-    UAVStatePublisher sp;
-    ros::Rate loop_rate(80);
-    while (ros::ok()) {
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
-
-    return 0;
-}
-
 bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr scan, double& ret_height)
 {
     std::vector<tf::Point> points;
@@ -537,4 +562,127 @@ bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr sca
 
     ret_height = -smallest_z;
     return true;
+}
+
+UAVStatePublisher::FIFO::FIFO(int s) :
+    size_(s),
+    head_(0),
+    tail_(0),
+    elements_(0),
+    q_(nullptr)
+{
+    q_ = new double[s];
+}
+
+UAVStatePublisher::FIFO::~FIFO()
+{
+    delete[] q_;
+}
+
+void UAVStatePublisher::FIFO::insert(double x)
+{
+    *(q_ + head_) = x;
+    head_++;
+    if (head_ == size_) {
+        head_ = 0;
+    }
+    if (elements_ < size_) {
+        elements_++;
+    }
+}
+
+double UAVStatePublisher::FIFO::operator[](int i)
+{
+    int j = tail_ + i;
+    if (j >= size_) {
+        j -= size_;
+    }
+    return *(q_ + j);
+}
+
+UAVStatePublisher::velo_list::velo_list(int s) :
+    my_list(),
+    count(0),
+    size(s)
+{
+}
+
+void UAVStatePublisher::velo_list::add_value(double val)
+{
+    if (count == size) {
+        my_list.pop_front();
+    }
+    else {
+        count++;
+    }
+    my_list.push_back(val);
+}
+
+UAVStatePublisher::integrated_accel::integrated_accel(int s) :
+    m_list(),
+    m_size(s),
+    m_count(0),
+    m_offset_set(false),
+    m_offset(0)
+{
+}
+
+void UAVStatePublisher::integrated_accel::set_value(double val, ros::Time time)
+{
+    if (!m_offset_set) {
+        m_offset_set = true;
+        m_offset = val;
+    }
+
+    if (m_count == m_size) {
+        m_list.pop_front();
+    }
+    else {
+        m_count++;
+    }
+    reading r;
+    r.value = val - m_offset;
+    r.time = time;
+    m_list.push_back(r);
+}
+
+double UAVStatePublisher::integrated_accel::get_timespan() const
+{
+    if (m_list.empty()) {
+        return 0;
+    }
+    else {
+        return m_list.back().time.toSec() - m_list.front().time.toSec();
+    }
+}
+
+double UAVStatePublisher::integrated_accel::get_integrated()
+{
+    double s = 0;
+    int index = 0;
+    reading pr;
+    for (auto it = m_list.begin(); it != m_list.end(); ++it) {
+        if (index != 0) {
+            reading r = *it;
+            ros::Duration dt = r.time - pr.time;
+            double val = (pr.value + r.value) / 2;
+            s += (val * dt.toSec());
+        }
+        pr = *it;
+        index++;
+    }
+    return s;
+}
+
+int main(int argc, char **argv)
+{
+    ros::init(argc, argv, "uav_state_publisher");
+    UAVStatePublisher sp;
+    ros::Rate loop_rate(80);
+    while (ros::ok()) {
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+
+    return 0;
 }
