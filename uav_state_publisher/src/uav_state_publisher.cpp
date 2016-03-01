@@ -7,61 +7,87 @@
 #include <sensor_msgs/PointCloud2.h>
 
 UAVStatePublisher::UAVStatePublisher() :
-    tf_(ros::NodeHandle(), ros::Duration(10), true),
-    m_last_imu(),
+    state_pub_topic_("uav_state"),
+    z_laser_topic_("HeightLaser"),
+    z_laser_median_topic_("HeightLaserMedian"),
+    position_sub_topic_("ekf_state"),
+    vertical_laser_data_topic_("panning_laser"),
+    slam_topic_("slam_out_pose"),
+    imu_topic_("raw_imu"),
+    rpy_pub_topic_("rpy_with_acc4"),
+    flt_mode_stat_topic_("flight_mode_status"),
+    tf_prefix_(),
+    vertical_laser_frameid_("panning_laser_frame"),
+    map_frameid_("map"),
+    odom_frameid_("odom"),
+    body_frameid_("body_frame"),
+    body_map_aligned_frameid_("body_frame_map_aligned"),
+    body_stabilized_frameid_("body_frame_stabilized"),
+    state_(),
+    state_pub_(),
+    pointCloud_pub_(),
+    point_pub_(),
+    vel_pub_(),
+    ac_pub_(),
+    slam_vel_pub_(),
+    rpy_pub_(),
+    max_z_pub_(),
+    ekf_sub_(),
+    slam_sub_(),
+    lidar_sub_(),
+    flight_mode_sub_(),
+    imu_sub_(),
+    saved_yaw_(0.0),
+    tf_listener_(ros::NodeHandle(), ros::Duration(10), true),
+    tf_broadcaster_(),
+    min_lidar_angle_(-3.14159),
+    max_lidar_angle_(3.14159),
+    height_filter_deviation_max_(0.2),
     z_fifo_(5),
     z_time_fifo_(5),
-    m_last_scan_analysis_time(),
-    m_prev_scan_time(),
-    m_num_scans_processed(0),
-    m_filtered_z(0.0),
-    m_prev_filtered_z(0.0)
+    last_imu_(),
+    x_integrated_(40),
+    y_integrated_(40),
+    x_velo_(41),
+    y_velo_(41),
+    last_state_(),
+    T_body_vlaser_(),
+    last_scan_analysis_time_(),
+    prev_scan_time_(),
+    num_scans_processed_(0),
+    filtered_z_(0.0),
+    prev_filtered_z_(0.0)
 {
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
 
-    state_pub_topic_ = "uav_state";
-    z_laser_topic_ = "HeightLaser";
-    z_laser_median_topic_ = "HeightLaserMedian";
-    position_sub_topic_ = "ekf_state";
-    vertical_laser_data_topic_ = "panning_laser";
-    slam_topic_ = "slam_out_pose";
-    imu_topic_ = "raw_imu";
-    rpy_pub_topic_ = "rpy_with_acc4";
-    flt_mode_stat_topic_ = "flight_mode_status";
+    // Lookup tf_prefix and resolve frame ids
 
     tf_prefix_ = tf::getPrefixParam(ph);
     if (!tf_prefix_.empty()) {
         ROS_INFO("Using tf_prefix '%s'", tf_prefix_.c_str());
     }
 
-    vertical_laser_frame_topic_ = "panning_laser_frame";
-    map_topic_ = "map";
-    odom_topic_ = "odom";
-    body_topic_ = "body_frame";
-    body_map_aligned_topic_ = "body_frame_map_aligned";
-    body_stabilized_topic_ = "body_frame_stabilized";
+    ph.param<std::string>("vertical_laser_frame_topic", vertical_laser_frameid_, "panning_laser_frame");
+    ph.param<std::string>("map_topic", map_frameid_, "map");
+    ph.param<std::string>("odom_topic", odom_frameid_, "odom");
+    ph.param<std::string>("body_topic", body_frameid_, "body_frame");
+    ph.param<std::string>("body_map_aligned_topic", body_map_aligned_frameid_, "body_frame_map_aligned");
+    ph.param<std::string>("body_stabilized_topic", body_stabilized_frameid_, "body_frame_stabilized");
 
-    ph.param<std::string>("vertical_laser_frame_topic", vertical_laser_frame_topic_, "panning_laser_frame");
-    ph.param<std::string>("map_topic", map_topic_, "map");
-    ph.param<std::string>("odom_topic", odom_topic_, "odom");
-    ph.param<std::string>("body_topic", body_topic_, "body_frame");
-    ph.param<std::string>("body_map_aligned_topic", body_map_aligned_topic_, "body_frame_map_aligned");
-    ph.param<std::string>("body_stabilized_topic", body_stabilized_topic_, "body_frame_stabilized");
-
-    vertical_laser_frame_topic_ = tf::resolve(tf_prefix_, vertical_laser_frame_topic_);
-    map_topic_ = tf::resolve(tf_prefix_, map_topic_);
-    odom_topic_ = tf::resolve(tf_prefix_, odom_topic_);
-    body_topic_ = tf::resolve(tf_prefix_, body_topic_);
-    body_map_aligned_topic_ = tf::resolve(tf_prefix_, body_map_aligned_topic_);
-    body_stabilized_topic_ = tf::resolve(tf_prefix_, body_stabilized_topic_);
+    vertical_laser_frameid_ = tf::resolve(tf_prefix_, vertical_laser_frameid_);
+    map_frameid_ = tf::resolve(tf_prefix_, map_frameid_);
+    odom_frameid_ = tf::resolve(tf_prefix_, odom_frameid_);
+    body_frameid_ = tf::resolve(tf_prefix_, body_frameid_);
+    body_map_aligned_frameid_ = tf::resolve(tf_prefix_, body_map_aligned_frameid_);
+    body_stabilized_frameid_ = tf::resolve(tf_prefix_, body_stabilized_frameid_);
 
     ph.param("min_lidar_angle", min_lidar_angle_, -3.14159);
     ph.param("max_lidar_angle", max_lidar_angle_, 3.14159);
     ph.param("height_filter_deviation_max", height_filter_deviation_max_, 0.2);
 
     // clear last imu state (invalid anyway)
-    m_last_imu.orientation.w = 1.0;
+    last_imu_.orientation.w = 1.0;
 
     //publish an odometry message (it's the only message with all the state
     //variables we want)
@@ -73,20 +99,13 @@ UAVStatePublisher::UAVStatePublisher() :
     ac_pub_ = nh.advertise<geometry_msgs::PointStamped>("acel_trans", 1);
     slam_vel_pub_ = nh.advertise<geometry_msgs::PointStamped>("slam_vel", 1);
     rpy_pub_ = nh.advertise<geometry_msgs::PointStamped>(rpy_pub_topic_, 1);
-    m_max_z_pub = nh.advertise<std_msgs::Float32>("max_z", 10);
+    max_z_pub_ = nh.advertise<std_msgs::Float32>("max_z", 10);
 
-    //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
     ekf_sub_ = nh.subscribe(position_sub_topic_, 3, &UAVStatePublisher::ekfCallback, this);
     lidar_sub_ = nh.subscribe(vertical_laser_data_topic_, 3, &UAVStatePublisher::lidarCallback, this);
     slam_sub_ = nh.subscribe(slam_topic_, 3, &UAVStatePublisher::slamCallback, this);
     flight_mode_sub_ = nh.subscribe(flt_mode_stat_topic_, 1, &UAVStatePublisher::flightModeCallback, this);
-    m_imu_sub = nh.subscribe(imu_topic_, 10, &UAVStatePublisher::imuCallback, this);
-
-    x_integrated_ = new integrated_accel(40);
-    y_integrated_ = new integrated_accel(40);
-    x_velo_ = new velo_list(41);
-    y_velo_ = new velo_list(41);
-    saved_yaw_ = 0;
+    imu_sub_ = nh.subscribe(imu_topic_, 10, &UAVStatePublisher::imuCallback, this);
 }
 
 void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
@@ -104,7 +123,7 @@ void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 
     tf::StampedTransform transform;
     try {
-        tf_.lookupTransform(body_map_aligned_topic_, msg->header.frame_id, ros::Time(0), transform);
+        tf_listener_.lookupTransform(body_map_aligned_frameid_, msg->header.frame_id, ros::Time(0), transform);
     }
     catch (const tf::TransformException& ex) {
         ROS_ERROR("Failed to transform IMU data (%s)", ex.what());
@@ -120,22 +139,20 @@ void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
             p[0], p[1], p[2], pout[0], pout[1], pout[2]);
 
     // add world-aligned acceleration reading
-    x_integrated_->set_value(accel_x, msg->header.stamp);
-    y_integrated_->set_value(accel_y, msg->header.stamp);
+    x_integrated_.set_value(accel_x, msg->header.stamp);
+    y_integrated_.set_value(accel_y, msg->header.stamp);
 
-    if (x_integrated_->size() < 2 || y_integrated_->size() < 2) {
+    if (x_integrated_.size() < 2 || y_integrated_.size() < 2) {
         return;
     }
 
     ROS_DEBUG("velocity (imu) = (%f, %f)",
-            x_integrated_->get_integrated(),
-            y_integrated_->get_integrated());
+            x_integrated_.get_integrated(), y_integrated_.get_integrated());
     ROS_DEBUG("velocity (etc) = (%f, %f)",
-            x_velo_->get_last(),
-            y_velo_->get_last());
+            x_velo_.get_last(), y_velo_.get_last());
 
-    double part_sum_x = x_integrated_->get_integrated() + x_velo_->get_last();
-    double part_sum_y = y_integrated_->get_integrated() + y_velo_->get_last();
+    double part_sum_x = x_integrated_.get_integrated() + x_velo_.get_last();
+    double part_sum_y = y_integrated_.get_integrated() + y_velo_.get_last();
 
     geometry_msgs::PointStamped accel_int;
     accel_int.header.stamp = start_;
@@ -176,28 +193,29 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     ros::Time start_ = ros::Time::now();
 
     try {
+        // align odom-frame velocities with map frame
         tf::Point vel_odom(
                 p->twist.twist.linear.x,
                 p->twist.twist.linear.y,
                 p->twist.twist.linear.z);
 
         tf::StampedTransform T_map_odom;
-        tf_.lookupTransform(
-                body_map_aligned_topic_,
+        tf_listener_.lookupTransform(
+                body_map_aligned_frameid_,
                 p->header.frame_id,
                 ros::Time(0),
                 T_map_odom);
 
         tf::Point vel_map = T_map_odom * vel_odom;
 
-        x_velo_->add_value(vel_map.x());
-        y_velo_->add_value(vel_map.y());
+        x_velo_.add_value(vel_map.x());
+        y_velo_.add_value(vel_map.y());
     }
     catch (const tf::TransformException& ex) {
         ROS_ERROR("Failed to transform EKF velocity (%s)", ex.what());
     }
 
-    if (x_integrated_->size() > 1 && y_integrated_->size() > 1) {
+    if (x_integrated_.size() > 1 && y_integrated_.size() > 1) {
         // TODO: combine integrated accelerations and ekf velocities to form
         // world frame velocity
     }
@@ -242,7 +260,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     //publish the map to base_link transform
     geometry_msgs::TransformStamped trans;
     trans.header.stamp = p->header.stamp;
-    trans.header.frame_id = map_topic_;
+    trans.header.frame_id = map_frameid_;
     trans.transform.translation.x = state_.pose.pose.position.x;
     trans.transform.translation.y = state_.pose.pose.position.y;
     trans.transform.translation.z = state_.pose.pose.position.z;
@@ -262,16 +280,16 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     tf::transformTFToMsg(T_map_odom, trans.transform);
 
     //ROS_WARN("height is %f\n", trans.transform.translation.z);
-    trans.child_frame_id = odom_topic_;
-    tf_broadcaster.sendTransform(trans);
+    trans.child_frame_id = odom_frameid_;
+    tf_broadcaster_.sendTransform(trans);
 
     // publish the map -> body_frame_map_aligned transform
-    trans.child_frame_id = body_map_aligned_topic_;
+    trans.child_frame_id = body_map_aligned_frameid_;
     trans.transform.rotation.w = 1.0;
     trans.transform.rotation.x = 0.0;
     trans.transform.rotation.y = 0.0;
     trans.transform.rotation.z = 0.0;
-    tf_broadcaster.sendTransform(trans);
+    tf_broadcaster_.sendTransform(trans);
 
     // publish the state
     state_.header.stamp = ros::Time::now();
@@ -287,16 +305,16 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 
     // log scan count over the last period
     const ros::Duration scan_analysis_period(1.0);
-    if (now > m_last_scan_analysis_time + scan_analysis_period) {
+    if (now > last_scan_analysis_time_ + scan_analysis_period) {
         // log how many scans we've processed in the last period
-        const ros::Duration span = (now - m_last_scan_analysis_time);
-        ROS_DEBUG("Processed %d scans in the last %0.3f seconds (%0.3f Hz)", m_num_scans_processed, span.toSec(), (double )m_num_scans_processed / (span.toSec()));
-        m_num_scans_processed = 0;
-        m_last_scan_analysis_time = now;
+        const ros::Duration span = (now - last_scan_analysis_time_);
+        ROS_DEBUG("Processed %d scans in the last %0.3f seconds (%0.3f Hz)", num_scans_processed_, span.toSec(), (double )num_scans_processed_ / (span.toSec()));
+        num_scans_processed_ = 0;
+        last_scan_analysis_time_ = now;
     }
 
-    ++m_num_scans_processed;
-    const ros::Duration dt = now - m_prev_scan_time;
+    ++num_scans_processed_;
+    const ros::Duration dt = now - prev_scan_time_;
 
     double prev_height = state_.pose.pose.position.z;
 
@@ -312,7 +330,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         }
         ROS_INFO("uav_state_publisher: estimated initial height is %f", est_height);
         state_.pose.pose.position.z = est_height;
-        m_filtered_z = est_height;
+        filtered_z_ = est_height;
     }
 
     //////////////////////////////////////////////////////////////////
@@ -328,7 +346,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     tf::StampedTransform T_bodystable_vlaser;
     // first try the master transform
     try {
-        tf_.lookupTransform(body_stabilized_topic_, scan->header.frame_id, ros::Time(0), T_bodystable_vlaser);
+        tf_listener_.lookupTransform(body_stabilized_frameid_, scan->header.frame_id, ros::Time(0), T_bodystable_vlaser);
 
         have_bodymapaligned_to_laser = true;
     }
@@ -339,11 +357,11 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     // then try the two intermediate transforms
     tf::StampedTransform T_bodymapaligned_body;
     try {
-        tf_.lookupTransform(body_stabilized_topic_, body_topic_, ros::Time(0), T_bodymapaligned_body);
+        tf_listener_.lookupTransform(body_stabilized_frameid_, body_frameid_, ros::Time(0), T_bodymapaligned_body);
 
         have_bodymapaligned_to_body = true;
 
-        tf_.lookupTransform(body_topic_, vertical_laser_frame_topic_, ros::Time(0), m_T_body_vlaser);
+        tf_listener_.lookupTransform(body_frameid_, vertical_laser_frameid_, ros::Time(0), T_body_vlaser_);
 
         have_body_to_laser = true;
     }
@@ -393,7 +411,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         geometry_msgs::PointStamped pout;
         pout.header.seq = 0;
         pout.header.stamp = ros::Time(0);
-        pout.header.frame_id = body_stabilized_topic_;
+        pout.header.frame_id = body_stabilized_frameid_;
 
         tf::Point ptf(pin.point.x, pin.point.y, pin.point.z);
         if (have_bodymapaligned_to_laser) {
@@ -403,7 +421,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
             pout.point.z = ptfout.getZ();
         }
         else if (have_bodymapaligned_to_body && have_body_to_laser) {
-            tf::Point ptfout(T_bodymapaligned_body * m_T_body_vlaser * ptf);
+            tf::Point ptfout(T_bodymapaligned_body * T_body_vlaser_ * ptf);
             pout.point.x = ptfout.getX();
             pout.point.y = ptfout.getY();
             pout.point.z = ptfout.getZ();
@@ -422,8 +440,8 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         }
 
         // only accept height estimates that are close to previous height
-        if ((pout.point.z < m_filtered_z + height_filter_deviation_max_) &&
-            (pout.point.z > m_filtered_z - height_filter_deviation_max_))
+        if ((pout.point.z < filtered_z_ + height_filter_deviation_max_) &&
+            (pout.point.z > filtered_z_ - height_filter_deviation_max_))
         {
             zs.push_back(pout.point.z);
             voxels.push_back(pout.point);
@@ -438,7 +456,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     // publish max_z for debugging
     std_msgs::Float32 max_z_msg;
     max_z_msg.data = max_z;
-    m_max_z_pub.publish(max_z_msg);
+    max_z_pub_.publish(max_z_msg);
 
     // publish point cloud of considered ray points
     pcl::PointCloud<pcl::PointXYZ> pclCloud;
@@ -447,27 +465,27 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     }
     sensor_msgs::PointCloud2 cloud;
     pcl::toROSMsg(pclCloud, cloud);
-    cloud.header.frame_id = body_map_aligned_topic_;
+    cloud.header.frame_id = body_map_aligned_frameid_;
     cloud.header.stamp = ros::Time::now();
     pointCloud_pub_.publish(cloud);
 
     // Only estimate height afterwards when robot is in air
     if (last_state_.mode != uav_msgs::FlightModeStatus::LANDED) {
         // set height to previous filtered height
-        state_.pose.pose.position.z = m_prev_filtered_z;
+        state_.pose.pose.position.z = prev_filtered_z_;
 
         // get z by taking the median
         if (zs.size() > 6) {
             std::sort(zs.begin(), zs.end());
-            m_filtered_z = zs[zs.size() / 2];
-            state_.pose.pose.position.z = m_filtered_z;
+            filtered_z_ = zs[zs.size() / 2];
+            state_.pose.pose.position.z = filtered_z_;
         }
 
         if (height_cut_off <= max_z) {
             // take max of filtered and low bigger than cutout height
-            // state_.pose.pose.position.z = max(m_filtered_z, max_z);
+            // state_.pose.pose.position.z = max(filtered_z_, max_z);
             const double alpha = 0.9;
-            state_.pose.pose.position.z = alpha * m_filtered_z + (1.0 - alpha) * max_z;
+            state_.pose.pose.position.z = alpha * filtered_z_ + (1.0 - alpha) * max_z;
         }
 
         // update filtered z with weighted average
@@ -477,9 +495,9 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         // about
         const double SOMETHING = 1.2;
         if (max_z > SOMETHING) {
-            m_filtered_z = (beta * m_filtered_z) + ((1.0 - beta) * max_z);
+            filtered_z_ = (beta * filtered_z_) + ((1.0 - beta) * max_z);
         }
-        m_prev_filtered_z = m_filtered_z;
+        prev_filtered_z_ = filtered_z_;
     }
     else {
         ROS_DEBUG("landed");
@@ -494,14 +512,14 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
             pcl::PointXYZ(state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z));
     sensor_msgs::PointCloud2 medianpt;
     pcl::toROSMsg(pclmedianpt, medianpt);
-    medianpt.header.frame_id = map_topic_;
+    medianpt.header.frame_id = map_frameid_;
     medianpt.header.stamp = ros::Time::now();
     point_pub_.publish(medianpt);
 
     double ds = abs(state_.pose.pose.position.z - prev_height);
-    ROS_DEBUG_THROTTLE(1, "height: %0.3f, maxz: %0.3f filteredz %f with dt %f ds %f time %f", state_.pose.pose.position.z, max_z, m_filtered_z, dt.toSec(), ds, now.toSec());
+    ROS_DEBUG_THROTTLE(1, "height: %0.3f, maxz: %0.3f filteredz %f with dt %f ds %f time %f", state_.pose.pose.position.z, max_z, filtered_z_, dt.toSec(), ds, now.toSec());
 
-    m_prev_scan_time = now;
+    prev_scan_time_ = now;
     ros::Time stop_ = ros::Time::now();
     ROS_DEBUG("[state_pub] lidar callback %f %f = %f", now.toSec(), stop_.toSec(), stop_.toSec() - now.toSec());
 }
@@ -534,7 +552,7 @@ bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr sca
     // get transformation from body frame map aligned
     tf::StampedTransform T_bodystable_vlaser;
     try {
-        tf_.lookupTransform(body_stabilized_topic_, vertical_laser_frame_topic_, ros::Time(0), T_bodystable_vlaser);
+        tf_listener_.lookupTransform(body_stabilized_frameid_, vertical_laser_frameid_, ros::Time(0), T_bodystable_vlaser);
     }
     catch (tf::TransformException& ex) {
         ROS_ERROR_THROTTLE(1, "Failed to lookup transform (%s)", ex.what());

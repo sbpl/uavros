@@ -121,61 +121,63 @@ private:
     std::string slam_topic_;
     std::string imu_topic_;
     std::string rpy_pub_topic_;
+    std::string flt_mode_stat_topic_;
 
     // tf frame names
     std::string tf_prefix_;
-    std::string vertical_laser_frame_topic_;
-    std::string map_topic_;
-    std::string odom_topic_;
-    std::string body_topic_;
-    std::string body_map_aligned_topic_;
-    std::string body_stabilized_topic_;
+    std::string vertical_laser_frameid_;
+    std::string map_frameid_;
+    std::string odom_frameid_;
+    std::string body_frameid_;
+    std::string body_map_aligned_frameid_;
+    std::string body_stabilized_frameid_;
 
 	nav_msgs::Odometry state_;
+
 	ros::Publisher state_pub_;
 	ros::Publisher pointCloud_pub_;
 	ros::Publisher point_pub_;
 	ros::Publisher vel_pub_;
 	ros::Publisher ac_pub_;
 	ros::Publisher slam_vel_pub_;
+    ros::Publisher rpy_pub_;
+    ros::Publisher max_z_pub_;
+
 	ros::Subscriber ekf_sub_;
 	ros::Subscriber slam_sub_;
 	ros::Subscriber lidar_sub_;
-	ros::Publisher rpy_pub_;
     ros::Subscriber flight_mode_sub_;
-    ros::Subscriber m_imu_sub;
+    ros::Subscriber imu_sub_;
 
 	double saved_yaw_;
 
-	tf::TransformListener tf_;
-	tf::TransformBroadcaster tf_broadcaster;
+	tf::TransformListener tf_listener_;
+	tf::TransformBroadcaster tf_broadcaster_;
 
-	double min_lidar_angle_, max_lidar_angle_;
+	double min_lidar_angle_;
+    double max_lidar_angle_;
 
 	double height_filter_deviation_max_;
 
 	FIFO z_fifo_;
 	FIFO z_time_fifo_;
 
-    sensor_msgs::Imu m_last_imu;
-	integrated_accel* x_integrated_;
-	integrated_accel* y_integrated_;
-	velo_list* x_velo_;
-	velo_list* y_velo_;
+    sensor_msgs::Imu last_imu_;
+	integrated_accel x_integrated_;
+	integrated_accel y_integrated_;
+	velo_list x_velo_;
+	velo_list y_velo_;
 
-	ros::Time l_t_;
     uav_msgs::FlightModeStatus last_state_;
-    std::string flt_mode_stat_topic_;
 
     /// \name Height Estimation
     ///@{
-    tf::StampedTransform m_T_body_vlaser;
-    ros::Time m_last_scan_analysis_time;
-    ros::Time m_prev_scan_time;
-    int m_num_scans_processed;
-    double m_filtered_z;
-    double m_prev_filtered_z;
-    ros::Publisher m_max_z_pub;
+    tf::StampedTransform T_body_vlaser_;
+    ros::Time last_scan_analysis_time_;
+    ros::Time prev_scan_time_;
+    int num_scans_processed_;
+    double filtered_z_;
+    double prev_filtered_z_;
     ///@}
 };
 
