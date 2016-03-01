@@ -45,7 +45,6 @@ UAVStatePublisher::UAVStatePublisher() :
     height_filter_deviation_max_(0.2),
     z_fifo_(5),
     z_time_fifo_(5),
-    last_imu_(),
     x_integrated_(40),
     y_integrated_(40),
     x_velo_(41),
@@ -86,9 +85,6 @@ UAVStatePublisher::UAVStatePublisher() :
     ph.param("max_lidar_angle", max_lidar_angle_, 3.14159);
     ph.param("height_filter_deviation_max", height_filter_deviation_max_, 0.2);
 
-    // clear last imu state (invalid anyway)
-    last_imu_.orientation.w = 1.0;
-
     //publish an odometry message (it's the only message with all the state
     //variables we want)
 
@@ -114,8 +110,9 @@ void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 
     // determine gravity compensated accelerations
 
-    // input accelerations are generally in the body frame;
-    // transform imu acceleration into the map frame
+    // input accelerations are generally in the body frame; transform imu
+    // acceleration into the map frame (note: assumes origins of both frames are
+    // coincident...this should extract and apply just the rotation)
     tf::Point p(
             msg->linear_acceleration.x,
             msg->linear_acceleration.y,
@@ -131,9 +128,9 @@ void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
     }
 
     tf::Point pout = transform * p;
-    double accel_x = pout[0];
-    double accel_y = pout[1];
-    double accel_z = pout[2];
+    const double accel_x = pout[0];
+    const double accel_y = pout[1];
+    const double accel_z = pout[2];
 
     ROS_DEBUG("accel_body %f %f %f -> accel_world %f %f %f",
             p[0], p[1], p[2], pout[0], pout[1], pout[2]);

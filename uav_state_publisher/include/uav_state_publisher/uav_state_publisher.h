@@ -162,7 +162,6 @@ private:
 	FIFO z_fifo_;
 	FIFO z_time_fifo_;
 
-    sensor_msgs::Imu last_imu_;
 	integrated_accel x_integrated_;
 	integrated_accel y_integrated_;
 	velo_list x_velo_;
