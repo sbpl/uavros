@@ -1,5 +1,6 @@
 #include <uav_state_publisher/uav_state_publisher.h>
 
+#include <limits>
 #include <vector>
 
 #include <pcl_conversions/pcl_conversions.h>
@@ -47,6 +48,13 @@ UAVStatePublisher::UAVStatePublisher() :
     z_time_fifo_(5),
     x_integrated_(40),
     y_integrated_(40),
+    vel_x_integrated_(0.0),
+    vel_y_integrated_(0.0),
+    vel_update_time_(0),
+    prev_pose_x_(std::numeric_limits<double>::quiet_NaN()),
+    prev_pose_y_(std::numeric_limits<double>::quiet_NaN()),
+    vel_x_derived_(0.0),
+    vel_y_derived_(0.0),
     x_velo_(41),
     y_velo_(41),
     last_state_(),
@@ -143,10 +151,20 @@ void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
         return;
     }
 
-    ROS_DEBUG("velocity (imu) = (%f, %f)",
+    ROS_DEBUG("delta velocity (imu) = (%f, %f)",
             x_integrated_.get_integrated(), y_integrated_.get_integrated());
+
     ROS_DEBUG("velocity (etc) = (%f, %f)",
             x_velo_.get_last(), y_velo_.get_last());
+
+    if (x_integrated_.full() && y_integrated_.full()) {
+        vel_x_integrated_ += x_integrated_.get_integrated();
+        vel_y_integrated_ += y_integrated_.get_integrated();
+        x_integrated_.clear();
+        y_integrated_.clear();
+
+        ROS_DEBUG("velocity (imu) = (%f, %f)", vel_x_integrated_, vel_y_integrated_);
+    }
 
     double part_sum_x = x_integrated_.get_integrated() + x_velo_.get_last();
     double part_sum_y = y_integrated_.get_integrated() + y_velo_.get_last();
@@ -179,7 +197,24 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
 
     state_.pose.pose.position.x = slam_msg->pose.position.x;
     state_.pose.pose.position.y = slam_msg->pose.position.y;
-    // printf("############################################got the slam stuff....\n");
+
+    const ros::Rate vel_update_rate(10.0);
+    if (vel_update_time_ + vel_update_rate.cycleTime() < start_) {
+        // update velocity if we have a previous pose
+        if (prev_pose_x_ == prev_pose_x_ && prev_pose_y_ == prev_pose_y_) {
+            const double dx = slam_msg->pose.position.x - prev_pose_x_;
+            const double dy = slam_msg->pose.position.y - prev_pose_y_;
+            vel_x_derived_ = dx / (start_ - vel_update_time_).toSec();
+            vel_y_derived_ = dy / (start_ - vel_update_time_).toSec();
+            ROS_INFO("velocity (slam): (%f, %f)", vel_x_derived_, vel_y_derived_);
+        }
+
+        // record position and time of slam measurement
+        prev_pose_x_ = slam_msg->pose.position.x;
+        prev_pose_y_ = slam_msg->pose.position.y;
+        vel_update_time_ = start_;
+    }
+
     ros::Time stop_ = ros::Time::now();
     ROS_DEBUG("[state_pub] slam callback %f %f = %f", start_.toSec(), stop_.toSec(), stop_.toSec() - start_.toSec());
 }
@@ -190,7 +225,8 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     ros::Time start_ = ros::Time::now();
 
     try {
-        // align odom-frame velocities with map frame
+        // align odom-frame velocities with map frame (note comment in imu
+        // callback)
         tf::Point vel_odom(
                 p->twist.twist.linear.x,
                 p->twist.twist.linear.y,
@@ -212,20 +248,21 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
         ROS_ERROR("Failed to transform EKF velocity (%s)", ex.what());
     }
 
-    if (x_integrated_.size() > 1 && y_integrated_.size() > 1) {
-        // TODO: combine integrated accelerations and ekf velocities to form
-        // world frame velocity
+    if (z_fifo_.size() < 1) {
+        ROS_WARN_THROTTLE(1, "State is incomplete");
+        return;
     }
 
-    // get angular velocities
-    state_.twist.twist.angular = p->twist.twist.angular;
+    ///////////////////////
+    // State Aggregation //
+    ///////////////////////
 
-    //get the orientation
+    // retrieve orientation from EKF
     double roll, pitch, yaw;
     tf::Quaternion q;
     tf::quaternionMsgToTF(p->pose.pose.orientation, q);
     tf::Matrix3x3(q).getEulerZYX(yaw, pitch, roll);
-    //Publish RPY for debugging (in degrees)
+    // Publish RPY for debugging (in degrees)
     geometry_msgs::PointStamped rpy;
     rpy.header.stamp = p->header.stamp;
     rpy.point.x = roll * 180 / M_PI;
@@ -235,16 +272,21 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
 
     state_.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, saved_yaw_);
 
-    // get the x and y velocities
-    state_.twist.twist.linear.x = p->twist.twist.linear.x;
-    state_.twist.twist.linear.y = p->twist.twist.linear.y;
+    // compute x and y linear velocities
+//    state_.twist.twist.linear.x = p->twist.twist.linear.x;
+//    state_.twist.twist.linear.y = p->twist.twist.linear.y;
 
-    if (z_fifo_.size() < 1) {
-        ROS_WARN_THROTTLE(1, "State is incomplete");
-        return;
-    }
+//    if (x_integrated_.size() > 1 && y_integrated_.size() > 1) {
+//        // TODO: combine integrated accelerations pose deltas from SLAM to get
+//        // the final linear velocities?
+//        state_.twist.twist.linear.x = vel_x_integrated_;
+//        state_.twist.twist.linear.y = vel_y_integrated_;
+//    }
 
-    // compute the z velocity
+    state_.twist.twist.linear.x = vel_x_derived_;
+    state_.twist.twist.linear.y = vel_y_derived_;
+
+    // compute the linear z velocity
     double dz = 0.0;
     if (z_fifo_.size() > 0) {
         for (int i = 1; i < z_fifo_.size(); i++) {
@@ -254,29 +296,43 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     }
     state_.twist.twist.linear.z = dz;
 
-    //publish the map to base_link transform
-    geometry_msgs::TransformStamped trans;
-    trans.header.stamp = p->header.stamp;
-    trans.header.frame_id = map_frameid_;
-    trans.transform.translation.x = state_.pose.pose.position.x;
-    trans.transform.translation.y = state_.pose.pose.position.y;
-    trans.transform.translation.z = state_.pose.pose.position.z;
+    // retrieve angular velocities from EKF
+    state_.twist.twist.angular = p->twist.twist.angular;
+
+    ////////////////////////
+    // Publish Transforms //
+    ////////////////////////
 
     // publish the map -> odom transform
 
+    geometry_msgs::TransformStamped trans;
+    trans.header.stamp = p->header.stamp;
+    trans.header.frame_id = map_frameid_;
+
     const tf::Transform T_odom_body(
-            tf::Quaternion(p->pose.pose.orientation.x, p->pose.pose.orientation.y, p->pose.pose.orientation.z,
+            tf::Quaternion(
+                    p->pose.pose.orientation.x,
+                    p->pose.pose.orientation.y,
+                    p->pose.pose.orientation.z,
                     p->pose.pose.orientation.w),
-            tf::Vector3(p->pose.pose.position.x, p->pose.pose.position.y, p->pose.pose.position.z));
+            tf::Vector3(
+                    p->pose.pose.position.x,
+                    p->pose.pose.position.y,
+                    p->pose.pose.position.z));
     const tf::Transform T_map_body(
-            tf::Quaternion(state_.pose.pose.orientation.x, state_.pose.pose.orientation.y,
-                    state_.pose.pose.orientation.z, state_.pose.pose.orientation.w),
-            tf::Vector3(state_.pose.pose.position.x, state_.pose.pose.position.y, state_.pose.pose.position.z));
+            tf::Quaternion(
+                    state_.pose.pose.orientation.x,
+                    state_.pose.pose.orientation.y,
+                    state_.pose.pose.orientation.z,
+                    state_.pose.pose.orientation.w),
+            tf::Vector3(
+                    state_.pose.pose.position.x,
+                    state_.pose.pose.position.y,
+                    state_.pose.pose.position.z));
 
     const tf::Transform T_map_odom = T_map_body * T_odom_body.inverse();
     tf::transformTFToMsg(T_map_odom, trans.transform);
 
-    //ROS_WARN("height is %f\n", trans.transform.translation.z);
     trans.child_frame_id = odom_frameid_;
     tf_broadcaster_.sendTransform(trans);
 
@@ -687,6 +743,13 @@ double UAVStatePublisher::integrated_accel::get_integrated()
         index++;
     }
     return s;
+}
+
+void UAVStatePublisher::integrated_accel::clear()
+{
+    m_count = 0;
+    m_list.clear();
+    // NOTE: should this clear the offset value too?
 }
 
 int main(int argc, char **argv)

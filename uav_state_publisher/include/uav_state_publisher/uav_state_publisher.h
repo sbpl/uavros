@@ -78,8 +78,10 @@ private:
 
 		double get_integrated();
 
+        void clear();
         int size() const { return m_count; }
         int max_size() const { return m_size; }
+        bool full() const { return m_count == m_size; }
 
 	private:
 
@@ -162,8 +164,19 @@ private:
 	FIFO z_fifo_;
 	FIFO z_time_fifo_;
 
+    // world-frame velocities determined by integrating imu measurements
 	integrated_accel x_integrated_;
 	integrated_accel y_integrated_;
+    double vel_x_integrated_;
+    double vel_y_integrated_;
+
+    // world-frame velocities determined by differentiating slam measurements
+    ros::Time vel_update_time_; // when the last velocity update was computed
+    double prev_pose_x_;
+    double prev_pose_y_;
+    double vel_x_derived_;
+    double vel_y_derived_;
+
 	velo_list x_velo_;
 	velo_list y_velo_;
 
@@ -181,4 +194,3 @@ private:
 };
 
 #endif
-
