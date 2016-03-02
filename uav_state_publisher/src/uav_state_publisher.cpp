@@ -199,14 +199,17 @@ void UAVStatePublisher::slamCallback(geometry_msgs::PoseStampedConstPtr slam_msg
     state_.pose.pose.position.y = slam_msg->pose.position.y;
 
     const ros::Rate vel_update_rate(10.0);
-    if (vel_update_time_ + vel_update_rate.cycleTime() < start_) {
+    if (vel_update_time_ + vel_update_rate.expectedCycleTime() < start_) {
         // update velocity if we have a previous pose
         if (prev_pose_x_ == prev_pose_x_ && prev_pose_y_ == prev_pose_y_) {
             const double dx = slam_msg->pose.position.x - prev_pose_x_;
             const double dy = slam_msg->pose.position.y - prev_pose_y_;
-            vel_x_derived_ = dx / (start_ - vel_update_time_).toSec();
-            vel_y_derived_ = dy / (start_ - vel_update_time_).toSec();
-            ROS_INFO("velocity (slam): (%f, %f)", vel_x_derived_, vel_y_derived_);
+            const double dt = (start_ - vel_update_time_).toSec();
+            vel_x_derived_ = dx / dt;
+            vel_y_derived_ = dy / dt;
+            ROS_DEBUG("velocity (slam): (%f, %f) = (%f, %f) / %f",
+                    vel_x_derived_, vel_y_derived_,
+                    dx, dy, dt);
         }
 
         // record position and time of slam measurement
