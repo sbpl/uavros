@@ -8,31 +8,31 @@
 
     <!-- 1.1 Horizontal hokuyo -->
     <node if="$(arg use_fixed_laser)" name="fixed_laser" pkg="hokuyo_node" type="hokuyo_node" launch-prefix="nice --5">
-        <param name="port" value="/dev/sensors/hokuyo_H0904931" />
-        <param name="frame_id" value="fixed_laser_frame" />
-        <param name="min_ang" value="-2.356" />
-        <param name="max_ang" value="2.356" />
-        <remap from="/scan" to="fixed_laser" />
+        <param name="port" value="/dev/sensors/hokuyo_H0904931"/>
+        <param name="frame_id" value="fixed_laser_frame"/>
+        <param name="min_ang" value="-2.356"/>
+        <param name="max_ang" value="2.356"/>
+        <remap from="scan" to="fixed_laser"/>
     </node>
 
     <!-- 1.2 Vertical hokuyo -->
     <node if="$(arg use_panning_laser)" name="panning_laser" pkg="hokuyo_node" type="hokuyo_node" launch-prefix="nice --5">
-        <param name="port" value="/dev/sensors/hokuyo_H0904026" />
-        <param name="frame_id" value="panning_laser_frame" />
-        <param name="min_ang" value="-0.7" />
-        <param name="max_ang" value="2.35" />
-        <remap from="/scan" to="panning_laser" />
+        <param name="port" value="/dev/sensors/hokuyo_H0904026"/>
+        <param name="frame_id" value="panning_laser_frame"/>
+        <param name="min_ang" value="-0.7"/>
+        <param name="max_ang" value="2.35"/>
+        <remap from="scan" to="panning_laser"/>
     </node>
 
     <!-- 1.3 Panning Servo -->
     <node if="$(arg use_panning_servo)" name="panning_servo" pkg="uav_servo_node" type="uav_servo_node" launch-prefix="nice --1">
-        <param name="device_name" value="/dev/servo" />
-        <param name="servoID" value="1" />
+        <param name="device_name" value="/dev/servo"/>
+        <param name="servoID" value="1"/>
 
         <!-- for fixed -->
-        <param name="minAngle" value="-3" />
-        <param name="maxAngle" value="-3" />
-        <param name="velocity" value="100" />
+        <param name="minAngle" value="-3"/>
+        <param name="maxAngle" value="-3"/>
+        <param name="velocity" value="100"/>
 
         <!-- for panning -->
         <!--
@@ -51,6 +51,6 @@
 
     <node pkg="robot_state_publisher" type="robot_state_publisher"
             name="robot_state_publisher">
-        <param name="publish_frequency" value="50.0" />
+        <param name="publish_frequency" value="50.0"/>
     </node>
 </launch>
