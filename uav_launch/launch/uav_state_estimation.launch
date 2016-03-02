@@ -41,14 +41,8 @@
     </group>
 
     <!-- State Aggregation -->
-    <node name="uav_state_publisher"
-            pkg="uav_state_publisher"
-            type="uav_state_publisher"
-            launch-prefix="nice --1">
+    <node name="uav_state_publisher" pkg="uav_state_publisher" type="uav_state_publisher" launch-prefix="nice --1">
+        <remap from="raw_imu" to="imu"/>
         <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
     </node>
-
-    <!--
-    <node pkg="tf" type="static_transform_publisher" name="map2slam_map_publisher" args="0 0 0 0 0 0 map slam_map 100" />
-    -->
 </launch>
