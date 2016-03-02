@@ -44,6 +44,9 @@
 
     <node if="$(arg use_camera)" name="hexa_cam" pkg="usb_cam" type="usb_cam_node">
         <param name="video_device" value="/dev/video0"/>
+        <param name="image_width" value="1920"/>
+        <param name="image_height" value="1080"/>
+        <param name="framerate" value="30"/>
     </node>
 
     <node pkg="robot_state_publisher" type="robot_state_publisher"
