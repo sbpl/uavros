@@ -328,6 +328,11 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
 
     err_v = transform * temp;
 
+    const double max_vel_mps = 1.0;
+    if (err_v.length() > max_vel_mps) {
+        err_v = max_vel_mps * err_v.normalized();
+    }
+
     // roll
     RP_Pose[0] = -err_p[1] * CONT.Posekp + -err_v[1] * CONT.Posekd + -CONT.RposeI * CONT.Poseki;
     CONT.RposeI += err_p[1];
