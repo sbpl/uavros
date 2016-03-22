@@ -44,7 +44,7 @@
     <node name="uav_state_publisher"
             pkg="uav_state_publisher"
             type="uav_state_publisher"
-            launch-prefix="nice --1">
+            launch-prefix="nice --1" output="screen">
         <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
     </node>
 

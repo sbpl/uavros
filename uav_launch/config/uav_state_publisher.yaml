@@ -7,4 +7,4 @@ body_stabilized_topic: 'base_stabilized'
 
 min_lidar_angle: -3.14159
 max_lidar_angle: 3.14159
-height_filter_deviation_max: 0.05
+height_filter_deviation_max: 0.2
