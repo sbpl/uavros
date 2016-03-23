@@ -25,13 +25,13 @@ Ykp: 1
 Yki: 0
 Ykd: 0
 
-Tkp: 2
-Tki: 0.1
-Tkd: 6
+Tkp: 3.6 #2
+Tki: 0.02 # 0.05 #0.1
+Tkd: 3 #6
 
-Posekp: 0.8
-Poseki: 0
-Posekd: 0
+Posekp: 0.4
+Poseki: 0.0008 #0.016
+Posekd: 1.0
 
 RposeI: 0
 PposeI: 0

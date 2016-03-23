@@ -174,6 +174,7 @@ void UAVLocalPlanner::controllerThread()
         //  ROS_INFO("**************************    R: %f P: %f Y: %f T: %f", u.roll, u.pitch, u.yaw, u.thrust);
         // ROS_INFO("**************************    +=Right     +=Forward   +=CCW       +=Up");
 
+        u.header.stamp = ros::Time::now();
         command_pub_.publish(u);
         RPYT_pub_.publish(u);
         status_pub_.publish(state);
