@@ -30,7 +30,7 @@ Tki: 0.02 # 0.05 #0.1
 Tkd: 3 #6
 
 Posekp: 0.4
-Poseki: 0.008 #0.016
+Poseki: 0.0008 #0.016
 Posekd: 1.0
 
 RposeI: 0
