@@ -1,9 +1,0 @@
-high_level_controller_cmd: '/high_level_controller_cmd'
-ctrl_cmd_topic: '/controller_cmd'
-raw_imu_topic: '/raw_imu'
-raw_imu_with_g_topic: '/raw_imu_with_g'
-body_topic: '/body_frame'
-body_map_aligned_topic: '/body_frame_map_aligned'
-body_stabilized_topic: '/body_frame_stabilized'
-port: '/dev/mikrokopter'
-baud: 57600
