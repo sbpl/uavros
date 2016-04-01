@@ -21,10 +21,10 @@ include_directories(${PCL_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS})
 include_directories(include)
 
-add_executable(uav_state_publisher src/uav_state_publisher.cpp)
-target_link_libraries(uav_state_publisher ${PCL_LIBRARIES} ${catkin_LIBRARIES})
-add_dependencies(uav_state_publisher ${catkin_EXPORTED_TARGETS})
+add_executable(uav_state_publisher_new src/uav_state_publisher_new.cpp)
+target_link_libraries(uav_state_publisher_new ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+add_dependencies(uav_state_publisher_new ${catkin_EXPORTED_TARGETS})
 
 install(
-    TARGETS uav_state_publisher
+    TARGETS uav_state_publisher_new
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
