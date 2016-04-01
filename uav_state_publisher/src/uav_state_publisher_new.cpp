@@ -705,7 +705,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         ROS_DEBUG("landed");
     }
 
-    //clear elevation map now and then to
+    //clear elevation map after regular intervals to
     //account for segbot movements(roughly 0.1s)
     if(elevation_map_.size() > 1000)
     {
@@ -754,7 +754,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
                     //printf("Updated map at x = %f y = %f with elevation = %f\n", approx_x, approx_y, elevation_map_[k]);
                 }
 
-                //Elevation map marker(Not functional
+                //Elevation map marker(Not functional)
                 visualization_msgs::Marker elv_marker;
                 elv_marker.header.frame_id = map_frameid_;
                 elv_marker.header.stamp = ros::Time();
@@ -824,7 +824,7 @@ bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr sca
     // get points from lidar frame between desginated lidar angles and ranges
     for (size_t i = 0; i < scan->ranges.size(); i++) {
         bool valid = true;
-        if (scan->ranges[i] < scan->range_min || scan->ranges[i] > scan->range_max || scan->ranges[i] < 0.3) {
+        if (scan->ranges[i] < scan->range_min || scan->ranges[i] > scan->range_max) {
             valid = false;
         }
 
