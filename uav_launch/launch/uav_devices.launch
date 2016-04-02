@@ -7,7 +7,7 @@
     <!-- 1. Device Nodes -->
 
     <!-- 1.1 Horizontal hokuyo -->
-    <node if="$(arg use_fixed_laser)" name="fixed_laser" pkg="hokuyo_node" type="hokuyo_node" launch-prefix="nice --5">
+    <node if="$(arg use_fixed_laser)" name="fixed_laser" pkg="hokuyo_node" type="hokuyo_node" respawn="true">
         <param name="port" value="/dev/sensors/hokuyo_H0904931"/>
         <param name="frame_id" value="fixed_laser_frame"/>
         <param name="min_ang" value="-2.356"/>
@@ -16,7 +16,7 @@
     </node>
 
     <!-- 1.2 Vertical hokuyo -->
-    <node if="$(arg use_panning_laser)" name="panning_laser" pkg="hokuyo_node" type="hokuyo_node" launch-prefix="nice --5">
+    <node if="$(arg use_panning_laser)" name="panning_laser" pkg="hokuyo_node" type="hokuyo_node" respawn="true">
         <param name="port" value="/dev/sensors/hokuyo_H0904026"/>
         <param name="frame_id" value="panning_laser_frame"/>
         <param name="min_ang" value="-0.7"/>
