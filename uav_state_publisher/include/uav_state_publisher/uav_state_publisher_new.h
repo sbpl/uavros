@@ -16,9 +16,13 @@
 #include <Eigen/LU>
 #include <string>
 #include <list>
+#include <unordered_map>
+#include <utility>
 #include <uav_msgs/FlightModeStatus.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+
+using namespace std;
 
 class UAVStatePublisher
 {
@@ -26,6 +30,22 @@ public:
 
 	UAVStatePublisher();
 	~UAVStatePublisher() { }
+
+	class pairHash{
+	public:
+    	std::size_t operator()(const pair<double, double> &k) const{
+        	std::size_t h1 = std::hash<double>()(k.first);
+        	std::size_t h2 = std::hash<double>()(k.second);
+        	return h1 ^ h2;
+    	}
+	};
+
+	struct pairEquals : binary_function<const pair<double,double>&, const pair<double,double>&, bool> {
+  		result_type operator()( first_argument_type lhs, second_argument_type rhs ) const
+  		{
+    		return ( sqrt((lhs.first - rhs.first)*(lhs.first - rhs.first) + (lhs.second - rhs.second)*(lhs.second - rhs.second)) <= 0.05);
+  		}
+	};    
 
 private:
 
@@ -107,7 +127,7 @@ private:
 
         // the stored offset from the initial reading
 		double m_offset;
-	};
+	}; 
 
 	void ekfCallback(nav_msgs::OdometryConstPtr p);
 	void lidarCallback(sensor_msgs::LaserScanConstPtr scan);
@@ -115,7 +135,6 @@ private:
 	bool estimateInitialHeight(sensor_msgs::LaserScanConstPtr  scan, double& ret_height);
     void flightModeCallback(uav_msgs::FlightModeStatusConstPtr msg);
     void imuCallback(const sensor_msgs::Imu::ConstPtr& msg);
-    bool get_closest_elevation(std::map<std::pair<double, double>, double> elevation_map_, double current_x, double current_y, double &min_dist, double &ret_x, double &ret_y, double &ret_elevation);
 
     // topic names
 	std::string state_pub_topic_;
@@ -191,6 +210,7 @@ private:
     int num_scans_processed_;
     
     double filtered_z_;
+    double another_filtered_z_;
     double prev_filtered_z_;
 	double current_zs_;
     double prev_zs_;
@@ -207,10 +227,10 @@ private:
     double check_y_;
 
     typedef std::pair<double, double> key_;
-	std::map<std::pair<double, double> , double> elevation_map_;
+	std::unordered_map<std::pair<double, double> , double, pairHash, pairEquals> elevation_map_;
 
-    bool transform_to_map_;
     bool update_map_;
+    bool bag_test_;
 
     visualization_msgs::MarkerArray elv_marker_array_;
 

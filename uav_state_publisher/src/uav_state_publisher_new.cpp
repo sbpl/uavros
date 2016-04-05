@@ -21,7 +21,6 @@ UAVStatePublisher::UAVStatePublisher() :
     map_frameid_("map"),
     odom_frameid_("odom"),
     body_frameid_("body_frame"),
-    body_map_aligned_frameid_("body_frame_map_aligned"),
     body_stabilized_frameid_("body_frame_stabilized"),
     state_(),
     state_pub_(),
@@ -62,21 +61,27 @@ UAVStatePublisher::UAVStatePublisher() :
     prev_scan_time_(),
     num_scans_processed_(0),
     filtered_z_(0.0),
+    another_filtered_z_(0.0),
     prev_filtered_z_(0.0),
     current_elevation_(0.0),
     prev_elevation_(0.0),
     current_zs_(0.0),
     prev_zs_(0.0),
-    init_est(10, 0),
-    elevation_noise_(0.3),
+    init_est(5, 0),
+    elevation_noise_(0.25),
     check_x_(0.0),
     check_y_(0.0),
     scale_(0.001),
-    transform_to_map_(false),
-    update_map_(true)
+    update_map_(true),
+    bag_test_(false)
     {
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
+
+    if(!bag_test_)
+        body_map_aligned_frameid_ = "body_frame_map_aligned";
+    else
+        body_map_aligned_frameid_ = "body_frame_map_aligned_new";
 
     tf_prefix_ = tf::getPrefixParam(ph);
     if (!tf_prefix_.empty()) {
@@ -112,7 +117,7 @@ UAVStatePublisher::UAVStatePublisher() :
     slam_vel_pub_ = nh.advertise<geometry_msgs::PointStamped>("slam_vel", 1);
     rpy_pub_ = nh.advertise<geometry_msgs::PointStamped>(rpy_pub_topic_, 1);
     max_z_pub_ = nh.advertise<std_msgs::Float32>("max_z", 10);
-    elv_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("elevation_marker", 10);
+    elv_marker_pub_ = nh.advertise<visualization_msgs::Marker>("elevation_marker", 10);
 
     //subscribe to the SLAM pose from hector_mapping, the EKF pose from hector_localization, and the vertical lidar
     ekf_sub_ = nh.subscribe(position_sub_topic_, 3, &UAVStatePublisher::ekfCallback, this);
@@ -348,7 +353,8 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
     tf::transformTFToMsg(T_map_odom, trans.transform);
 
     trans.child_frame_id = odom_frameid_;
-    tf_broadcaster_.sendTransform(trans);
+    if(!bag_test_)
+        tf_broadcaster_.sendTransform(trans);
 
     // publish the map -> body_frame_map_aligned transform
     trans.child_frame_id = body_map_aligned_frameid_;
@@ -368,6 +374,9 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
 //on the order of 40Hz
 void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 {
+
+    static int init_est_count = 0;
+
     const ros::Time now = ros::Time::now();
 
     // log scan count over the last period
@@ -389,30 +398,19 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     // estimate initial height on first invocation //
     /////////////////////////////////////////////////
 
-    if (z_fifo_.size() < 1) {
+    if (z_fifo_.size() < 5) {
         double est_height;
-        for (int i = 0; i < 10; i++)
-        {
-            bool suc = estimateInitialHeight(scan, init_est[i]);
-            if (!suc) {
-                return;
-            }
+        bool suc = estimateInitialHeight(scan, init_est[init_est_count]);
+        init_est_count++;
+        if (!suc) {
+            return;
         }
         std::sort(init_est.begin(), init_est.end());
-        est_height = init_est[init_est.size()/2];
+        est_height = *std::max_element(init_est.begin(), init_est.end());
         ROS_INFO("uav_state_publisher: estimated initial height is %f", est_height);
         state_.pose.pose.position.z = est_height;
         filtered_z_ = est_height;
         prev_filtered_z_ = est_height;
-        current_zs_ = 0.28;
-        prev_zs_ = 0.28;
-        current_elevation_ = est_height - 0.28;
-        prev_elevation_ = current_elevation_;
-        if (current_elevation_ < 0.4)
-        {
-            current_elevation_ = 0.0;
-            prev_elevation_ = 0.0;
-        }
     }
 
     //////////////////////////////////////////////////////////////////
@@ -477,6 +475,9 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     std::vector<double> xs;
     std::vector<double> ys;
     std::vector<double> zs;
+    std::vector<double> zero_points;
+    std::vector<double> not_zero_points;
+    std::vector<double> filt_vect;
 
     xs.reserve(scan->ranges.size());
     ys.reserve(scan->ranges.size());
@@ -575,23 +576,16 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
             max_z = std::max(max_z, pout.point.z);
         }
 
-        //Push back points for elevation map
-        if(transform_to_map_)
-        {
-            xel.push_back(el_pout.point.x);
-            yel.push_back(el_pout.point.y);
-            zel.push_back(el_pout.point.z);
-        }
-        else{
-            xel.push_back(pout.point.x);
-            yel.push_back(pout.point.y);
-            zel.push_back(pout.point.z);
-        }
-
         //Push back points for current state
         if (pout.point.z > 0)
         {
-            if(fabs(ang - M_PI / 2) < (5.0 * M_PI / 180.0))
+            //Push back points for elevation map
+            xel.push_back(pout.point.x);
+            yel.push_back(pout.point.y);
+            zel.push_back(pout.point.z);
+            
+            //if(fabs(ang - M_PI / 2) < (10.0 * M_PI / 180.0))
+            //if (pout.point.z < prev_height + 0.5 && pout.point.z > prev_height - 0.5)
             {
                 xs.push_back(pout.point.x);
                 ys.push_back(pout.point.y);
@@ -635,65 +629,55 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         update_map_ = true;
 
         // get z by taking the median
-        if (zs.size() > 6){//&& elevation_map_.size() > 10) {
+        if (zs.size() > 6) {
 
-            std::sort(xs.begin(), xs.end());
-            std::sort(ys.begin(), ys.end());
-            std::sort(zs.begin(), zs.end());
+            for(size_t i = 0; i < xs.size(); i++)
+            {
+                //state to chck in map
+                check_x_ = (int)((state_.pose.pose.position.x + xs[i])/scale_)*scale_;
+                check_y_ = (int)((state_.pose.pose.position.y + ys[i])/scale_)*scale_;
 
-            //Return values from the elevation map with closest distance
-            double min_dist = 100000;
-            double ret_x = 0;
-            double ret_y = 0;
-            double ret_elevation = 0;
+                //current_elevation_ = prev_elevation_;
+                
+                auto search = elevation_map_.find(make_pair(check_x_, check_y_));
 
-            //state to chck in map
-            check_x_ = (int)((state_.pose.pose.position.x + xs[xs.size()/2])/scale_)*scale_;
-            check_y_ = (int)((state_.pose.pose.position.y + ys[xs.size()/2])/scale_)*scale_;
+                if(search != elevation_map_.end())
+                    current_elevation_ = (search->second);
+                else
+                    continue;
 
-            current_elevation_ = prev_elevation_;
+                current_zs_ = zs[i];
+
+                if(current_elevation_ == 0.0)
+                    zero_points.push_back(current_zs_);
+                
+                not_zero_points.push_back(current_zs_ + current_elevation_);
+
+            }
+
+            std::sort(zero_points.begin(), zero_points.end());
+            std::sort(not_zero_points.begin(), not_zero_points.end());
+
+            if(zero_points.size() > 0)
+                filtered_z_ = zero_points[zero_points.size()/2];
+            else if(not_zero_points.size() > 0)
+                filtered_z_ = not_zero_points[not_zero_points.size()/2];
+            else{
+                filtered_z_ = prev_filtered_z_;
+                update_map_ = false;
+            }
+            //printf("the actual elevation is %f, actual zs is %f and height calculated is %f\n", current_elevation, current_zs, m_filtered_z);
             
-            if(get_closest_elevation(elevation_map_, check_x_, check_y_, min_dist, ret_x, ret_y, ret_elevation))
-                current_elevation_ = ret_elevation;
-
-            current_zs_ = zs[zs.size()/2];
-
-            filtered_z_ =  current_zs_ + current_elevation_;
-
-            //printf("the actual elevation is %f, actual zs is %f and height calculated is %f\n", current_elevation_, current_zs_, filtered_z_);
-
             //The map lookup might not be exact at borders for obtacles and hence we must look for some edge cases        
             if(filtered_z_ > (prev_filtered_z_ + height_filter_deviation_max_) || filtered_z_ < (prev_filtered_z_ - height_filter_deviation_max_) )
             {   
-                if(fabs(current_zs_ - prev_zs_) < height_filter_deviation_max_/2 && fabs(current_elevation_ - prev_elevation_) > height_filter_deviation_max_/2)
-                {
-                    current_zs_ = prev_zs_;
-                    current_elevation_ = prev_elevation_;
-                    key_ k (check_x_, check_y_);
-                    elevation_map_[k] = current_elevation_;
-                    filtered_z_ =  current_zs_ + current_elevation_;
-                    update_map_ = false;
-                }
-                else if(fabs(current_zs_ - prev_zs_) > height_filter_deviation_max_/2 && fabs(current_elevation_ - prev_elevation_) < height_filter_deviation_max_/2)
-                {
-                    current_elevation_ = current_elevation_ + (prev_zs_ - current_zs_);
-                    key_ k (check_x_, check_y_);
-                    elevation_map_[k] = current_elevation_;
-                    filtered_z_ = current_zs_ + current_elevation_;
-                    update_map_ = false;
-                }
-                //Both seem to potentially drifting
-                else{
                     filtered_z_ = prev_filtered_z_;
-                    current_elevation_ = prev_elevation_;
-                    current_zs_ = prev_zs_;
                     update_map_ = false;
-                }
             }
 
             state_.pose.pose.position.z = filtered_z_;
 
-            //printf("The current elevation is %f, current zs is %f and total height is %f\n", current_elevation_, current_zs_, filtered_z_);
+            //printf("The current elevation is %f, current zs is %f and total height is %f\n", current_elevation, current_zs, m_filtered_z);
 
             prev_zs_ = current_zs_;
             prev_elevation_ = current_elevation_;
@@ -705,12 +689,12 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         ROS_DEBUG("landed");
     }
 
-    //clear elevation map after regular intervals to
-    //account for segbot movements(roughly 0.1s)
-    if(elevation_map_.size() > 1000)
-    {
-        elevation_map_.clear();
-    }
+    // //clear elevation map after regular intervals to
+    // //account for segbot movements(roughly 0.1s)
+    // if(elevation_map_.size() > 2000 && update_map_)
+    // {
+    //     elevation_map_.clear();
+    // }
 
     // Dont update elevation map when landing
     //TODO(Karthik) : Replace const 1 below with actual message for while landing
@@ -719,27 +703,14 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         double elz = 0;
 
         //Update elevation Map
-        for(int i = 0; i < zel.size(); i++)
+        for(size_t i = 0; i < zel.size(); i++)
         {
-
             double approx_x, approx_y;
 
-            if(transform_to_map_){
+            elz = (filtered_z_ - zel[i]);
 
-                elz = zel[i];
-
-                approx_x = (int)(xel[i]/scale_)*scale_;
-                approx_y = (int)(yel[i]/scale_)*scale_;
-
-            }
-            else{
-
-                elz = fabs(filtered_z_ - zel[i]);
-
-                approx_x = (int)((state_.pose.pose.position.x + xel[i])/scale_)*scale_;
-                approx_y = (int)((state_.pose.pose.position.y + yel[i])/scale_)*scale_;
-
-            }
+            approx_x = (int)((state_.pose.pose.position.x + xel[i])/scale_)*scale_;
+            approx_y = (int)((state_.pose.pose.position.y + yel[i])/scale_)*scale_;
 
             //Zero out points below certain height to avoid ground creeping up
             if (elz < elevation_noise_)
@@ -747,10 +718,11 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 
             key_ k (approx_x, approx_y);
 
-            if(elz >= 0 && elz < filtered_z_ && fabs(filtered_z_ - elz) > 0.25){
-                if ( (elevation_map_.find(k) == elevation_map_.end() ) || (elz - elevation_map_[k]) < elevation_noise_)
+            if(elz >= 0 && elz <= 0.72){
+                if ( (elevation_map_.find(k) == elevation_map_.end()) || (elz - elevation_map_[k] > elevation_noise_))
                 {
-                    elevation_map_[k] = std::max(elz, 0.0);
+                    elevation_map_[k] = elz;
+                    //printf("x = %f y = %f the filtered_z is %f, zel is %f and elz is %f\n", approx_x, approx_y, filtered_z_, zel[i], elz);
                     //printf("Updated map at x = %f y = %f with elevation = %f\n", approx_x, approx_y, elevation_map_[k]);
                 }
 
@@ -774,11 +746,9 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
                 elv_marker.scale.z = 0.01;
                 elv_marker.lifetime = ros::Duration();
 
-                elv_marker_array_.markers.push_back(elv_marker);
                 elv_marker_pub_.publish(elv_marker);
 
             }
-
         }
     }
 
@@ -871,31 +841,6 @@ bool UAVStatePublisher::estimateInitialHeight(sensor_msgs::LaserScanConstPtr sca
 
     ret_height = -smallest_z;
     return true;
-}
-
-bool UAVStatePublisher::get_closest_elevation(std::map<std::pair<double, double>, double> elevation_map_, double current_x, double current_y, double &min_dist, double &ret_x, double &ret_y, double &ret_elevation)
-{   
-    double map_current_x;
-    double map_current_y;
-
-    for(std::map<key_,double>::iterator it=elevation_map_.begin(); it!=elevation_map_.end(); ++it)
-    {   
-        map_current_x = (it->first).first;
-        map_current_y = (it->first).second;
-
-        if (sqrt( pow(map_current_x - current_x,2) + pow(map_current_y - current_y,2) ) <= min_dist)
-        {   
-            min_dist = sqrt( pow(map_current_x - current_x,2) + pow(map_current_y - current_y,2) );
-            ret_x = map_current_x;
-            ret_y = map_current_y;
-            ret_elevation = it->second;
-        }   
-    }
-
-    if (min_dist < 0.05)
-        return true;   
-    else
-        return false;
 }
 
 UAVStatePublisher::FIFO::FIFO(int s) :
