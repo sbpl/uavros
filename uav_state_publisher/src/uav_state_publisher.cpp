@@ -131,7 +131,7 @@ void UAVStatePublisher::imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
         tf_listener_.lookupTransform(body_map_aligned_frameid_, msg->header.frame_id, ros::Time(0), transform);
     }
     catch (const tf::TransformException& ex) {
-        ROS_ERROR("Failed to transform IMU data (%s)", ex.what());
+        ROS_ERROR_THROTTLE(1.0, "Failed to transform IMU data (%s)", ex.what());
         return;
     }
 
@@ -248,7 +248,7 @@ void UAVStatePublisher::ekfCallback(nav_msgs::OdometryConstPtr p)
         y_velo_.add_value(vel_map.y());
     }
     catch (const tf::TransformException& ex) {
-        ROS_ERROR("Failed to transform EKF velocity (%s)", ex.what());
+        ROS_ERROR_THROTTLE(1.0, "Failed to transform EKF velocity (%s)", ex.what());
     }
 
     if (z_fifo_.size() < 1) {
