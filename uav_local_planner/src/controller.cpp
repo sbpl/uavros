@@ -29,10 +29,6 @@ UAVController::~UAVController()
 
 void UAVController::InitializeGains()
 {
-    // TODO: ROS electric and earlier do not support params of type "float", so
-    // we have to add a hack to get them...  header changed to double for all
-    // robot parameters
-
     waitForParam("UAV/Mass");
     readParam("UAV/Mass", CONT.mass, 5.0, "kg");
 
@@ -53,7 +49,7 @@ void UAVController::InitializeGains()
     readParam("UAV/MaxError", CONT.maxError, 0.5, "m");
 
     // Gravity Vector
-    //TODO: load list for gravity vector
+    // TODO: load list for gravity vector
     CONT.g << 0, 0, -9.81;
 
     // Default thrust for hovering
@@ -148,11 +144,12 @@ void UAVController::dynamic_reconfigure_callback(uav_local_planner::UAVControlle
     CONT.Posekd = config.Posekd;
     CONT.Poseki = config.Poseki;
 
-    //CONT.mass = config.mass;
-    // CONT.maxF = config.maxF;
-    //CONT.minF = config.minF;
-    // CONT.maxError = config.maxError;
-    //TODO:  Make node for broadcast params (mass, etc) then each affected node subscribe to broadcast param topic/service
+//    CONT.mass = config.mass;
+//    CONT.maxF = config.maxF;
+//    CONT.minF = config.minF;
+//    CONT.maxError = config.maxError;
+    // TODO: Make node for broadcast params (mass, etc) then each affected node
+    // subscribe to broadcast param topic/service
 }
 
 Eigen::VectorXf UAVController::SetDesState(const geometry_msgs::PoseStamped goal_pose)
@@ -174,7 +171,6 @@ Eigen::VectorXf UAVController::SetDesState(const geometry_msgs::PoseStamped goal
     des_state[3] = roll;
     des_state[4] = pitch;
     des_state[5] = yaw;
-    //  printf("$$$$$$$$ des yaw %f\n", yaw);
     return des_state;
 }
 
@@ -198,7 +194,6 @@ Eigen::VectorXf UAVController::SetCurrState(
     current_state[3] = roll;
     current_state[4] = pitch;
     current_state[5] = yaw;
-    // printf("$$$$$$$$ cur yaw %f\n", yaw);
 
     // Linear velocities in world frame
     current_state[6] = current_velocities.twist.linear.x;
@@ -284,8 +279,6 @@ Eigen::Vector3f UAVController::AttitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     Pitch_o_g.point.y = CONT.RPkd * err[4];
     Pitch_o_g.point.z = CONT.PI * CONT.RPki;
     Pitch_o_gain.publish(Pitch_o_g);
-
-    //TODO: Error Logging  --- meaning what????
 
     return RPY;
 }
@@ -430,8 +423,6 @@ float UAVController::AltitudeCtrl(Eigen::VectorXf X, Eigen::VectorXf DesX)
     PID_pt.point.y = CONT.TI * CONT.Tki;
     PID_pt.point.z = err[1] * CONT.Tkd;
     PID_pub_.publish(PID_pt);
-
-    //TODO: Error Logging
 
     return T;
 }

@@ -59,7 +59,11 @@ private:
     UAVController controller;
     dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig> dynamic_reconfigure_server_;
 
-    double sizex_, sizey_, sizez_, resolution_;
+    double sizex_;
+    double sizey_;
+    double sizez_;
+    double resolution_;
+
     std::string flt_mode_req_topic_;
     std::string flt_mode_stat_topic_;
     std::string ctrl_cmd_topic_;

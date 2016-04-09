@@ -2,11 +2,9 @@
 
 UAVLocalPlanner::UAVLocalPlanner()
 {
-    ROS_ERROR("starting with an error");
-    printf("starting ...... really\n");
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
-    ROS_WARN("[local_planner] Getting params");
+    ROS_INFO("[local_planner] Getting params");
     ph.param("size_x", sizex_, 4.0);
     ph.param("size_y", sizey_, 4.0);
     ph.param("size_z", sizez_, 4.0);
@@ -31,7 +29,7 @@ UAVLocalPlanner::UAVLocalPlanner()
     uav_state_topic_ = "uav_state";
     path_topic_ = "path";
 
-    ROS_ERROR("[local_planner] done getting params");
+    ROS_INFO("[local_planner] done getting params");
     path_idx_ = 0;
 
     // publish UAV commands and goals (in case we detect a collision up ahead we
@@ -452,9 +450,9 @@ void UAVLocalPlanner::visualizeTargetPose(geometry_msgs::PoseStamped p)
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "uav_local_planner");
-    ROS_ERROR("[local planner] starting local planner");
+    ROS_INFO("[local planner] starting local planner");
     UAVLocalPlanner local_planner;
-    ROS_ERROR("[local planner] going to spin");
+    ROS_INFO("[local planner] going to spin");
     ros::spin();
     return 0;
 }
