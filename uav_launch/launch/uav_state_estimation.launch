@@ -39,7 +39,7 @@
 
     <!-- State Aggregation -->
 
-    <node name="uav_state_publisher_new" pkg="uav_state_publisher" type="uav_state_publisher_new" launch-prefix="nice --1">
+    <node name="uav_state_publisher_new" pkg="uav_state_publisher" type="uav_state_publisher" launch-prefix="nice --1">
         <remap from="raw_imu" to="imu"/>
         <rosparam file="$(find uav_launch)/config/uav_state_publisher.yaml" command="load"/>
     </node>
