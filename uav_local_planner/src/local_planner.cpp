@@ -113,6 +113,7 @@ void UAVLocalPlanner::controllerThread()
 
         last_state_ = state;
         uav_msgs::ControllerCommand u;
+        controller.setTrackedVelocity(0.0);
         switch (state.mode) {
         case uav_msgs::FlightModeStatus::LANDED:
 //            ROS_INFO("[controller] state: LANDED");
@@ -272,6 +273,16 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(
     geometry_msgs::PoseStamped target = controller_path_->poses[i];
     ROS_DEBUG("next target is %f %f %f", target.pose.position.x, target.pose.position.y, target.pose.position.z);
     visualizeTargetPose(target);
+    const double nominal_vel = 0.3; // TODO: configurate
+    const double taper_dist = 0.5; // TODO: configurate
+    double vel_goal_ratio = nominal_vel / taper_dist;
+    double dx_goal = pose.pose.position.x - controller_path_->poses.back().pose.position.x;
+    double dy_goal = pose.pose.position.y - controller_path_->poses.back().pose.position.y;
+    double d_goal = sqrt(dx_goal*dx_goal + dy_goal*dy_goal);
+    if(d_goal > taper_dist)
+        controller.setTrackedVelocity(nominal_vel);
+    else
+        controller.setTrackedVelocity(vel_goal_ratio*d_goal);
     uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
     // TODO: collision check the controls for some very short period of time
     return u;
@@ -456,4 +467,3 @@ int main(int argc, char **argv)
     ros::spin();
     return 0;
 }
-

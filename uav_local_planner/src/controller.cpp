@@ -5,11 +5,10 @@
 
 // Constructor
 UAVController::UAVController() :
-      tf_(ros::NodeHandle(), ros::Duration(10), true),
-      flt_mode_stat_topic_("flight_mode_status"),
-      last_state_()
+      tf_(ros::NodeHandle(), ros::Duration(10), true)
 {
     ros::NodeHandle nh("~");
+    ros::NodeHandle nh2;
     UAVController::InitializeGains();
     Pos_err = nh.advertise<geometry_msgs::PointStamped>("Pos_error", 1);
     Or_err = nh.advertise<geometry_msgs::PointStamped>("Or_error", 1);
@@ -22,8 +21,7 @@ UAVController::UAVController() :
 
     PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_altitude", 1);
 
-    flight_mode_sub_ = nh.subscribe(flt_mode_stat_topic_, 1, &UAVStatePublisher::flightModeCallback, this);
-    last_state_.mode = uav_msgs::FlightModeStatus::LANDED;
+    nominal_linear_velocity_ = 0.0;
 
     ROS_DEBUG("[controller] did I get here end?");
 }
@@ -121,12 +119,6 @@ void UAVController::InitializeGains()
 
     waitForParam("UAV/windupPose");
     readParam("UAV/windupPose", CONT.windupPose, 5.0);
-}
-
-void UAVController::flightModeCallback(uav_msgs::FlightModeStatusConstPtr msg)
-{
-    last_state_ = *msg;
-    ROS_DEBUG("flight_status is %d\n", (int ) last_state_.mode);
 }
 
 void UAVController::dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level)
@@ -326,17 +318,16 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
         }
     }
 
-    double nominal_linear_velocity_ = 0.0;
-    if(last_state_.mode == uav_msgs::FlightModeStatus::FOLLOWING)
-    {
-        nominal_linear_velocity_ = 0.3;
+    temp.setZ(0.0);
+    tf::Point desV = temp;
+    if (temp.length2() > 0.0) {
+        desV = nominal_linear_velocity_ * temp.normalized();
     }
-    tf::Point desV = nominal_linear_velocity_ * temp.normalized();
 
     // velocity
-    temp.setX(desV(0)-X(6));
-    temp.setY(desV(1)-X(7));
-    temp.setZ(desV(2)-X(8));
+    temp.setX(desV.x() - X(6));
+    temp.setY(desV.y() - X(7));
+    temp.setZ(desV.z() - X(8));
 
     err_v = transform * temp;
 

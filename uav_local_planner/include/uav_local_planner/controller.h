@@ -9,6 +9,7 @@
 #include <cmath>
 #include <Eigen/Core>
 #include <Eigen/LU>
+#include <uav_msgs/FlightModeStatus.h>
 
 //TODO: combine this with the local planner in a more coherent fashion
 
@@ -142,11 +143,7 @@ public:
      */
     void dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level);
 
-    /**
-     * @brief Callback for getting the UAV flightmode
-     * @param message Callback from the UAV
-     */
-    void flightModeCallback(uav_msgs::FlightModeStatusConstPtr msg);
+    void setTrackedVelocity(double velocity) { nominal_linear_velocity_ = std::min(velocity, 0.0); }
 
 private:
 
@@ -161,8 +158,7 @@ private:
     ros::Publisher Roll_o_gain;
     ros::Publisher Pitch_o_gain;
 
-    std::string flt_mode_stat_topic_;
-    uav_msgs::FlightModeStatusConstPtr last_state_;
+    double nominal_linear_velocity_;
 
     void waitForParam(const std::string& name) const;
 
