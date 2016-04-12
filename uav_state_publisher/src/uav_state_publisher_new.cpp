@@ -552,13 +552,13 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         el_pout.header.frame_id = map_frameid_;
 
         //if (have_map_to_vlaser) {
-            
+
             // tf::Point scanout;
 
             // if (have_bodymapaligned_to_laser){
             //     scanout = T_map_odom_ * T_odom_base_footprint * T_base_footprint_body_stabilized * T_bodystable_vlaser * ptf;
             // }else{
-            //     scanout = T_map_odom_ * T_odom_base_footprint * T_base_footprint_body_stabilized * T_bodymapaligned_body * T_body_vlaser_ * ptf;   
+            //     scanout = T_map_odom_ * T_odom_base_footprint * T_base_footprint_body_stabilized * T_bodymapaligned_body * T_body_vlaser_ * ptf;
             // }
             // el_pout.point.x = scanout.getX();
             // el_pout.point.y = scanout.getY();
@@ -572,7 +572,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 
         // update max_z; only calculate max_z using rays "directly under the
         // hexacopter"
-        if (fabs(ang - M_PI / 2) < (10.0 * M_PI / 180.0)) {
+        if (fabs(ang - M_PI / 2) < (65.0 * M_PI / 180.0)) {
             max_z = std::max(max_z, pout.point.z);
         }
 
@@ -583,7 +583,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
             xel.push_back(pout.point.x);
             yel.push_back(pout.point.y);
             zel.push_back(pout.point.z);
-            
+
             //if(fabs(ang - M_PI / 2) < (10.0 * M_PI / 180.0))
             //if (pout.point.z < prev_height + 0.5 && pout.point.z > prev_height - 0.5)
             {
@@ -638,7 +638,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
                 check_y_ = (int)((state_.pose.pose.position.y + ys[i])/scale_)*scale_;
 
                 //current_elevation_ = prev_elevation_;
-                
+
                 auto search = elevation_map_.find(make_pair(check_x_, check_y_));
 
                 if(search != elevation_map_.end())
@@ -650,7 +650,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 
                 if(current_elevation_ == 0.0)
                     zero_points.push_back(current_zs_);
-                
+
                 not_zero_points.push_back(current_zs_ + current_elevation_);
 
             }
@@ -667,10 +667,10 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
                 update_map_ = false;
             }
             //printf("the actual elevation is %f, actual zs is %f and height calculated is %f\n", current_elevation, current_zs, m_filtered_z);
-            
-            //The map lookup might not be exact at borders for obtacles and hence we must look for some edge cases        
+
+            //The map lookup might not be exact at borders for obtacles and hence we must look for some edge cases
             if(filtered_z_ > (prev_filtered_z_ + height_filter_deviation_max_) || filtered_z_ < (prev_filtered_z_ - height_filter_deviation_max_) )
-            {   
+            {
                     filtered_z_ = prev_filtered_z_;
                     update_map_ = false;
             }
@@ -683,7 +683,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
             prev_elevation_ = current_elevation_;
         }
 
-        prev_filtered_z_ = filtered_z_;      
+        prev_filtered_z_ = filtered_z_;
     }
     else {
         ROS_DEBUG("landed");
@@ -699,7 +699,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
     // Dont update elevation map when landing
     //TODO(Karthik) : Replace const 1 below with actual message for while landing
     if (last_state_.mode != 1 && update_map_) {
-        
+
         double elz = 0;
 
         //Update elevation Map
