@@ -19,7 +19,7 @@ UAVController::UAVController() : tf_(ros::NodeHandle(), ros::Duration(10), true)
 
     PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_altitude", 1);
 
-    ROS_WARN("[controller] did I get here end?");
+    ROS_DEBUG("[controller] did I get here end?");
 }
 
 // Destructor

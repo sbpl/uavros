@@ -491,7 +491,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
 
         // update max_z; only calculate max_z using rays "directly under the
         // hexacopter"
-        if (fabs(ang - M_PI / 2) < (10.0 * M_PI / 180.0)) {
+        if (fabs(ang - M_PI / 2) < (65.0 * M_PI / 180.0)) {
             max_z = std::max(max_z, pout.point.z);
         }
 
