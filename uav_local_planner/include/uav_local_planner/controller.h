@@ -142,6 +142,12 @@ public:
      */
     void dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level);
 
+    /**
+     * @brief Callback for getting the UAV flightmode
+     * @param message Callback from the UAV
+     */
+    void flightModeCallback(uav_msgs::FlightModeStatusConstPtr msg);
+
 private:
 
     tf::TransformListener tf_;
@@ -154,6 +160,9 @@ private:
     ros::Publisher Pitch_p_gain;
     ros::Publisher Roll_o_gain;
     ros::Publisher Pitch_o_gain;
+
+    std::string flt_mode_stat_topic_;
+    uav_msgs::FlightModeStatusConstPtr last_state_;
 
     void waitForParam(const std::string& name) const;
 
