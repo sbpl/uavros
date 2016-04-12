@@ -1,4 +1,3 @@
-
 <launch>
     <arg name="ns"  default="false"/>
     <arg name="sim" default="false"/>
@@ -26,9 +25,7 @@
         <arg name="use_slam" value="$(arg use_slam)"/>
     </include>
 
-    <include file="$(find uav_launch)/launch/uav_controls.launch">
-        <arg name="sim" value="$(arg sim)"/>
-    </include>
+    <include file="$(find uav_launch)/launch/uav_controls.launch"/>
 
     <include file="$(find uav_launch)/launch/uav_navigation.launch"/>
 
