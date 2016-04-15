@@ -548,7 +548,7 @@ void UAVStatePublisher::lidarCallback(sensor_msgs::LaserScanConstPtr scan)
         const double beta = 0.99;
 
         // arbitrary number, possibly related to takeoff height, and something
-        // about
+        // about...
         const double SOMETHING = 1.2;
         if (max_z > SOMETHING) {
             filtered_z_ = (beta * filtered_z_) + ((1.0 - beta) * max_z);
