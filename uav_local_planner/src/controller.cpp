@@ -21,7 +21,8 @@ UAVController::UAVController() :
 
     PID_pub_ = nh.advertise<geometry_msgs::PointStamped>("PID_altitude", 1);
 
-    nominal_linear_velocity_ = 0.0;
+    nominal_vx_ = 0.0;
+    nominal_vy_ = 0.0;
 
     ROS_DEBUG("[controller] did I get here end?");
 }
@@ -319,10 +320,11 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     }
 
     temp.setZ(0.0);
-    tf::Point desV = temp;
-    if (temp.length2() > 0.0) {
-        desV = nominal_linear_velocity_ * temp.normalized();
-    }
+    tf::Point desV = transform * tf::Vector3(nominal_vx_, nominal_vy_, 0.0);
+
+    // if (temp.length2() > 0.0) {
+    //     desV = nominal_linear_velocity_ * temp.normalized();
+    // }
 
     // velocity
     temp.setX(desV.x() - X(6));
@@ -335,6 +337,8 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     if (err_v.length() > max_vel_mps) {
         err_v = max_vel_mps * err_v.normalized();
     }
+
+    ROS_INFO_THROTTLE(0.5, "v_x = %0.6f, desired v_x = %0.6f, err_v = %0.6f, nomv = (%0.6f, %0.6f)", X(6), desV.x(), err_v.x(), nominal_vx_, nominal_vy_);
 
     // roll
     RP_Pose[0] = -err_p[1] * CONT.Posekp + -err_v[1] * CONT.Posekd + -CONT.RposeI * CONT.Poseki;

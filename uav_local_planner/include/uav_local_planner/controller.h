@@ -143,7 +143,11 @@ public:
      */
     void dynamic_reconfigure_callback(uav_local_planner::UAVControllerConfig &config, uint32_t level);
 
-    void setTrackedVelocity(double velocity) { nominal_linear_velocity_ = std::min(velocity, 0.0); }
+    void setTrackedVelocity(double vx, double vy) {
+      nominal_vx_ = vx;
+      nominal_vy_ = vy;
+      // nominal_linear_velocity_ = std::max(velocity, 0.0);
+    }
 
 private:
 
@@ -158,7 +162,8 @@ private:
     ros::Publisher Roll_o_gain;
     ros::Publisher Pitch_o_gain;
 
-    double nominal_linear_velocity_;
+    double nominal_vx_;
+    double nominal_vy_;
 
     void waitForParam(const std::string& name) const;
 
