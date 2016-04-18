@@ -239,7 +239,7 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(
     double dz = pose.pose.position.z - controller_path_->poses[path_idx_].pose.position.z;
     double dist = sqrt(dx * dx + dy * dy + dz * dz);
     const double carrot_dist = 0.3;
-    if(dist < carrot_dist)
+    if(dist < carrot_dist && path_idx_ < controller_path_->poses.size() - 1)
     {
         ++path_idx_;
         dx = pose.pose.position.x - controller_path_->poses[path_idx_].pose.position.x;
@@ -261,10 +261,13 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(
     }
     ROS_DEBUG("b");
     path_idx_ = i - 1;
-    if (3 >= ((int)(controller_path_->poses.size()) - ((int)i))) {
+    double dxg =  controller_path_->poses.back().pose.position.x - pose.pose.position.x;
+    double dyg =  controller_path_->poses.back().pose.position.y - pose.pose.position.y;
+    double dist2 = sqrt(dxg*dxg + dyg*dyg);
+    if (dist2 < 0.3) {
         state.mode = uav_msgs::FlightModeStatus::HOVER;
         hover_pose_ = controller_path_->poses[controller_path_->poses.size() - 1];
-        i = controller_path_->poses.size() - 1;
+        // i = controller_path_->poses.size() - 1;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -272,48 +275,51 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(
     ///////////////////////////////////////////////////////////////////
 
     const double nominal_vel = 0.3; // TODO: configurate
-    if (path_idx_ < (int)controller_path_->poses.size() - 1) {
+    if (dist2 > 0.6 && state.mode != uav_msgs::FlightModeStatus::HOVER && path_idx_ < controller_path_->poses.size() - 1) {
       const geometry_msgs::Point& curr_tracked = controller_path_->poses[path_idx_].pose.position;
       const geometry_msgs::Point& next_tracked = controller_path_->poses[path_idx_ + 1].pose.position;
       double dx = next_tracked.x - curr_tracked.x;
       double dy = next_tracked.y - curr_tracked.y;
-      tf::Vector3 d(dx, dy, 0.0);
-      if (d.length2() > 0.0) {
-        d = nominal_vel * d.normalized();
+
+      double robot_th = tf::getYaw(pose.pose.orientation);
+      double path_th = atan2(dy, dx);
+      double dAngle = fmod(fabs(robot_th - path_th), 2*M_PI);
+      if(dAngle > M_PI)
+      {
+        dAngle -= 2*M_PI;
       }
-      controller.setTrackedVelocity(d.x(), d.y());
+      dAngle = fabs(dAngle);
+      if(dAngle < M_PI/2) // Angle off the path is good
+      {
+        tf::Vector3 d(dx, dy, 0.0);
+        if (d.length2() > 0.0) {
+          d = nominal_vel * d.normalized();
+        }
+        controller.setTrackedVelocity(d.x(), d.y());
+      }
+      else{ // Angle off the path is too big
+        ROS_INFO("r_th: %.3f p_th: %.3f d_th: %.3f", robot_th, path_th, dAngle);
+        controller.setTrackedVelocity(0.0, 0.0);
+      }
+
     }
     else {
       controller.setTrackedVelocity(0.0, 0.0);
     }
 
     ROS_DEBUG("c");
-    ROS_DEBUG("point index is %d", i);
+    ROS_DEBUG("point index is %d", path_idx_);
 
-    if (controller_path_->poses[i].pose.position.z < 0.6) {
-        ROS_DEBUG("Target height was %f, Setting it to 0.6", controller_path_->poses[i].pose.position.z);
-        controller_path_->poses[i].pose.position.z = 0.6;
+    if (controller_path_->poses[path_idx_].pose.position.z < 0.6) {
+        ROS_DEBUG("Target height was %f, Setting it to 0.6", controller_path_->poses[path_idx_].pose.position.z);
+        controller_path_->poses[path_idx_].pose.position.z = 0.6;
     }
-
-    // TODO: verify that i is never out of bounds
 
     // TODO: collision check the path from our pose to the target pose (just check the straight line)
     // TODO: collision check the path from the target to the next few points (use a time horizon)
-    const geometry_msgs::PoseStamped& target = controller_path_->poses[i];
+    const geometry_msgs::PoseStamped& target = controller_path_->poses[path_idx_];
     ROS_DEBUG("next target is %f %f %f", target.pose.position.x, target.pose.position.y, target.pose.position.z);
     visualizeTargetPose(target);
-
-//    const double taper_dist = 0.4; // TODO: configurate
-//    double vel_goal_ratio = nominal_vel / taper_dist;
-//    double dx_goal = pose.pose.position.x - controller_path_->poses.back().pose.position.x;
-//    double dy_goal = pose.pose.position.y - controller_path_->poses.back().pose.position.y;
-//    double d_goal = sqrt(dx_goal*dx_goal + dy_goal*dy_goal);
-//    if(d_goal > taper_dist) {
-//        controller.setTrackedVelocity(nominal_vel);
-//    }
-//    else {
-//        controller.setTrackedVelocity(vel_goal_ratio*d_goal);
-//    }
 
     uav_msgs::ControllerCommand u = controller.Controller(pose, vel, target);
     // TODO: collision check the controls for some very short period of time

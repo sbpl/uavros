@@ -320,11 +320,8 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     }
 
     temp.setZ(0.0);
-    tf::Point desV = transform * tf::Vector3(nominal_vx_, nominal_vy_, 0.0);
 
-    // if (temp.length2() > 0.0) {
-    //     desV = nominal_linear_velocity_ * temp.normalized();
-    // }
+    tf::Point desV = tf::Vector3(nominal_vx_, nominal_vy_, 0.0);
 
     // velocity
     temp.setX(desV.x() - X(6));
@@ -352,6 +349,7 @@ Eigen::Vector2f UAVController::PositionCtrl(Eigen::VectorXf X, Eigen::VectorXf D
     double pitch_limit = abs(0.15 / CONT.Poseki);
     CONT.PposeI = std::max(-pitch_limit, min(pitch_limit, CONT.PposeI));
 
+    // TODO: Make better messages for debugging (Current, Desired, Error, Gain*Error) for Position and Velocity in the same frame
     geometry_msgs::PointStamped Pos_e;
     Pos_e.header.stamp = ros::Time::now();
     Pos_e.point.x = err_p[0];
