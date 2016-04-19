@@ -342,7 +342,7 @@ bool UAVLocalPlanner::updatePath(uav_msgs::FlightModeStatus &state)
     bool ret = false;
     boost::unique_lock<boost::mutex> lock(path_mutex_);
     if (new_path_) {
-        ROS_ERROR("[controller] received new path");
+        ROS_INFO("[controller] received new path");
         nav_msgs::Path* temp = latest_path_;
         latest_path_ = controller_path_;
         controller_path_ = temp;
