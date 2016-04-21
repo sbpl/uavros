@@ -62,6 +62,9 @@ UAVLocalPlanner::UAVLocalPlanner()
     dynamic_reconfigure::Server<uav_local_planner::UAVControllerConfig>::CallbackType f;
     f = boost::bind(&UAVController::dynamic_reconfigure_callback, &controller, _1, _2);
     dynamic_reconfigure_server_.setCallback(f);
+
+    double dx_prev_ = 0.0;
+    double dy_prev_ = 0.0;
 }
 
 UAVLocalPlanner::~UAVLocalPlanner()
@@ -230,15 +233,32 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(
     uav_msgs::FlightModeStatus& state,
     bool isNewPath)
 {
+    const double carrot_dist = 0.3;
+
     if (isNewPath) {
+        // reset the filter state of the desired velocity
+        dx_prev_ = 0.0;
+        dy_prev_ = 0.0;
+
+        // find the latest point on the path that is carrot distance away from the current pose
         path_idx_ = 0;
+        for (int i = (int)controller_path_->poses.size() - 1; i >= 0; i--) {
+            double dx = pose.pose.position.x - controller_path_->poses[i].pose.position.x;
+            double dy = pose.pose.position.y - controller_path_->poses[i].pose.position.y;
+            double dz = pose.pose.position.z - controller_path_->poses[i].pose.position.z;
+            double dist = sqrt(dx * dx + dy * dy + dz * dz);
+            if (dist <= carrot_dist) {
+                break;
+            }
+            path_idx_ = i;
+        }
     }
+
     ROS_WARN("size is %zu ", controller_path_->poses.size());
     double dx = pose.pose.position.x - controller_path_->poses[path_idx_].pose.position.x;
     double dy = pose.pose.position.y - controller_path_->poses[path_idx_].pose.position.y;
     double dz = pose.pose.position.z - controller_path_->poses[path_idx_].pose.position.z;
     double dist = sqrt(dx * dx + dy * dy + dz * dz);
-    const double carrot_dist = 0.3;
     if(dist < carrot_dist && path_idx_ < controller_path_->poses.size() - 1)
     {
         ++path_idx_;
@@ -276,32 +296,37 @@ uav_msgs::ControllerCommand UAVLocalPlanner::followPath(
 
     const double nominal_vel = 0.3; // TODO: configurate
     if (dist2 > 0.6 && state.mode != uav_msgs::FlightModeStatus::HOVER && path_idx_ < controller_path_->poses.size() - 1) {
-      const geometry_msgs::Point& curr_tracked = controller_path_->poses[path_idx_].pose.position;
-      const geometry_msgs::Point& next_tracked = controller_path_->poses[path_idx_ + 1].pose.position;
-      double dx = next_tracked.x - curr_tracked.x;
-      double dy = next_tracked.y - curr_tracked.y;
+        const geometry_msgs::Point& curr_tracked = controller_path_->poses[path_idx_].pose.position;
+        const geometry_msgs::Point& next_tracked = controller_path_->poses[path_idx_ + 1].pose.position;
+        double dx = next_tracked.x - curr_tracked.x;
+        double dy = next_tracked.y - curr_tracked.y;
 
-      double robot_th = tf::getYaw(pose.pose.orientation);
-      double path_th = atan2(dy, dx);
-      double dAngle = fmod(fabs(robot_th - path_th), 2*M_PI);
-      if(dAngle > M_PI)
-      {
-        dAngle -= 2*M_PI;
-      }
-      dAngle = fabs(dAngle);
-      if(dAngle < M_PI/2) // Angle off the path is good
-      {
-        tf::Vector3 d(dx, dy, 0.0);
+        double alfa = 0.9;
+        double beta = 1.0 - alfa;
+        tf::Vector3 d(dx*alfa + dx_prev_*beta, dy*alfa + dy_prev_*beta, 0.0);
         if (d.length2() > 0.0) {
-          d = nominal_vel * d.normalized();
+            d = nominal_vel * d.normalized();
         }
-        controller.setTrackedVelocity(d.x(), d.y());
-      }
-      else{ // Angle off the path is too big
-        ROS_INFO("r_th: %.3f p_th: %.3f d_th: %.3f", robot_th, path_th, dAngle);
-        controller.setTrackedVelocity(0.0, 0.0);
-      }
+        dx_prev_ = dx;
+        dy_prev_ = dy;
 
+        double robot_th = tf::getYaw(pose.pose.orientation);
+        double path_th = atan2(dy, dx);
+        double dAngle = fmod(fabs(robot_th - path_th), 2 * M_PI);
+        if (dAngle > M_PI) {
+            dAngle -= 2 * M_PI;
+        }
+        dAngle = fabs(dAngle);
+        // Angle off the path is good
+        const double sidestep_prevention_angle = M_PI / 3.0;
+        if (dAngle < sidestep_prevention_angle) {
+            controller.setTrackedVelocity(d.x(), d.y());
+        }
+        else {
+            // Angle off the path is too big
+            ROS_INFO("r_th: %.3f p_th: %.3f d_th: %.3f", robot_th, path_th, dAngle);
+            controller.setTrackedVelocity(0.0, 0.0);
+        }
     }
     else {
       controller.setTrackedVelocity(0.0, 0.0);

@@ -112,6 +112,8 @@ private:
     geometry_msgs::PoseStamped hover_pose_;
     uav_msgs::FlightModeStatus last_state_;
     unsigned int path_idx_;
+    double dx_prev_;
+    double dy_prev_;
 };
 
 #endif
