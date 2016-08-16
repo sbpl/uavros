@@ -4,7 +4,7 @@
     <description>uav_goal_interpolate</description>
     <maintainer email="andrew.dornbush@gmail.com">Andrew Dornbush</maintainer>
     <author>Jonathan Butzke</author>
-    <license>TODO</license>
+    <license>BSD</license>
 
     <buildtool_depend>catkin</buildtool_depend>
 
