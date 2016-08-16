@@ -1,5 +1,5 @@
 <launch>
-    <node pkg="rosbag" type="record" name="rosbag_record" args="-a -x /hexa_cam/image_raw(.*) /hexa_cam -O /home/utacc/Bag/HexaData"/>  
+    <node pkg="rosbag" type="record" name="rosbag_record" args="-a -x /hexa_cam/image_raw(.*) /hexa_cam -O $(env HOME)/tmp/"/>  
     
     <!-- TODO: There is hector_geotiff node that can be brought up to save the trajectory of the UAV-->
 </launch>
